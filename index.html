@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="gl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Minixogos Portela</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --card: #1e293b;
+            --accent: #38bdf8;
+            --text: #f8fafc;
+            --danger: #ef4444;
+            --gold: #f59e0b;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 440px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        header {
+            text-align: center;
+            background: var(--card);
+            padding: 15px;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+
+        h1 { margin: 0 0 5px 0; font-size: 1.5rem; color: var(--accent); }
+        .user-info { font-size: 0.9rem; color: #94a3b8; }
+
+        .card {
+            background: var(--card);
+            padding: 18px;
+            border-radius: 16px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+
+        button {
+            background: var(--accent);
+            color: #0f172a;
+            border: none;
+            padding: 12px 15px;
+            font-size: 0.95rem;
+            font-weight: bold;
+            border-radius: 10px;
+            width: 100%;
+            cursor: pointer;
+            margin-top: 8px;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        button:active { opacity: 0.8; }
+        button.btn-alt { background: #334155; color: var(--text); }
+        button.btn-random { background: #a855f7; color: white; font-size: 1.05rem; padding: 14px; }
+        button.btn-profile { background: var(--gold); color: #0f172a; }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #334155;
+            background: #0f172a;
+            color: white;
+            font-size: 1rem;
+            box-sizing: border-box;
+            text-align: center;
+            margin-bottom: 8px;
+        }
+
+        .search-input {
+            text-align: left;
+            padding: 10px;
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+        }
+
+        .category-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            max-height: 240px;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+
+        .category-btn {
+            background: #334155;
+            color: var(--text);
+            font-size: 0.78rem;
+            padding: 10px 6px;
+            margin-top: 0;
+            border-radius: 8px;
+            text-align: left;
+            line-height: 1.2;
+        }
+
+        .screen { display: none; }
+        .screen.active { display: block; }
+
+        .game-box {
+            min-height: 120px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .game-desc {
+            background: #0f172a;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            color: #94a3b8;
+            margin-bottom: 10px;
+        }
+
+        .ranking-box, .records-box {
+            background: #0f172a;
+            border-radius: 12px;
+            padding: 12px;
+            margin-top: 12px;
+            text-align: left;
+            max-height: 180px;
+            overflow-y: auto;
+        }
+
+        .ranking-box h3, .records-box h3 {
+            margin: 0 0 10px 0;
+            font-size: 0.95rem;
+            text-align: center;
+            color: var(--accent);
+        }
+
+        .ranking-item, .record-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            border-bottom: 1px solid #1e293b;
+            font-size: 0.85rem;
+        }
+
+        .err-msg { color: var(--danger); font-size: 0.85rem; margin-top: 5px; display: none; }
+    </style>
+
+    <!-- Firebase SDK Limpo e Seguro -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        // Substitúe estes campos polos datos xerados no teu Paso 2.1
+        const firebaseConfig = {
+            apiKey: "AIzaSyDY68e8tDZkcvrLiu2xoaVCDJIY_g1KP0w",
+            authDomain: "minixogos-portela.firebaseapp.com",
+            projectId: "minixogos-portela",
+            storageBucket: "minixogos-portela.appspot.com",
+            messagingSenderId: "610062616692",
+            appId: "1:610062616692:web:1004d65064538a61dc2921"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // Autenticación anónima sen incomodar ao usuario
+        signInAnonymously(auth).catch(console.error);
+
+        window.db = db;
+        window.auth = auth;
+        window.doc = doc;
+        window.getDoc = getDoc;
+        window.setDoc = setDoc;
+        window.collection = collection;
+        window.onSnapshot = onSnapshot;
+    </script>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Minixogos Portela</h1>
+        <div class="user-info" id="userInfo">Sen identificar</div>
+    </header>
+
+    <!-- PANTALLA INICIO DE SESIÓN -->
+    <div id="screenLogin" class="screen card active">
+        <h2>Acceso de Xogador</h2>
+        <p>Escribe o teu nome e un PIN de 6 díxitos para protexer o teu perfil.</p>
+        <input type="text" id="usernameInput" placeholder="O teu Nome ou Apodo" maxlength="15">
+        <input type="password" id="pinInput" placeholder="PIN Secreto (6 números)" maxlength="6" pattern="\d*">
+        <div id="loginError" class="err-msg">O PIN é incorrecto para este xogador.</div>
+        <button onclick="autenticarUsuario()">Entrar a Xogar</button>
+    </div>
+
+    <!-- PANTALLA MENÚ -->
+    <div id="screenMenu" class="screen card">
+        <button class="btn-random" onclick="jugarAleatorio()">🎲 Xogo Aleatorio</button>
+        <button class="btn-profile" onclick="abrirPerfil()">📊 O meu Perfil e Récords</button>
+
+        <input type="text" id="searchCat" class="search-input" placeholder="🔍 Buscar categoría..." oninput="filtrarCategorias()">
+        <div class="category-grid" id="categoryGrid"></div>
+
+        <div class="ranking-box">
+            <h3>🏆 Clasificación Xeral</h3>
+            <div id="rankingList">Cargando datos...</div>
+        </div>
+
+        <button class="btn-alt" onclick="cerrarSesion()" style="margin-top: 12px;">Cerrar Sesión</button>
+    </div>
+
+    <!-- PANTALLA PERFIL -->
+    <div id="screenProfile" class="screen card">
+        <h2>Perfil de Xogador</h2>
+        <p id="profileTotalScore" style="font-size: 1.2rem; font-weight: bold; color: var(--gold);"></p>
+
+        <div class="records-box">
+            <h3> Os meus Récords por Categoría</h3>
+            <div id="userRecordsList">Aínda non tes rexistros</div>
+        </div>
+
+        <button onclick="mostrarPantalla('screenMenu')">Volver ao Menú</button>
+    </div>
+
+    <!-- PANTALLA XOGO -->
+    <div id="screenGame" class="screen card">
+        <h3 id="gameTitle">Cargando...</h3>
+        <div class="game-desc" id="gameDesc"></div>
+        <div class="game-box" id="gameArea"></div>
+        <div id="gameControls"></div>
+    </div>
+</div>
+
+<script>
+    let currentUser = "";
+    let userProfile = { puntosTotales: 0, juegos: {} };
+
+    // CATEGORÍAS CON EXPLICACIÓNS EN GALEGO
+    const CATEGORIAS = [
+        { nome: "1. Sumas Rápidas", desc: "Resolve a operación matemática de suma o máis rápido posíbel para gañar puntos." },
+        { nome: "2. Restas Exprés", desc: "Calcula a diferenza entre dous números antes de que remate o tempo." },
+        { nome: "3. Multiplicacións", desc: "Demostra a túa axilidade mental resolvendo táboas de multiplicar rápidas." },
+        { nome: "4. Divisións", desc: "Calcula a división exacta indicada na pantalla." },
+        { nome: "5. Parar o Reloxo", desc: "Detén o cronómetro exactamente no segundo indicado para acadar a máxima puntuación." },
+        { nome: "6. Comparación Mayor/Menor", desc: "Selecciona rapidamente cal dos dous números amosados é o máis grande." },
+        { nome: "7. Adiviña o Número", desc: "Encontra o número secreto oculto no menor número de intentos posíbel." },
+        { nome: "8. Dobres e Mitades", desc: "Calcula rapidamente o dobre ou a metade do número solicitado." },
+        { nome: "9. Conteo Rápido", desc: "Responde cantos elementos ou números cumpren a condición amosada." },
+        { nome: "10. Series Numéricas", desc: "Descobre o patrón lóxico e completa o número que falta na secuencia." }
+    ];
+
+    function init() {
+        renderizarCategorias(CATEGORIAS);
+        const savedUser = localStorage.getItem('portela_user');
+        if (savedUser) {
+            currentUser = savedUser;
+            actualizarHeader();
+            mostrarPantalla('screenMenu');
+            escucharRankingGlobal();
+            cargarDatosUsuario();
+        }
+    }
+
+    function renderizarCategorias(lista) {
+        const grid = document.getElementById('categoryGrid');
+        grid.innerHTML = "";
+        lista.forEach(cat => {
+            const indexOriginal = CATEGORIAS.findIndex(c => c.nome === cat.nome);
+            grid.innerHTML += `<button class="category-btn" onclick="jugarCategoria(${indexOriginal})">${cat.nome}</button>`;
+        });
+    }
+
+    function filtrarCategorias() {
+        const query = document.getElementById('searchCat').value.toLowerCase();
+        const filtradas = CATEGORIAS.filter(c => c.nome.toLowerCase().includes(query));
+        renderizarCategorias(filtradas);
+    }
+
+    async function autenticarUsuario() {
+        const name = document.getElementById('usernameInput').value.trim().toLowerCase();
+        const pin = document.getElementById('pinInput').value.trim();
+        const errDiv = document.getElementById('loginError');
+        errDiv.style.display = "none";
+
+        if (!name || pin.length !== 6) {
+            alert("Por favor, introduce un nome e un PIN de 6 díxitos.");
+            return;
+        }
+
+        const userRef = window.doc(window.db, "ranking", name);
+        const userSnap = await window.getDoc(userRef);
+
+        if (userSnap.exists()) {
+            if (userSnap.data().pin === pin) {
+                iniciarSesionExitoso(name);
+            } else {
+                errDiv.style.display = "block";
+            }
+        } else {
+            await window.setDoc(userRef, {
+                jugador: name,
+                pin: pin,
+                puntosTotales: 0,
+                juegos: {},
+                fechaRegistro: new Date()
+            });
+            iniciarSesionExitoso(name);
+        }
+    }
+
+    function iniciarSesionExitoso(name) {
+        currentUser = name;
+        localStorage.setItem('portela_user', name);
+        actualizarHeader();
+        mostrarPantalla('screenMenu');
+        escucharRankingGlobal();
+        cargarDatosUsuario();
+    }
+
+    function cerrarSesion() {
+        localStorage.removeItem('portela_user');
+        currentUser = "";
+        document.getElementById('usernameInput').value = "";
+        document.getElementById('pinInput').value = "";
+        mostrarPantalla('screenLogin');
+    }
+
+    function actualizarHeader() {
+        document.getElementById('userInfo').innerText = `Xogador: ${currentUser.toUpperCase()}`;
+    }
+
+    function mostrarPantalla(id) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+    }
+
+    async function cargarDatosUsuario() {
+        if (!currentUser || !window.db) return;
+        const userRef = window.doc(window.db, "ranking", currentUser);
+        const userSnap = await window.getDoc(userRef);
+        if (userSnap.exists()) {
+            userProfile = userSnap.data();
+            if (!userProfile.juegos) userProfile.juegos = {};
+        }
+    }
+
+    function abrirPerfil() {
+        mostrarPantalla('screenProfile');
+        document.getElementById('profileTotalScore').innerText = `Puntuación Total: ${userProfile.puntosTotales || 0} pts`;
+
+        let html = "";
+        const juegosMap = userProfile.juegos || {};
+        const keys = Object.keys(juegosMap);
+
+        if (keys.length === 0) {
+            html = "<p style='text-align:center;'>Aínda non xogaches a ningún minixogo.</p>";
+        } else {
+            keys.forEach(cat => {
+                html += `<div class="record-item">
+                    <span>${cat}</span>
+                    <span><strong>${juegosMap[cat]} pts</strong></span>
+                </div>`;
+            });
+        }
+        document.getElementById('userRecordsList').innerHTML = html;
+    }
+
+    function escucharRankingGlobal() {
+        if (!window.db) { setTimeout(escucharRankingGlobal, 500); return; }
+        window.onSnapshot(window.collection(window.db, "ranking"), (snapshot) => {
+            let jugadores = [];
+            snapshot.forEach(docSnap => jugadores.push(docSnap.data()));
+            jugadores.sort((a, b) => (b.puntosTotales || 0) - (a.puntosTotales || 0));
+
+            let html = "";
+            jugadores.forEach((j, index) => {
+                html += `<div class="ranking-item">
+                    <span>${index + 1}. <strong>${j.jugador}</strong></span>
+                    <span>${j.puntosTotales || 0} pts</span>
+                </div>`;
+            });
+            document.getElementById('rankingList').innerHTML = html || "<p style='text-align:center;'>Sen datos aínda</p>";
+        });
+    }
+
+    async function guardarResultadoJuego(catNombre, puntosObtenidos) {
+        if (!window.db || !currentUser) return;
+
+        const nuevoTotal = (userProfile.puntosTotales || 0) + puntosObtenidos;
+        const recordAnterior = userProfile.juegos[catNombre] || 0;
+        const nuevoRecord = Math.max(recordAnterior, puntosObtenidos);
+
+        userProfile.puntosTotales = nuevoTotal;
+        userProfile.juegos[catNombre] = nuevoRecord;
+
+        const userRef = window.doc(window.db, "ranking", currentUser);
+        await window.setDoc(userRef, {
+            puntosTotales: nuevoTotal,
+            juegos: {
+                [catNombre]: nuevoRecord
+            }
+        }, { merge: true });
+    }
+
+    // LÓXICA DE XOGOS
+    let categoriaActual = "";
+
+    function jugarAleatorio() {
+        jugarCategoria(Math.floor(Math.random() * CATEGORIAS.length));
+    }
+
+    function jugarCategoria(index) {
+        const cat = CATEGORIAS[index];
+        categoriaActual = cat.nome;
+
+        mostrarPantalla('screenGame');
+
+        const area = document.getElementById('gameArea');
+        const ctrl = document.getElementById('gameControls');
+        area.innerHTML = ""; ctrl.innerHTML = "";
+
+        const miRecord = userProfile.juegos[categoriaActual] || 0;
+        document.getElementById('gameTitle').innerText = categoriaActual;
+        document.getElementById('gameDesc').innerText = `📋 Instrucións: ${cat.desc}`;
+
+        const a = Math.floor(Math.random() * 20) + 1;
+        const b = Math.floor(Math.random() * 20) + 1;
+        const resCorrecta = a + b;
+
+        area.innerHTML = `
+            <p style="font-size: 0.85rem; color: var(--gold);">Récord nesta categoría: ${miRecord} pts</p>
+            <p style="font-size: 1.2rem;">¿Canto é <strong>${a} + ${b}</strong>?</p>
+            <input type="number" id="ans" placeholder="A túa resposta">`;
+
+        ctrl.innerHTML = `<button onclick="evaluarRespuesta(${resCorrecta})">Enviar Resposta</button>`;
+    }
+
+    function evaluarRespuesta(correcto) {
+        const val = parseInt(document.getElementById('ans').value);
+        const acierto = val === correcto;
+        const puntos = acierto ? 100 : 0;
+
+        guardarResultadoJuego(categoriaActual, puntos);
+
+        const area = document.getElementById('gameArea');
+        const ctrl = document.getElementById('gameControls');
+
+        area.innerHTML = `
+            <h3>${acierto ? " ¡Excelente! Resposta Correcta" : " Fallaches... Inténtao de novo"}</h3>
+            <p>Puntos obtidos: <strong>+${puntos}</strong></p>
+            <p>Récord acumulado: <strong>${userProfile.juegos[categoriaActual]} pts</strong></p>`;
+
+        ctrl.innerHTML = `<button onclick="mostrarPantalla('screenMenu')">Volver ao Menú</button>`;
+    }
+
+    init();
+</script>
+</body>
+</html>
