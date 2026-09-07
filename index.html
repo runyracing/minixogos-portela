@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Minixogos Portela 26</title>
+    <title>Minixogos Portela</title>
     
-    <!-- Firebase Compat SDK -->
+    <!-- Firebase Compat SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
 
@@ -83,7 +83,6 @@
         .screen { display: none; }
         .screen.active { display: block; }
 
-        /* Botóns e Inputs */
         button {
             background: var(--accent-blue);
             color: #0f172a;
@@ -123,7 +122,6 @@
             margin-bottom: 10px;
         }
 
-        /* Menú Categorías e Xogos */
         .category-grid {
             display: grid;
             grid-template-columns: 1fr;
@@ -164,7 +162,6 @@
             text-align: center;
         }
 
-        /* Pantalla de Xogo e Taboleiro Visual */
         .board {
             width: 100%;
             min-height: 250px;
@@ -223,7 +220,6 @@
 
         .num-btn.done { visibility: hidden; }
 
-        /* Ranking e Perfil */
         .ranking-box, .records-box {
             background: #0f172a;
             border-radius: 12px;
@@ -279,7 +275,7 @@
         <p style="font-size: 0.85rem; color: var(--text-muted);">Escribe o teu Nome e un PIN de 6 díxitos para gardar os teus puntos.</p>
         <input type="text" id="usernameInput" placeholder="O teu Nome / Apodo" maxlength="15">
         <input type="password" id="pinInput" placeholder="PIN Secreto (6 números)" maxlength="6" pattern="\d*">
-        <div id="loginError" class="err-msg">O PIN é incorrecto para este xogador.</div>
+        <div id="loginError" class="err-msg">PIN incorrecto para este usuario.</div>
         <button onclick="autenticarUsuario()">Entrar a Xogar</button>
     </div>
 
@@ -295,7 +291,7 @@
 
         <div class="ranking-box">
             <h3>🏆 Clasificación Xeral en Directo</h3>
-            <div id="rankingList">Cargando datos...</div>
+            <div id="rankingList">Cargando clasificación...</div>
         </div>
 
         <button class="btn-alt" onclick="cerrarSesion()" style="margin-top: 12px;">Cerrar Sesión</button>
@@ -325,37 +321,45 @@
 </div>
 
 <script>
-    // --- CONFIGURACIÓN E INICIALIZACIÓN DE FIREBASE ---
-        const firebaseConfig = {
-            apiKey: "AIzaSyDY68e8tDZkcvrLiu2xoaVCDJIY_g1KP0w",
-            authDomain: "minixogos-portela.firebaseapp.com",
-            projectId: "minixogos-portela",
-            storageBucket: "minixogos-portela.appspot.com",
-            messagingSenderId: "610062616692",
-            appId: "1:610062616692:web:1004d65064538a61dc2921"
-        };
+    // --- INTEGRACIÓN FIREBASE CONFIG ---
+    const firebaseConfig = {
+        apiKey: "AIzaSyDY68e8tDZkcvrLiu2xoaVCDJIY_g1KP0w",
+        authDomain: "minixogos-portela.firebaseapp.com",
+        databaseURL: "https://minixogos-portela-default-rtdb.firebaseio.com",
+        projectId: "minixogos-portela",
+        storageBucket: "minixogos-portela.firebasestorage.app",
+        messagingSenderId: "610062616692",
+        appId: "1:610062616692:web:1004d65064538a61dc2921"
+    };
 
-    if (!firebase.apps.length) {
-        firebase.initializeApp(firebaseConfig);
+    let db = null;
+    try {
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        db = firebase.database();
+    } catch(e) {
+        console.warn("Firebase non dispoñible, usando sistema local.");
     }
-    const db = firebase.database();
 
     // --- EFECTOS DE SON CON WEB AUDIO API ---
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     function playBeep(freq = 440, type = 'sine', duration = 0.1) {
-        if (audioCtx.state === 'suspended') audioCtx.resume();
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.type = type;
-        osc.frequency.value = freq;
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        osc.start();
-        gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + duration);
-        osc.stop(audioCtx.currentTime + duration);
+        try {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type;
+            osc.frequency.value = freq;
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + duration);
+            osc.stop(audioCtx.currentTime + duration);
+        } catch(e){}
     }
 
-    // --- XERACIÓN CATÁLOGO DE 500 XOGOS ---
+    // --- CATÁLOGO DE 500 XOGOS ---
     const CATEGORIAS_BASE = [
         { id: "react", nome: "⚡ Reacción e Velocidade", desc: "Toca o botón amarelo no menor tempo posíbel." },
         { id: "order", nome: "🔢 Orde Numérica", desc: "Toca os números amosados en orde crecente." },
@@ -367,7 +371,7 @@
         { id: "piano", nome: "🎹 Teclas ao Voo", desc: "Axilidade de pulsación continua." },
         { id: "pattern", nome: "💡 Patrón de Luz", desc: "Memoriza e repite a secuencia de luz." },
         { id: "compare", nome: "⚖️ Comparación Visual", desc: "Selecciona o lado co número ou volume maior." },
-        { id: "math", nome: "📐 Cálculo Mental", desc: "Resolución rápida de operacioóns sinxelas." },
+        { id: "math", nome: "📐 Cálculo Mental", desc: "Resolución rápida de operacións sinxelas." },
         { id: "memory", nome: "🧠 Parellas de Memoria", desc: "Atopa as parellas ocultas no taboleiro." }
     ];
 
@@ -394,17 +398,17 @@
 
     // --- ESTADO DA APLICACIÓN ---
     let currentUser = "";
-    let userProfile = { puntosTotales: 0, juegos: {} };
+    let userProfile = { puntosTotales: 0, pin: "", juegos: {} };
 
     function init() {
         renderizarCategorias(CATÁLOGO_500);
         const savedUser = localStorage.getItem('portela_user');
         if (savedUser) {
             currentUser = savedUser;
+            cargarDatosUsuario();
             actualizarHeader();
             mostrarPantalla('screenMenu');
-            escucharRankingGlobal();
-            cargarDatosUsuario();
+            escucharRanking();
         }
     }
 
@@ -413,7 +417,7 @@
         grid.innerHTML = "";
         lista.forEach(cat => {
             let htmlBtns = "";
-            cat.xogos.slice(0, 4).forEach(g => { // Amosamos os primeiros 4 por categoría na vista rápida
+            cat.xogos.slice(0, 4).forEach(g => {
                 htmlBtns += `<button class="game-btn" onclick="iniciarXogoDirecto(${g.id})">Nivel ${g.level}</button>`;
             });
             grid.innerHTML += `
@@ -433,8 +437,8 @@
         renderizarCategorias(filtradas);
     }
 
-    // --- SISTEMA DE AUTENTICACIÓN E FIREBASE ---
-    async function autenticarUsuario() {
+    // --- AUTENTICACIÓN HÍBRIDA (FIREBASE + LOCAL) ---
+    function autenticarUsuario() {
         const name = document.getElementById('usernameInput').value.trim().toLowerCase();
         const pin = document.getElementById('pinInput').value.trim();
         const errDiv = document.getElementById('loginError');
@@ -445,33 +449,68 @@
             return;
         }
 
-        const userRef = db.ref('ranking/' + name);
-        userRef.once('value', snapshot => {
-            if (snapshot.exists()) {
-                if (snapshot.val().pin === pin) {
-                    iniciarSesionExitoso(name);
+        const dbLocal = JSON.parse(localStorage.getItem('portela_users_db') || '{}');
+
+        // Intento con Firebase se está activo
+        if (db) {
+            let userRef = db.ref('ranking/' + name);
+            userRef.once('value').then(snapshot => {
+                if (snapshot.exists()) {
+                    if (snapshot.val().pin === pin) {
+                        iniciarSesionExitoso(name, snapshot.val());
+                    } else {
+                        errDiv.style.display = "block";
+                    }
                 } else {
-                    errDiv.style.display = "block";
+                    let newUser = { jugador: name, pin: pin, puntosTotales: 0, juegos: {} };
+                    userRef.set(newUser);
+                    iniciarSesionExitoso(name, newUser);
                 }
-            } else {
-                userRef.set({
-                    jugador: name,
-                    pin: pin,
-                    puntosTotales: 0,
-                    juegos: {}
-                });
-                iniciarSesionExitoso(name);
-            }
-        });
+            }).catch(err => {
+                console.warn("Erro conectando a Firebase, usando LocalStorage:", err);
+                autenticarLocal(name, pin, dbLocal, errDiv);
+            });
+        } else {
+            autenticarLocal(name, pin, dbLocal, errDiv);
+        }
     }
 
-    function iniciarSesionExitoso(name) {
+    function autenticarLocal(name, pin, dbLocal, errDiv) {
+        if (dbLocal[name]) {
+            if (dbLocal[name].pin === pin) {
+                iniciarSesionExitoso(name, dbLocal[name]);
+            } else {
+                errDiv.style.display = "block";
+            }
+        } else {
+            const newUser = { jugador: name, pin: pin, puntosTotales: 0, juegos: {} };
+            dbLocal[name] = newUser;
+            localStorage.setItem('portela_users_db', JSON.stringify(dbLocal));
+            iniciarSesionExitoso(name, newUser);
+        }
+    }
+
+    function iniciarSesionExitoso(name, profileData) {
         currentUser = name;
+        userProfile = profileData || { puntosTotales: 0, juegos: {} };
         localStorage.setItem('portela_user', name);
         actualizarHeader();
         mostrarPantalla('screenMenu');
-        escucharRankingGlobal();
-        cargarDatosUsuario();
+        escucharRanking();
+    }
+
+    function cargarDatosUsuario() {
+        if (db && currentUser) {
+            db.ref('ranking/' + currentUser).on('value', snapshot => {
+                if (snapshot.exists()) {
+                    userProfile = snapshot.val();
+                    if (!userProfile.juegos) userProfile.juegos = {};
+                }
+            });
+        } else {
+            const dbLocal = JSON.parse(localStorage.getItem('portela_users_db') || '{}');
+            if (dbLocal[currentUser]) userProfile = dbLocal[currentUser];
+        }
     }
 
     function cerrarSesion() {
@@ -489,16 +528,6 @@
     function mostrarPantalla(id) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.getElementById(id).classList.add('active');
-    }
-
-    function cargarDatosUsuario() {
-        if (!currentUser) return;
-        db.ref('ranking/' + currentUser).on('value', snapshot => {
-            if (snapshot.exists()) {
-                userProfile = snapshot.val();
-                if (!userProfile.juegos) userProfile.juegos = {};
-            }
-        });
     }
 
     function abrirPerfil() {
@@ -522,35 +551,62 @@
         document.getElementById('userRecordsList').innerHTML = html;
     }
 
-    function escucharRankingGlobal() {
-        db.ref('ranking').on('value', snapshot => {
-            let jugadores = [];
-            snapshot.forEach(child => {
-                jugadores.push(child.val());
+    function escucharRanking() {
+        if (db) {
+            db.ref('ranking').on('value', snapshot => {
+                let jugadores = [];
+                snapshot.forEach(child => { jugadores.push(child.val()); });
+                renderizarRanking(jugadores);
+            }, () => {
+                renderizarRankingLocal();
             });
-            jugadores.sort((a, b) => (b.puntosTotales || 0) - (a.puntosTotales || 0));
+        } else {
+            renderizarRankingLocal();
+        }
+    }
 
-            let html = "";
-            jugadores.forEach((j, index) => {
-                html += `<div class="ranking-item">
-                    <span>${index + 1}. <strong>${j.jugador}</strong></span>
-                    <span>${j.puntosTotales || 0} pts</span>
-                </div>`;
-            });
-            document.getElementById('rankingList').innerHTML = html || "<p style='text-align:center;'>Sen datos aínda</p>";
+    function renderizarRankingLocal() {
+        const dbLocal = JSON.parse(localStorage.getItem('portela_users_db') || '{}');
+        renderizarRanking(Object.values(dbLocal));
+    }
+
+    function renderizarRanking(jugadores) {
+        jugadores.sort((a, b) => (b.puntosTotales || 0) - (a.puntosTotales || 0));
+        let html = "";
+        jugadores.forEach((j, index) => {
+            html += `<div class="ranking-item">
+                <span>${index + 1}. <strong>${j.jugador}</strong></span>
+                <span>${j.puntosTotales || 0} pts</span>
+            </div>`;
         });
+        document.getElementById('rankingList').innerHTML = html || "<p style='text-align:center;'>Sen datos aínda</p>";
     }
 
     function guardarResultado(nombreXogo, puntos) {
         if (!currentUser) return;
+
         const novoTotal = (userProfile.puntosTotales || 0) + puntos;
+        if (!userProfile.juegos) userProfile.juegos = {};
         const recordAnterior = userProfile.juegos[nombreXogo] || 0;
         const novoRecord = Math.max(recordAnterior, puntos);
 
-        db.ref('ranking/' + currentUser).update({
-            puntosTotales: novoTotal,
-            [`juegos/${nombreXogo}`]: novoRecord
-        });
+        userProfile.puntosTotales = novoTotal;
+        userProfile.juegos[nombreXogo] = novoRecord;
+
+        // Gardar en Firebase se está dispoñible
+        if (db) {
+            db.ref('ranking/' + currentUser).update({
+                puntosTotales: novoTotal,
+                [`juegos/${nombreXogo}`]: novoRecord
+            }).catch(() => {});
+        }
+
+        // Gardar en LocalStorage como copia de seguridade
+        const dbLocal = JSON.parse(localStorage.getItem('portela_users_db') || '{}');
+        dbLocal[currentUser] = userProfile;
+        localStorage.setItem('portela_users_db', JSON.stringify(dbLocal));
+
+        escucharRanking();
     }
 
     // --- LÓXICA DE XOGOS VISUAIS ---
@@ -580,7 +636,6 @@
         const ctrl = document.getElementById('gameControls');
         area.innerHTML = ''; ctrl.innerHTML = '';
 
-        // Router segundo o tipo de minixogo
         if (xogoActual.type === 'react') cargarXogoReaccion(area, ctrl);
         else if (xogoActual.type === 'order') cargarXogoOrde(area, ctrl);
         else if (xogoActual.type === 'box') cargarXogoCaixas(area, ctrl);
@@ -685,7 +740,7 @@
         }, 1500);
     }
 
-    // TIPO XENÉRICO VISUAL
+    // XENÉRICO VISUAL
     function cargarXogoXenerico(area, ctrl) {
         const a = Math.floor(Math.random() * 20) + 1;
         const b = Math.floor(Math.random() * 20) + 1;
@@ -710,7 +765,7 @@
         ctrl.appendChild(btn);
     }
 
-    // PANTALLA DE RESULTADOS INTEGRADA (SEN POPUPS)
+    // RESULTADOS EN PANTALLA
     function rematarEAmosarPuntos(puntos, detalle) {
         guardarResultado(xogoActual.nome, puntos);
         
