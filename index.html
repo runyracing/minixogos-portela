@@ -145,21 +145,23 @@
             margin-bottom: 8px;
         }
 
-        .games-subgrid {
+        .diff-grid {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(3, 1fr);
             gap: 6px;
         }
 
-        .game-btn {
-            background: #334155;
-            color: var(--text-light);
+        .btn-diff {
             font-size: 0.75rem;
-            padding: 8px 4px;
+            padding: 8px 2px;
             margin: 0;
             border-radius: 6px;
             text-align: center;
+            font-weight: bold;
         }
+        .btn-trivial { background: #059669; color: white; }
+        .btn-normal { background: #d97706; color: white; }
+        .btn-extremoduro { background: #dc2626; color: white; }
 
         .board {
             width: 100%;
@@ -177,11 +179,12 @@
             border: 1px solid #1e293b;
         }
 
+        /* BARRIÑA PRECISIÓN */
         .bar-container {
             width: 100%;
-            height: 30px;
+            height: 34px;
             background: linear-gradient(90deg, #ef4444 0%, #f59e0b 35%, #10b981 50%, #f59e0b 65%, #ef4444 100%);
-            border-radius: 15px;
+            border-radius: 17px;
             position: relative;
             cursor: pointer;
             overflow: hidden;
@@ -189,13 +192,60 @@
         }
 
         .bar-pointer {
-            width: 8px;
+            width: 6px;
             height: 100%;
             background: #ffffff;
             position: absolute;
             top: 0;
             left: 0%;
             box-shadow: 0 0 8px #ffffff;
+        }
+
+        .click-mark {
+            position: absolute;
+            top: 0;
+            width: 4px;
+            height: 100%;
+            background: #000;
+            opacity: 0.8;
+        }
+
+        /* DADOS */
+        .dice-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .dice {
+            width: 60px;
+            height: 60px;
+            background: white;
+            border-radius: 10px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            padding: 6px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+
+        .dot {
+            background: black;
+            border-radius: 50%;
+            width: 8px;
+            height: 8px;
+            align-self: center;
+            justify-self: center;
+            visibility: hidden;
+        }
+
+        /* GRIDS DE BOTÓNS */
+        .grid-2x2 {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            width: 100%;
         }
 
         .grid-3x3 {
@@ -238,11 +288,7 @@
             cursor: pointer;
         }
 
-        .num-btn.hidden-val {
-            background: #334155;
-            color: transparent;
-        }
-
+        .num-btn.hidden-val { background: #334155; color: transparent; }
         .num-btn.done { visibility: hidden; }
 
         .ranking-box, .records-box {
@@ -266,14 +312,28 @@
         .ranking-item, .record-item {
             display: flex;
             justify-content: space-between;
+            align-items: center;
             padding: 6px 0;
             border-bottom: 1px solid #1e293b;
             font-size: 0.85rem;
         }
 
+        .user-date {
+            font-size: 0.7rem;
+            color: #64748b;
+            margin-left: 6px;
+        }
+
         .result-box { text-align: center; width: 100%; }
         .result-score { font-size: 2rem; font-weight: bold; color: var(--accent-yellow); margin: 10px 0; }
         .err-msg { color: var(--accent-red); font-size: 0.85rem; margin-top: 5px; display: none; }
+
+        .correct-anim {
+            background: var(--accent-green) !important;
+            color: white !important;
+            transition: all 0.2s;
+            opacity: 0;
+        }
 
         footer { text-align: center; margin-top: 6px; margin-bottom: 12px; }
         .app-revision { font-size: 0.75rem; color: var(--text-muted); opacity: 0.4; letter-spacing: 0.5px; }
@@ -292,18 +352,18 @@
         <h2>Acceso de Xogador</h2>
         <p style="font-size: 0.85rem; color: var(--text-muted);">Escribe o teu Nome e un PIN de 6 díxitos para gardar os teus puntos.</p>
         <input type="text" id="usernameInput" placeholder="O teu Nome / Apodo" maxlength="15">
-        <input type="password" id="pinInput" placeholder="PIN Secreto (6 números)">
+        <input type="password" id="pinInput" placeholder="PIN Secreto (6 números)" maxlength="6">
         <div id="loginError" class="err-msg">PIN incorrecto para este usuario.</div>
         <button onclick="autenticarUsuario()">Entrar a Xogar</button>
     </div>
 
     <!-- MENÚ PRINCIPAL -->
     <div id="screenMenu" class="screen card">
-        <button class="btn-random" onclick="jugarAleatorio()">🎲 Xogo Aleatorio (1 de 500)</button>
+        <button class="btn-random" onclick="jugarAleatorio()">🎲 Xogo Aleatorio</button>
         <button class="btn-profile" onclick="abrirPerfil()">📊 O meu Perfil e Récords</button>
         
         <div style="margin-top: 12px;">
-            <input type="text" id="searchCat" class="search-input" placeholder="🔍 Buscar entre os 500 xogos..." oninput="filtrarCategorias()">
+            <input type="text" id="searchCat" class="search-input" placeholder="🔍 Buscar minixogo..." oninput="filtrarCategorias()">
             <div class="category-grid" id="categoryGrid"></div>
         </div>
 
@@ -338,13 +398,11 @@
     </div>
 
     <footer>
-        <span class="app-revision">~#v0.2</span>
+        <span class="app-revision">~#v0.4</span>
     </footer>
 </div>
 
 <script>
-    const MASTER_PASS = "(<¶ÄØ¥¬¬.Æïé^Ì8ý<ÉÂ¸ÈÔÁ?ÌzÍÌFï{¸El¼¼%ú/ÝÅ2CÈ]ß5·F|?ë÷b·ÅÅìÏ7Snå&s¬BZB;¬Ðú¨ãp^oføÜ¡3¬[6$v;u(Ó0fÐL~q¨w";
-
     const firebaseConfig = {
         apiKey: "AIzaSyDY68e8tDZkcvrLiu2xoaVCDJIY_g1KP0w",
         authDomain: "minixogos-portela.firebaseapp.com",
@@ -376,43 +434,24 @@
     }
 
     const CATEGORIAS_BASE = [
-        { id: "bar", nome: "🎯 Precision de Barriña", desc: "Para o punto no centro exacto para acadar 100 puntos." },
+        { id: "bar", nome: "🎯 Precision da Barriña", desc: "Para o punto no centro exacto para acadar puntos." },
         { id: "memory", nome: "🧠 Memoria Revertida", desc: "Memoriza os números antes de que se oculten e tócalos en orde." },
-        { id: "math", nome: "📐 Sumas Enlazadas Express", desc: "Resolve 5 sumas seguidas o máis rápido posíbel." },
-        { id: "react", nome: "⚡ Reacción e Velocidade", desc: "Toca o botón amarelo no menor tempo posíbel." },
+        { id: "math", nome: "📐 Sumas Enlazadas Express", desc: "Resolve as sumas o máis rápido posíbel." },
+        { id: "react", nome: "⚡ Reacción e Velocidade", desc: "Toca o botón activo no menor tempo posíbel." },
         { id: "order", nome: "🔢 Orde Numérica", desc: "Toca os números amosados en orde crecente." },
-        { id: "box", nome: "📦 Contador de Caixas", desc: "Memoriza cantas caixas aparecen (sen solapamento)." },
-        { id: "time", nome: "⏱️ Tempo Exacto!", desc: "Calcula a cegas cando se cumpre o tempo solicitado." },
-        { id: "dice", nome: "🎲 Suma de Dados", desc: "Suma o valor dos dados amosados en pantalla." },
-        { id: "color", nome: "🎨 Cor Correcta", desc: "Selecciona a cor coa que está escrita a palabra." },
-        { id: "swipe", nome: "👆 Desliza Rápido!", desc: "Adiviña e selecciona a dirección correcta." },
-        { id: "piano", nome: "🎹 Teclas ao Voo", desc: "Axilidade de pulsación continua." },
-        { id: "pattern", nome: "💡 Patrón de Luz", desc: "Memoriza e repite a secuencia de luz." }
+        { id: "box", nome: "📦 Contador de Caixas", desc: "Contas cantas caixas aparecen despois de premer o botón." },
+        { id: "time", nome: "⏱️ Tempo Exacto!", desc: "Para o reloxo a cegas canto máis preto de 0s." },
+        { id: "dice", nome: "🎲 Suma de Dados", desc: "Suma os puntos totais dos 4 dados que aparecen." },
+        { id: "color", nome: "🎨 Cor Correcta", desc: "Selecciona a cor real coa que está escrita a palabra." },
+        { id: "swipe", nome: "👆 Desliza Rápido!", desc: "Preme a frecha na dirección na que apunta a frecha." },
+        { id: "pattern", nome: "💡 Patrón de Luz", desc: "Memoriza e repite a secuencia de cores." }
     ];
 
-    const CATÁLOGO_500 = [];
-    CATEGORIAS_BASE.forEach((cat, cIndex) => {
-        const xogosCategoria = [];
-        for (let i = 1; i <= 42; i++) {
-            const gameId = cIndex * 42 + i;
-            if (gameId <= 500) {
-                xogosCategoria.push({
-                    id: gameId,
-                    type: cat.id,
-                    level: i,
-                    nome: `${cat.nome.split(" ")[1] || cat.nome} - Nivel ${i}`,
-                    desc: `${cat.desc} (Dificultade ${i})`
-                });
-            }
-        }
-        CATÁLOGO_500.push({ nomeCat: cat.nome, xogos: xogosCategoria });
-    });
-
     let currentUser = "";
-    let userProfile = { puntosTotales: 0, pin: "", juegos: {} };
+    let userProfile = { puntosTotales: 0, pin: "", fechaReg: "", juegos: {} };
 
     function init() {
-        renderizarCategorias(CATÁLOGO_500);
+        renderizarCategorias(CATEGORIAS_BASE);
         const savedUser = localStorage.getItem('portela_user');
         if (savedUser) {
             currentUser = savedUser;
@@ -427,24 +466,21 @@
         const grid = document.getElementById('categoryGrid');
         grid.innerHTML = "";
         lista.forEach(cat => {
-            let htmlBtns = "";
-            cat.xogos.forEach(g => {
-                htmlBtns += `<button class="game-btn" onclick="iniciarXogoDirecto(${g.id})">N${g.level}</button>`;
-            });
             grid.innerHTML += `
                 <div class="category-item">
-                    <div class="category-title">${cat.nomeCat} (${cat.xogos.length} Niveis)</div>
-                    <div class="games-subgrid">${htmlBtns}</div>
+                    <div class="category-title">${cat.nome}</div>
+                    <div class="diff-grid">
+                        <button class="btn-diff btn-trivial" onclick="iniciarXogoDirecto('${cat.id}', 1)">TRIVIAL</button>
+                        <button class="btn-diff btn-normal" onclick="iniciarXogoDirecto('${cat.id}', 2)">NORMAL</button>
+                        <button class="btn-diff btn-extremoduro" onclick="iniciarXogoDirecto('${cat.id}', 3)">EXTREMODURO</button>
+                    </div>
                 </div>`;
         });
     }
 
     function filtrarCategorias() {
         const query = document.getElementById('searchCat').value.toLowerCase();
-        const filtradas = CATÁLOGO_500.map(cat => {
-            const xogosCoincidentes = cat.xogos.filter(g => g.nome.toLowerCase().includes(query) || cat.nomeCat.toLowerCase().includes(query));
-            return { nomeCat: cat.nomeCat, xogos: xogosCoincidentes };
-        }).filter(cat => cat.xogos.length > 0);
+        const filtradas = CATEGORIAS_BASE.filter(c => c.nome.toLowerCase().includes(query));
         renderizarCategorias(filtradas);
     }
 
@@ -454,21 +490,12 @@
         const errDiv = document.getElementById('loginError');
         errDiv.style.display = "none";
 
-        if (name === "masterdrop" && pin === MASTER_PASS) {
-            if (confirm("⚠️ ¿REINICIAR TOTAIS DA BASE DE DATOS E LIMPAR RANKINGS?")) {
-                if (db) db.ref('ranking').remove();
-                localStorage.clear();
-                alert("Base de datos e gardado local restablecidos por completo.");
-                location.reload();
-            }
-            return;
-        }
-
         if (!name || pin.length !== 6) {
             alert("Introduce un nome e un PIN de 6 díxitos.");
             return;
         }
 
+        const dataData = new Date().toLocaleDateString('gl-ES', { day:'2-digit', month:'2-digit', year:'2-digit' });
         const dbLocal = JSON.parse(localStorage.getItem('portela_users_db') || '{}');
 
         if (db) {
@@ -478,22 +505,22 @@
                     if (snapshot.val().pin === pin) iniciarSesionExitoso(name, snapshot.val());
                     else errDiv.style.display = "block";
                 } else {
-                    let newUser = { jugador: name, pin: pin, puntosTotales: 0, juegos: {} };
+                    let newUser = { jugador: name, pin: pin, fechaReg: dataData, puntosTotales: 0, juegos: {} };
                     userRef.set(newUser);
                     iniciarSesionExitoso(name, newUser);
                 }
-            }).catch(() => autenticarLocal(name, pin, dbLocal, errDiv));
+            }).catch(() => autenticarLocal(name, pin, dbLocal, errDiv, dataData));
         } else {
-            autenticarLocal(name, pin, dbLocal, errDiv);
+            autenticarLocal(name, pin, dbLocal, errDiv, dataData);
         }
     }
 
-    function autenticarLocal(name, pin, dbLocal, errDiv) {
+    function autenticarLocal(name, pin, dbLocal, errDiv, dataData) {
         if (dbLocal[name]) {
             if (dbLocal[name].pin === pin) iniciarSesionExitoso(name, dbLocal[name]);
             else errDiv.style.display = "block";
         } else {
-            const newUser = { jugador: name, pin: pin, puntosTotales: 0, juegos: {} };
+            const newUser = { jugador: name, pin: pin, fechaReg: dataData, puntosTotales: 0, juegos: {} };
             dbLocal[name] = newUser;
             localStorage.setItem('portela_users_db', JSON.stringify(dbLocal));
             iniciarSesionExitoso(name, newUser);
@@ -575,7 +602,8 @@
         jugadores.sort((a, b) => (b.puntosTotales || 0) - (a.puntosTotales || 0));
         let html = "";
         jugadores.forEach((j, index) => {
-            html += `<div class="ranking-item"><span>${index + 1}. <strong>${j.jugador}</strong></span><span>${j.puntosTotales || 0} pts</span></div>`;
+            let f = j.fechaReg ? `<span class="user-date">(${j.fechaReg})</span>` : '';
+            html += `<div class="ranking-item"><span>${index + 1}. <strong>${j.jugador}</strong>${f}</span><span>${j.puntosTotales || 0} pts</span></div>`;
         });
         document.getElementById('rankingList').innerHTML = html || "<p style='text-align:center;'>Sen datos aínda</p>";
     }
@@ -603,52 +631,61 @@
         escucharRanking();
     }
 
-    // --- LÓXICAS DE XOGOS ---
     let xogoActual = null;
     let animFrame = null;
 
     function jugarAleatorio() {
-        const idAleatorio = Math.floor(Math.random() * 500) + 1;
-        iniciarXogoDirecto(idAleatorio);
+        const catAlea = CATEGORIAS_BASE[Math.floor(Math.random() * CATEGORIAS_BASE.length)];
+        const diffAlea = Math.floor(Math.random() * 3) + 1;
+        iniciarXogoDirecto(catAlea.id, diffAlea);
     }
 
-    function iniciarXogoDirecto(id) {
+    function iniciarXogoDirecto(typeId, level) {
         if (animFrame) cancelAnimationFrame(animFrame);
-        let xogoEncontrado = null;
-        for (let cat of CATÁLOGO_500) {
-            let f = cat.xogos.find(g => g.id === id);
-            if (f) { xogoEncontrado = f; break; }
-        }
-        if (!xogoEncontrado) xogoEncontrado = CATÁLOGO_500[0].xogos[0];
-        xogoActual = xogoEncontrado;
+        const cat = CATEGORIAS_BASE.find(c => c.id === typeId) || CATEGORIAS_BASE[0];
+        const nomesDiff = ["TRIVIAL", "NORMAL", "EXTREMODURO"];
+        
+        xogoActual = {
+            id: typeId,
+            level: level,
+            nome: `${cat.nome} (${nomesDiff[level-1]})`,
+            desc: cat.desc
+        };
 
         mostrarPantalla('screenGame');
-        document.getElementById('gameTitle').innerText = `${xogoActual.nome} (#${xogoActual.id})`;
+        document.getElementById('gameTitle').innerText = xogoActual.nome;
         document.getElementById('gameDesc').innerText = xogoActual.desc;
 
         const area = document.getElementById('gameArea');
         const ctrl = document.getElementById('gameControls');
         area.innerHTML = ''; ctrl.innerHTML = '';
 
-        if (xogoActual.type === 'bar') cargarXogoBarra(area, ctrl);
-        else if (xogoActual.type === 'memory') cargarXogoMemory(area, ctrl);
-        else if (xogoActual.type === 'math') cargarXogoMathSpeed(area, ctrl);
-        else if (xogoActual.type === 'box') cargarXogoCaixas(area, ctrl);
-        else if (xogoActual.type === 'order') cargarXogoOrde(area, ctrl);
-        else cargarXogoReaccion(area, ctrl);
+        if (typeId === 'bar') cargarXogoBarra(area, ctrl);
+        else if (typeId === 'memory') cargarXogoMemory(area, ctrl);
+        else if (typeId === 'math') cargarXogoMathSpeed(area, ctrl);
+        else if (typeId === 'react') cargarXogoReaccion(area, ctrl);
+        else if (typeId === 'order') cargarXogoOrde(area, ctrl);
+        else if (typeId === 'box') cargarXogoCaixas(area, ctrl);
+        else if (typeId === 'time') cargarXogoTempoExacto(area, ctrl);
+        else if (typeId === 'dice') cargarXogoDados(area, ctrl);
+        else if (typeId === 'color') cargarXogoCorCorrecta(area, ctrl);
+        else if (typeId === 'swipe') cargarXogoDesliza(area, ctrl);
+        else if (typeId === 'pattern') cargarXogoPatron(area, ctrl);
     }
 
-    // 1. BARRIÑA / PÉNDULO (5 INTENTOS)
+    // 1. BARRIÑA PRECISIÓN
     function cargarXogoBarra(area, ctrl) {
         let intentos = [];
         let pos = 0;
-        let dir = 2 + (xogoActual.level * 0.4);
+        let speed = xogoActual.level === 1 ? 1.5 : (xogoActual.level === 2 ? 3 : 5);
+        let dir = speed;
 
         area.innerHTML = `
-            <p id="barStatus">Intento 1 de 5 - Toca a barra!</p>
+            <p id="barStatus" style="margin:4px; font-size:0.9rem;">Intento 1 de 5</p>
             <div class="bar-container" id="barBox">
                 <div class="bar-pointer" id="barPtr"></div>
-            </div>`;
+            </div>
+            <p id="barScore" style="color:var(--accent-yellow); font-weight:bold; margin-top:10px;">Último: - | Media: 0</p>`;
 
         const ptr = document.getElementById('barPtr');
         const barBox = document.getElementById('barBox');
@@ -663,26 +700,33 @@
 
         barBox.onclick = () => {
             playBeep(500, 'sine', 0.1);
+            let mark = document.createElement('div');
+            mark.className = 'click-mark';
+            mark.style.left = pos + '%';
+            barBox.appendChild(mark);
+
             let distToCenter = Math.abs(50 - pos);
             let score = Math.max(0, Math.round(100 - (distToCenter * 2)));
             intentos.push(score);
 
+            let media = Math.round(intentos.reduce((a,b)=>a+b, 0) / intentos.length);
+            document.getElementById('barScore').innerText = `Último: ${score} pts | Media: ${media} pts`;
+
             if (intentos.length < 5) {
-                document.getElementById('barStatus').innerText = `Intento ${intentos.length + 1} de 5 (Último: ${score} pts)`;
+                document.getElementById('barStatus').innerText = `Intento ${intentos.length + 1} de 5`;
             } else {
                 cancelAnimationFrame(animFrame);
-                let media = Math.round(intentos.reduce((a,b)=>a+b, 0) / 5);
                 rematarEAmosarPuntos(media, `Media de 5 intentos: ${media} pts`);
             }
         };
     }
 
-    // 2. MEMORY DE NÚMEROS
+    // 2. MEMORIA REVERTIDA
     function cargarXogoMemory(area, ctrl) {
-        let cantidad = Math.min(12, 3 + Math.floor(xogoActual.level / 4));
-        let numArr = Array.from({length: cantidad}, (_, i) => i + 1).sort(() => Math.random() - 0.5);
+        let cant = xogoActual.level === 1 ? 4 : (xogoActual.level === 2 ? 6 : 8);
+        let numArr = Array.from({length: cant}, (_, i) => i + 1).sort(() => Math.random() - 0.5);
         let expected = 1;
-        let startTime = 0;
+        let acertos = 0;
 
         let grid = document.createElement('div');
         grid.className = 'grid-4x4';
@@ -696,7 +740,7 @@
         });
         area.appendChild(grid);
 
-        let tVisual = Math.max(800, 3000 - (xogoActual.level * 50));
+        let tVisual = Math.max(800, 3000 - (xogoActual.level * 600));
         setTimeout(() => {
             let btns = area.querySelectorAll('.num-btn');
             btns.forEach(b => {
@@ -707,106 +751,116 @@
                         playBeep(500 + v*40, 'sine', 0.1);
                         b.classList.add('done');
                         expected++;
-                        if (expected > cantidad) {
-                            let dur = ((Date.now() - startTime)/1000).toFixed(2);
-                            rematarEAmosarPuntos(Math.max(20, Math.round(600 - dur * 20)), `Tempo: ${dur}s`);
+                        acertos++;
+                        if (expected > cant) {
+                            rematarEAmosarPuntos(acertos * 30, `Perfecto! ${acertos}/${cant} acertos.`);
                         }
                     } else {
                         playBeep(180, 'sawtooth', 0.2);
-                        rematarEAmosarPuntos(0, "Erro de memoria ao seleccionar.");
+                        rematarEAmosarPuntos(acertos * 30, `Erro. Acadaches ${acertos}/${cant} acertos.`);
                     }
                 };
             });
-            startTime = Date.now();
         }, tVisual);
     }
 
-    // 3. SUMAS EXPRESS (5 OPERACIÓNS AUTOMÁTICAS)
+    // 3. SUMAS EXPRESS
     function cargarXogoMathSpeed(area, ctrl) {
-        let count = 0;
+        let totalRondas = 5;
+        let ronda = 0;
+        let acertos = 0;
         let tStart = Date.now();
-        let currentA, currentB;
+        let numMax = xogoActual.level === 1 ? 10 : (xogoActual.level === 2 ? 25 : 50);
 
         function nextMath() {
-            if (count >= 5) {
-                let dur = ((Date.now() - tStart)/1000).toFixed(2);
-                rematarEAmosarPuntos(Math.max(30, Math.round(800 - dur * 40)), `5 Sumas en ${dur}s`);
+            if (ronda >= totalRondas) {
+                let dur = ((Date.now() - tStart)/1000).toFixed(1);
+                let pts = Math.max(0, (acertos * 40) - Math.round(dur * 2));
+                rematarEAmosarPuntos(pts, `${acertos}/${totalRondas} acertos en ${dur}s`);
                 return;
             }
-            count++;
-            currentA = Math.floor(Math.random() * (10 + xogoActual.level)) + 1;
-            currentB = Math.floor(Math.random() * (10 + xogoActual.level)) + 1;
+            ronda++;
+            let a = Math.floor(Math.random() * numMax) + 1;
+            let b = Math.floor(Math.random() * numMax) + 1;
 
             area.innerHTML = `
-                <p style="color:var(--text-muted)">Operación ${count} de 5</p>
-                <h2 style="color:var(--accent-yellow); font-size:2.2rem; margin:5px 0;">${currentA} + ${currentB}</h2>
+                <p style="color:var(--text-muted); margin:0;">Suma ${ronda} de ${totalRondas}</p>
+                <h2 id="sumExpr" style="color:var(--accent-yellow); font-size:2.2rem; margin:10px 0;">${a} + ${b}</h2>
                 <input type="number" id="mathAns" autofocus style="width:60%; font-size:1.5rem;">`;
 
             const inp = document.getElementById('mathAns');
             inp.focus();
             inp.oninput = () => {
-                if (parseInt(inp.value) === (currentA + currentB)) {
+                if (parseInt(inp.value) === (a + b)) {
                     playBeep(700, 'sine', 0.08);
-                    nextMath();
+                    inp.classList.add('correct-anim');
+                    acertos++;
+                    setTimeout(nextMath, 200);
                 }
             };
         }
         nextMath();
     }
 
-    // 4. CAIXAS SEN SOLAPAMENTO
-    function cargarXogoCaixas(area, ctrl) {
-        let count = Math.floor(Math.random() * 6) + 3 + Math.floor(xogoActual.level / 5);
-        area.innerHTML = '';
-        let placedBoxes = [];
+    // 4. REACCIÓN E VELOCIDADE
+    function cargarXogoReaccion(area, ctrl) {
+        let rondasTotal = 5;
+        let rondaActual = 0;
+        let tempos = [];
 
-        for (let i = 0; i < count; i++) {
-            let box = document.createElement('div');
-            let w = 32, h = 32;
-            let maxTries = 100, placed = false, top = 0, left = 0;
+        let grid = document.createElement('div');
+        grid.className = 'grid-3x3';
+        for (let i = 0; i < 9; i++) {
+            let btn = document.createElement('div');
+            btn.className = 'circle-btn';
+            grid.appendChild(btn);
+        }
+        area.appendChild(grid);
 
-            while (maxTries-- > 0 && !placed) {
-                top = Math.random() * 160 + 10;
-                left = Math.random() * 220 + 10;
-                placed = !placedBoxes.some(b => !(left + w + 6 < b.left || left > b.left + w + 6 || top + h + 6 < b.top || top > b.top + h + 6));
+        let info = document.createElement('p');
+        info.innerText = "Preme Comezar para iniciar as 5 roldas.";
+        area.appendChild(info);
+
+        function proximaRolda() {
+            if (rondaActual >= rondasTotal) {
+                let media = Math.round(tempos.reduce((a,b)=>a+b,0) / rondasTotal);
+                let pts = Math.max(10, Math.round(800 - media));
+                rematarEAmosarPuntos(pts, `Tempo medio: ${media}ms`);
+                return;
             }
+            rondaActual++;
+            info.innerText = `Rolda ${rondaActual} de ${rondasTotal}... Atento!`;
+            let circles = area.querySelectorAll('.circle-btn');
+            circles.forEach(c => { c.classList.remove('active'); c.onclick = null; });
 
-            if (placed) {
-                placedBoxes.push({top, left});
-                box.style.cssText = `width:${w}px; height:${h}px; background:var(--accent-yellow); border-radius:6px; position:absolute; top:${top}px; left:${left}px;`;
-                area.appendChild(box);
-            }
+            let delay = Math.random() * (xogoActual.level === 1 ? 2000 : 1000) + 800;
+            setTimeout(() => {
+                let idx = Math.floor(Math.random() * 9);
+                let activeCircle = circles[idx];
+                activeCircle.classList.add('active');
+                let start = Date.now();
+
+                activeCircle.onclick = () => {
+                    let diff = Date.now() - start;
+                    playBeep(800, 'sine', 0.1);
+                    tempos.push(diff);
+                    proximaRolda();
+                };
+            }, delay);
         }
 
-        let totalReal = placedBoxes.length;
-
-        setTimeout(() => {
-            area.innerHTML = '<h4 style="color:var(--text-muted)">Cantas caixas vaches?</h4>';
-            let input = document.createElement('input');
-            input.type = 'number';
-            input.placeholder = 'Número de caixas';
-            area.appendChild(input);
-
-            let btn = document.createElement('button');
-            btn.innerText = 'Confirmar Resposta';
-            btn.onclick = () => {
-                if (parseInt(input.value) === totalReal) {
-                    playBeep(800, 'sine', 0.2);
-                    rematarEAmosarPuntos(150, `Correcto! Había ${totalReal} caixas.`);
-                } else {
-                    playBeep(200, 'sawtooth', 0.2);
-                    rematarEAmosarPuntos(0, `Incorrecto. Había ${totalReal} caixas.`);
-                }
-            };
-            ctrl.appendChild(btn);
-        }, 1600);
+        let startBtn = document.createElement('button');
+        startBtn.innerText = 'Comezar Roldas';
+        startBtn.onclick = () => { startBtn.style.display = 'none'; proximaRolda(); };
+        ctrl.appendChild(startBtn);
     }
 
     // 5. ORDE NUMÉRICA
     function cargarXogoOrde(area, ctrl) {
-        let currentNum = 1;
-        let startTime = Date.now();
-        let numbers = Array.from({length: 16}, (_, i) => i + 1).sort(() => Math.random() - 0.5);
+        let cant = xogoActual.level === 1 ? 8 : (xogoActual.level === 2 ? 12 : 16);
+        let expected = 1;
+        let acertos = 0;
+        let numbers = Array.from({length: cant}, (_, i) => i + 1).sort(() => Math.random() - 0.5);
         
         let grid = document.createElement('div');
         grid.className = 'grid-4x4';
@@ -816,16 +870,17 @@
             btn.className = 'num-btn';
             btn.innerText = num;
             btn.onclick = () => {
-                if (num === currentNum) {
-                    playBeep(400 + (num * 30), 'sine', 0.08);
+                if (num === expected) {
+                    playBeep(400 + (num * 20), 'sine', 0.08);
                     btn.classList.add('done');
-                    currentNum++;
-                    if (currentNum > 16) {
-                        let totalTime = ((Date.now() - startTime) / 1000).toFixed(2);
-                        rematarEAmosarPuntos(Math.max(20, Math.round(500 - totalTime * 15)), `Completado en ${totalTime}s`);
+                    expected++;
+                    acertos++;
+                    if (expected > cant) {
+                        rematarEAmosarPuntos(acertos * 25, `Completado de $cant/$cant números!`);
                     }
                 } else {
-                    playBeep(150, 'sawtooth', 0.15);
+                    playBeep(180, 'sawtooth', 0.15);
+                    rematarEAmosarPuntos(acertos * 20, `Falaches. Clicabas o ${num} pero era o ${expected}. Total: ${acertos}/${cant}`);
                 }
             };
             grid.appendChild(btn);
@@ -833,38 +888,269 @@
         area.appendChild(grid);
     }
 
-    // 6. REACCIÓN SIMPLE
-    function cargarXogoReaccion(area, ctrl) {
-        let grid = document.createElement('div');
-        grid.className = 'grid-3x3';
-        let reactStartTime = 0;
+    // 6. CONTADOR DE CAIXAS (BOTOA INICIAL + 3 ROLDAS)
+    function cargarXogoCaixas(area, ctrl) {
+        let rolda = 0, totalRoldas = 3, acertosTotais = 0;
 
-        for (let i = 0; i < 9; i++) {
-            let btn = document.createElement('div');
-            btn.className = 'circle-btn';
-            btn.onclick = () => {
-                if (btn.classList.contains('active')) {
-                    let tempo = ((Date.now() - reactStartTime) / 1000).toFixed(3);
-                    playBeep(880, 'sine', 0.2);
-                    rematarEAmosarPuntos(Math.max(10, Math.round(1000 - tempo * 300)), `Tempo: ${tempo}s`);
+        function xogarRolda() {
+            if (rolda >= totalRoldas) {
+                rematarEAmosarPuntos(acertosTotais * 50, `Acertaches ${acertosTotais} de ${totalRoldas} roldas.`);
+                return;
+            }
+            rolda++;
+            area.innerHTML = `<p style="color:var(--text-muted)">Rolda ${rolda} de ${totalRoldas}</p>`;
+            ctrl.innerHTML = '';
+
+            let btnStart = document.createElement('button');
+            btnStart.innerText = `📦 Preme para amosar caixas (Rolda ${rolda})`;
+            ctrl.appendChild(btnStart);
+
+            btnStart.onclick = () => {
+                ctrl.innerHTML = '';
+                let numBoxes = Math.floor(Math.random() * (xogoActual.level * 4)) + 3;
+                let placed = [];
+
+                for (let i = 0; i < numBoxes; i++) {
+                    let b = document.createElement('div');
+                    let w = 28, h = 28, max = 50, top = 0, left = 0;
+                    while (max-- > 0) {
+                        top = Math.random() * 150 + 20;
+                        left = Math.random() * 200 + 20;
+                        if (!placed.some(p => !(left + w + 4 < p.left || left > p.left + w + 4 || top + h + 4 < p.top || top > p.top + h + 4))) {
+                            placed.push({top, left});
+                            b.style.cssText = `width:${w}px; height:${h}px; background:var(--accent-yellow); border-radius:6px; position:absolute; top:${top}px; left:${left}px;`;
+                            area.appendChild(b);
+                            break;
+                        }
+                    }
+                }
+
+                setTimeout(() => {
+                    area.innerHTML = '<h4 style="color:var(--text-muted)">Cantas caixas había?</h4>';
+                    let inp = document.createElement('input');
+                    inp.type = 'number';
+                    area.appendChild(inp);
+
+                    let btnOk = document.createElement('button');
+                    btnOk.innerText = 'Responder';
+                    btnOk.onclick = () => {
+                        if (parseInt(inp.value) === placed.length) acertosTotais++;
+                        xogarRolda();
+                    };
+                    ctrl.appendChild(btnOk);
+                }, 1500);
+            };
+        }
+        xogarRolda();
+    }
+
+    // 7. TEMPO EXACTO
+    function cargarXogoTempoExacto(area, ctrl) {
+        let target = xogoActual.level === 1 ? 5.0 : (xogoActual.level === 2 ? 7.0 : 10.0);
+        area.innerHTML = `
+            <p style="margin:0;">Obxectivo: Clica aos <strong>${target.toFixed(1)}s</strong></p>
+            <div style="width:100%; background:#334155; height:20px; border-radius:10px; margin:15px 0; overflow:hidden;">
+                <div id="timeFill" style="width:100%; height:100%; background:var(--accent-blue);"></div>
+            </div>
+            <h2 id="timeDisp" style="font-size:2rem; color:var(--accent-yellow);">0.0s</h2>`;
+
+        let fill = document.getElementById('timeFill');
+        let disp = document.getElementById('timeDisp');
+        let start = Date.now();
+
+        function updateTime() {
+            let elapsed = (Date.now() - start) / 1000;
+            let percent = Math.max(0, 100 - (elapsed / target) * 100);
+            fill.style.width = percent + '%';
+
+            if (percent < 50) {
+                fill.style.opacity = '0';
+                disp.innerText = "???";
+            } else {
+                disp.innerText = elapsed.toFixed(1) + 's';
+            }
+            animFrame = requestAnimationFrame(updateTime);
+        }
+        updateTime();
+
+        let stopBtn = document.createElement('button');
+        stopBtn.innerText = '🛑 PARAR AGORA!';
+        stopBtn.onclick = () => {
+            cancelAnimationFrame(animFrame);
+            let total = ((Date.now() - start) / 1000).toFixed(2);
+            let diff = Math.abs(target - total);
+            let score = Math.max(0, Math.round(200 - (diff * 50)));
+            rematarEAmosarPuntos(score, `Paraches en ${total}s (Diferenza: ${diff.toFixed(2)}s)`);
+        };
+        ctrl.appendChild(stopBtn);
+    }
+
+    // 8. SUMA DE DADOS
+    function cargarXogoDados(area, ctrl) {
+        let totalDots = 0;
+        let html = '<div class="dice-container">';
+        
+        for (let d = 0; d < 4; d++) {
+            let val = Math.floor(Math.random() * 6) + 1;
+            totalDots += val;
+            html += `<div class="dice">`;
+            for (let i = 1; i <= 9; i++) {
+                let show = (val===1 && i===5) || (val===2 && (i===1||i===9)) || (val===3 && (i===1||i===5||i===9)) ||
+                           (val===4 && (i===1||i===3||i===7||i===9)) || (val===5 && (i===1||i===3||i===5||i===7||i===9)) ||
+                           (val===6 && (i===1||i===3||i===4||i===6||i===7||i===9));
+                html += `<div class="dot" style="visibility:${show?'visible':'hidden'}"></div>`;
+            }
+            html += `</div>`;
+        }
+        html += '</div>';
+        area.innerHTML = html;
+
+        let inp = document.createElement('input');
+        inp.type = 'number';
+        inp.placeholder = 'Suma total dos puntos';
+        area.appendChild(inp);
+
+        let btn = document.createElement('button');
+        btn.innerText = 'Confirmar Suma';
+        btn.onclick = () => {
+            if (parseInt(inp.value) === totalDots) {
+                playBeep(800, 'sine', 0.2);
+                rematarEAmosarPuntos(100 * xogoActual.level, `Correcto! A suma era ${totalDots}.`);
+            } else {
+                playBeep(200, 'sawtooth', 0.2);
+                rematarEAmosarPuntos(0, `Erro. A suma correcta era ${totalDots}.`);
+            }
+        };
+        ctrl.appendChild(btn);
+    }
+
+    // 9. COR CORRECTA
+    function cargarXogoCorCorrecta(area, ctrl) {
+        const cores = [
+            { nome: 'VERMELLO', color: '#ef4444' },
+            { nome: 'VERDE', color: '#10b981' },
+            { nome: 'AZUL', color: '#38bdf8' },
+            { nome: 'AMARELO', color: '#f59e0b' }
+        ];
+
+        let idxTexto = Math.floor(Math.random() * cores.length);
+        let idxCor = Math.floor(Math.random() * cores.length);
+
+        area.innerHTML = `
+            <p style="color:var(--text-muted); margin:0;">De que cor é a palabra?</p>
+            <h1 style="color:${cores[idxCor].color}; font-size:2.5rem; margin:15px 0;">${cores[idxTexto].nome}</h1>`;
+
+        let grid = document.createElement('div');
+        grid.className = 'grid-2x2';
+
+        cores.forEach(c => {
+            let b = document.createElement('button');
+            b.innerText = c.nome;
+            b.style.background = c.color;
+            b.style.color = '#000';
+            b.onclick = () => {
+                if (c.color === cores[idxCor].color) {
+                    playBeep(800, 'sine', 0.15);
+                    rematarEAmosarPuntos(80 * xogoActual.level, "Acertaches a cor vista!");
+                } else {
+                    playBeep(200, 'sawtooth', 0.15);
+                    rematarEAmosarPuntos(0, "Falaches a cor!");
                 }
             };
-            grid.appendChild(btn);
+            grid.appendChild(b);
+        });
+        area.appendChild(grid);
+    }
+
+    // 10. DESLIZA RÁPIDO
+    function cargarXogoDesliza(area, ctrl) {
+        let dirs = [
+            { txt: '⬆️', code: 'UP' },
+            { txt: '⬇️', code: 'DOWN' },
+            { txt: '⬅️', code: 'LEFT' },
+            { txt: '➡️', code: 'RIGHT' }
+        ];
+        let rondas = 5, acertos = 0, actual = 0;
+
+        function segRolda() {
+            if (actual >= rondas) {
+                rematarEAmosarPuntos(acertos * 30, `Acertaches ${acertos}/${rondas} frechas.`);
+                return;
+            }
+            actual++;
+            let target = dirs[Math.floor(Math.random() * dirs.length)];
+            area.innerHTML = `
+                <p style="color:var(--text-muted); margin:0;">Rolda ${actual} de ${rondas}</p>
+                <h1 style="font-size:4rem; margin:10px 0;">${target.txt}</h1>`;
+
+            let grid = document.createElement('div');
+            grid.className = 'grid-2x2';
+            dirs.forEach(d => {
+                let b = document.createElement('button');
+                b.innerText = d.txt;
+                b.onclick = () => {
+                    if (d.code === target.code) acertos++;
+                    segRolda();
+                };
+                grid.appendChild(b);
+            });
+            area.appendChild(grid);
+        }
+        segRolda();
+    }
+
+    // 11. PATRÓN DE LUZ
+    function cargarXogoPatron(area, ctrl) {
+        let patron = [];
+        let paso = 0;
+        let maxPasos = xogoActual.level === 1 ? 3 : (xogoActual.level === 2 ? 5 : 7);
+
+        let grid = document.createElement('div');
+        grid.className = 'grid-2x2';
+        for(let i=0; i<4; i++) {
+            let b = document.createElement('div');
+            b.className = 'circle-btn';
+            b.dataset.idx = i;
+            grid.appendChild(b);
         }
         area.appendChild(grid);
 
-        let startBtn = document.createElement('button');
-        startBtn.innerText = 'Comezar Rolda';
-        startBtn.onclick = () => {
-            startBtn.style.display = 'none';
+        for(let i=0; i<maxPasos; i++) patron.push(Math.floor(Math.random()*4));
+
+        let info = document.createElement('p');
+        info.innerText = "Observa a secuencia...";
+        area.appendChild(info);
+
+        function reproducir() {
+            let btns = area.querySelectorAll('.circle-btn');
+            patron.forEach((val, idx) => {
+                setTimeout(() => {
+                    btns[val].classList.add('active');
+                    playBeep(400 + val*100, 'sine', 0.2);
+                    setTimeout(() => btns[val].classList.remove('active'), 400);
+                }, (idx + 1) * 700);
+            });
+
             setTimeout(() => {
-                let circles = area.querySelectorAll('.circle-btn');
-                circles[Math.floor(Math.random() * 9)].classList.add('active');
-                playBeep(600, 'triangle', 0.15);
-                reactStartTime = Date.now();
-            }, Math.random() * 2000 + 1000);
-        };
-        ctrl.appendChild(startBtn);
+                info.innerText = "Repite a secuencia!";
+                btns.forEach(b => {
+                    b.onclick = () => {
+                        let idxClicked = parseInt(b.dataset.idx);
+                        if (idxClicked === patron[paso]) {
+                            playBeep(400 + idxClicked*100, 'sine', 0.1);
+                            paso++;
+                            if (paso >= maxPasos) {
+                                rematarEAmosarPuntos(maxPasos * 40, "Patrón repetido á perfección!");
+                            }
+                        } else {
+                            playBeep(180, 'sawtooth', 0.2);
+                            rematarEAmosarPuntos(paso * 20, `Falaches no paso ${paso+1}.`);
+                        }
+                    };
+                });
+            }, (maxPasos + 1) * 700);
+        }
+        reproducir();
     }
 
     function rematarEAmosarPuntos(puntos, detalle) {
@@ -884,7 +1170,7 @@
             </div>`;
 
         ctrl.innerHTML = `
-            <button onclick="iniciarXogoDirecto(${xogoActual.id})">🔄 Xogar de Novo</button>
+            <button onclick="iniciarXogoDirecto('${xogoActual.id}', ${xogoActual.level})">🔄 Xogar de Novo</button>
             <button class="btn-alt" onclick="mostrarPantalla('screenMenu')">🏠 Volver ao Menú</button>`;
     }
 
