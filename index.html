@@ -100,8 +100,24 @@
         button:active { transform: scale(0.98); opacity: 0.9; }
         button.btn-alt { background: #334155; color: var(--text-light); }
         button.btn-danger { background: #991b1b; color: white; }
-        button.btn-random { background: var(--accent-purple); color: white; font-size: 1rem; padding: 14px; }
+        button.btn-random { background: var(--accent-purple); color: white; font-size: 1rem; padding: 12px; }
         button.btn-profile { background: var(--accent-yellow); color: #0f172a; }
+        button.btn-club { background: var(--accent-green); color: #0f172a; }
+
+        .campaign-bar {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+            margin-top: 8px;
+        }
+
+        .btn-camp {
+            font-size: 0.75rem;
+            padding: 10px 4px;
+            margin: 0;
+            border-radius: 8px;
+            font-weight: bold;
+        }
 
         input, select {
             width: 100%;
@@ -127,7 +143,7 @@
             display: flex;
             flex-direction: column;
             gap: 12px;
-            max-height: 380px;
+            max-height: 360px;
             overflow-y: auto;
             padding-right: 4px;
         }
@@ -167,7 +183,7 @@
 
         .board {
             width: 100%;
-            min-height: 250px;
+            min-height: 260px;
             background: #0f172a;
             border-radius: 12px;
             display: flex;
@@ -274,13 +290,23 @@
             width: 100%;
         }
 
+        .grid-3x2 {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            width: 100%;
+        }
+
         .swipe-btn {
-            font-size: 2.2rem;
-            padding: 16px;
+            font-size: 2rem;
+            padding: 14px;
             border-radius: 12px;
             background: #334155;
             color: white;
             border: 2px solid #475569;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .grid-3x3 {
@@ -364,7 +390,7 @@
 
         .ranking-tab {
             flex: 1;
-            font-size: 0.75rem;
+            font-size: 0.72rem;
             padding: 6px 2px;
             margin: 0;
             background: #1e293b;
@@ -428,6 +454,15 @@
             align-self: flex-start;
         }
 
+        .club-card {
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 10px;
+            padding: 10px;
+            margin-bottom: 8px;
+            text-align: left;
+        }
+
         footer { text-align: center; margin-top: 6px; margin-bottom: 12px; }
         .app-revision { font-size: 0.75rem; color: var(--text-muted); opacity: 0.4; letter-spacing: 0.5px; }
     </style>
@@ -453,6 +488,17 @@
     <!-- MENÚ PRINCIPAL -->
     <div id="screenMenu" class="screen card">
         <button class="btn-random" onclick="jugarAleatorio()">🎲 Xogo Aleatorio</button>
+
+        <div style="margin-top: 6px;">
+            <label style="font-size:0.8rem; color:var(--text-muted);"> Modo Campaña (Varios xogos seguidos):</label>
+            <div class="campaign-bar">
+                <button class="btn-camp btn-trivial" onclick="iniciarCampana(1)">⚔️ Campaña TRIVIAL</button>
+                <button class="btn-camp btn-normal" onclick="iniciarCampana(2)">⚔️ Campaña NORMAL</button>
+                <button class="btn-camp btn-extremoduro" onclick="iniciarCampana(3)">⚔️ Campaña EXTREME</button>
+            </div>
+        </div>
+
+        <button class="btn-club" onclick="abrirXestionClubs()" style="margin-top:10px;">👥 Os meus Clubes de Amigos</button>
         <button class="btn-profile" onclick="abrirPerfil()">📊 O meu Perfil e Récords</button>
         
         <div style="margin-top: 12px;">
@@ -471,12 +517,39 @@
                     <button class="ranking-tab" id="tabTotal" onclick="cambiarTabRanking('total')">Total</button>
                     <button class="ranking-tab" id="tabDia" onclick="cambiarTabRanking('dia')">Do Día</button>
                     <button class="ranking-tab" id="tabXogo" onclick="cambiarTabRanking('xogo')">Por Xogo</button>
+                    <button class="ranking-tab" id="tabClub" onclick="cambiarTabRanking('club')">Clubes</button>
+                </div>
+                <div id="clubSelectorBox" style="display:none; margin-bottom:6px;">
+                    <select id="rankingClubSelect" onchange="renderizarRankingSegunTab()"></select>
                 </div>
                 <div id="rankingList">Selecciona unha pestana para amosar a listaxe...</div>
             </div>
         </div>
 
         <button class="btn-alt" onclick="cerrarSesion()" style="margin-top: 12px;">Cerrar Sesión</button>
+    </div>
+
+    <!-- PANTALLA CLUBES DE AMIGOS -->
+    <div id="screenClubs" class="screen card">
+        <h2>👥 Clubes de Amigos</h2>
+        <p style="font-size: 0.85rem; color: var(--text-muted);">Crea un grupo ou únete cun código compartido.</p>
+        
+        <div style="background:#0f172a; padding:10px; border-radius:10px; margin-bottom:10px;">
+            <h4 style="margin:0 0 6px 0; color:var(--accent-yellow);">➕ Crear Novo Club</h4>
+            <input type="text" id="newClubNameInput" placeholder="Nome do Club">
+            <button onclick="crearNovoClub()" style="margin-top:0;">Crear Club</button>
+        </div>
+
+        <div style="background:#0f172a; padding:10px; border-radius:10px; margin-bottom:12px;">
+            <h4 style="margin:0 0 6px 0; color:var(--accent-blue);">🔑 Unirse a un Club</h4>
+            <input type="text" id="joinClubCodeInput" placeholder="Código do Club (6 caracteres)">
+            <button onclick="unirseAClub()" style="margin-top:0;">Unirse</button>
+        </div>
+
+        <h3 style="color:var(--accent-yellow); text-align:left; font-size:1rem; margin-bottom:6px;">Os meus Clubes:</h3>
+        <div id="myClubsList" style="max-height:200px; overflow-y:auto;">Cargando...</div>
+
+        <button class="btn-alt" onclick="mostrarPantalla('screenMenu')" style="margin-top:12px;">Volver ao Menú</button>
     </div>
 
     <!-- PERFIL -->
@@ -486,7 +559,7 @@
         
         <div class="ranking-box" style="text-align:left;">
             <h3 style="color:var(--accent-yellow); text-align:center;">🏅 As miñas Mellores Marcas</h3>
-            <div id="userRecordsList" style="max-height:220px; overflow-y:auto; margin-top:8px;">Aínda non tes rexistros.</div>
+            <div id="userRecordsList" style="max-height:180px; overflow-y:auto; margin-top:8px;">Aínda non tes rexistros.</div>
         </div>
 
         <button onclick="mostrarPantalla('screenMenu')">Volver ao Menú</button>
@@ -500,11 +573,12 @@
         <button class="btn-danger" onclick="adminBorrarTodo()">🔥 Borrar Tódolos Rankings</button>
         <button class="btn-danger" onclick="adminBorrarDia()">📅 Borrar Rankings do Día</button>
         <button class="btn-danger" onclick="adminBorrarXogo()">🎮 Borrar Rankings por Xogo</button>
+        <button class="btn-danger" onclick="adminBorrarTodosClubs()">👥 Borrar Tódolos Clubes</button>
         
         <div style="margin-top:10px; text-align:left;">
             <label style="font-size:0.8rem; color:var(--accent-yellow);">Borrar xogador en concreto:</label>
             <select id="adminUserSelect"></select>
-            <button class="btn-danger" onclick="adminBorrarXogadorConcreto()" style="margin-top:4px;">❌ Borrar este Xogador</button>
+            <button class="btn-danger" onclick="adminBorrarXogadorConcreto()" style="margin-top:4px;">❌ Borrar este Xogador e os seus Clubes</button>
         </div>
 
         <button class="btn-alt" onclick="mostrarPantalla('screenMenu')" style="margin-top:15px;">Saír do Panel</button>
@@ -522,7 +596,7 @@
     </div>
 
     <footer>
-        <span class="app-revision">~#v0.6</span>
+        <span class="app-revision">~#v0.7</span>
     </footer>
 </div>
 
@@ -561,22 +635,32 @@
         { id: "bar", nome: "🎯 Precision da Barriña", desc: "Para o punto no centro exacto.", exp: "Puntuación = 100 - (distancia ao centro * 2). Media de 5 intentos." },
         { id: "memory", nome: "🧠 Memoria Revertida", desc: "Memoriza os números antes de ocultarse.", exp: "Puntuación = +30 pts por número correcto premido na orde exacta." },
         { id: "math", nome: "📐 Sumas Enlazadas Express", desc: "Resolve as sumas o máis rápido posíbel.", exp: "Puntuación = (Acertos * 50) - (Segundos totais * 2)." },
-        { id: "react", nome: "⚡ Reacción e Velocidade", desc: "Toca o botón activo no menor tempo.", exp: "Puntuación = 1000 - Tempo de reacción en ms. (Dificultade aumenta velocidade e botóns)." },
+        { id: "react", nome: "⚡ Reacción e Velocidade", desc: "Toca o botón activo no menor tempo.", exp: "Puntuación = 1000 - Tempo de reacción en ms." },
         { id: "order", nome: "🔢 Orde Numérica", desc: "Toca os números en orde crecente.", exp: "Puntuación = +25 pts por número correcto premido." },
-        { id: "box", nome: "📦 Contador de Caixas", desc: "Contas cantas caixas aparecen.", exp: "Puntuación = +60 pts por rolda acertada. (Caixas máis pequenas e variadas)." },
+        { id: "box", nome: "📦 Contador de Caixas", desc: "Contas cantas caixas aparecen.", exp: "Puntuación = +60 pts por rolda acertada." },
         { id: "time", nome: "⏱️ Tempo Exacto!", desc: "Para o reloxo a cegas preto de 0s.", exp: "Puntuación = 200 - (Diferenza de segundos ao 0 exacto * 50)." },
         { id: "dice", nome: "🎲 Suma de Dados", desc: "Suma os puntos totais dos 4 dados.", exp: "Puntuación = (Acertos * 100) - (Segundos empregados * 3) [3 roldas]." },
-        { id: "color", nome: "🎨 Cor Correcta", desc: "Selecciona a cor real do texto.", exp: "Puntuación = (Acertos * 40) - (Segundos empregados * 2) en 5 roldas." },
-        { id: "swipe", nome: "👆 Desliza Rápido!", desc: "Preme a frecha na dirección amosada.", exp: "Puntuación = +30 pts por frecha (Frechas mesturadas e desordenadas)." },
-        { id: "pattern", nome: "💡 Patrón de Luz", desc: "Memoriza e repite a secuencia.", exp: "Puntuación = +35 pts por cada paso. (3 roldas progresivas)." }
+        { id: "color", nome: "🎨 Cor Correcta", desc: "Selecciona a cor real do texto entre 6 opcións.", exp: "Puntuación = (Acertos * 40) - (Segundos empregados * 2) en 5 roldas." },
+        { id: "swipe", nome: "👆 Desliza Rápido!", desc: "Preme a frecha na dirección amosada.", exp: "Puntuación = +30 pts por frecha (opcións acordes á orientación)." },
+        { id: "pattern", nome: "💡 Patrón de Luz", desc: "Memoriza e repite a secuencia.", exp: "Puntuación = +35 pts por cada paso. (3 roldas progresivas)." },
+        { id: "reverse_math", nome: "🧠 Cálculo Mental Invertido", desc: "Atopa os dous números que orixinan o resultado.", exp: "Puntuación = +50 pts por combinación correcta." },
+        { id: "balance", nome: "⚖️ Balanza de Pesos", desc: "Deduce cal figura é máis pesada.", exp: "Puntuación = +60 pts por dedución correcta." },
+        { id: "visual_find", nome: "👁️ O Obxecto Intruso", desc: "Atopa o emoji/símbolo diferente.", exp: "Puntuación = 500 - (Segundos * 20) por rolda." }
     ];
 
     let currentUser = "";
-    let userProfile = { puntosTotales: 0, pin: "", fechaReg: "", ultAct: "", juegos: {} };
+    let userProfile = { jugador: "", puntosTotales: 0, pin: "", fechaReg: "", ultAct: "", juegos: {} };
     let currentTabRanking = null;
     let rawJugadoresRanking = [];
+    let rawClubesDB = {};
     let titleClickCount = 0;
     let titleClickTimer = null;
+
+    let modoCampana = false;
+    let campanaListaXogos = [];
+    let campanaIndex = 0;
+    let campanaPuntosAcumulados = 0;
+    let campanaNivel = 1;
 
     function init() {
         renderizarCategorias(CATEGORIAS_BASE);
@@ -587,6 +671,7 @@
             actualizarHeader();
             mostrarPantalla('screenMenu');
             escucharRanking();
+            escucharClubes();
         }
     }
 
@@ -612,10 +697,12 @@
         let sel = document.getElementById('adminUserSelect');
         sel.innerHTML = "";
         rawJugadoresRanking.forEach(j => {
-            let opt = document.createElement('option');
-            opt.value = j.jugador;
-            opt.innerText = j.jugador;
-            sel.appendChild(opt);
+            if (j.jugador) {
+                let opt = document.createElement('option');
+                opt.value = j.jugador;
+                opt.innerText = j.jugador;
+                sel.appendChild(opt);
+            }
         });
     }
 
@@ -632,7 +719,7 @@
         if (confirm("Borrar os puntos rexistrados no día de hoxe?")) {
             const hoxe = new Date().toISOString().split('T')[0];
             rawJugadoresRanking.forEach(j => {
-                if (j.ultAct === hoxe) {
+                if (j.jugador && j.ultAct === hoxe) {
                     if (db) db.ref(`ranking/${j.jugador}/ultAct`).set("2000-01-01");
                 }
             });
@@ -643,16 +730,24 @@
     function adminBorrarXogo() {
         if (confirm("Borrar as marcas por minixogos de tódolos xogadores?")) {
             rawJugadoresRanking.forEach(j => {
-                if (db) db.ref(`ranking/${j.jugador}/juegos`).remove();
+                if (j.jugador && db) db.ref(`ranking/${j.jugador}/juegos`).remove();
             });
             alert("Marcas por xogo borradas.");
+        }
+    }
+
+    function adminBorrarTodosClubs() {
+        if (confirm("Borrar tódolos clubes de amigos?")) {
+            if (db) db.ref('clubes').remove();
+            localStorage.setItem('portela_clubs_db', JSON.stringify({}));
+            alert("Clubes borrados.");
         }
     }
 
     function adminBorrarXogadorConcreto() {
         let u = document.getElementById('adminUserSelect').value;
         if (!u) return;
-        if (confirm(`Borrar por completo ao xogador "${u}"?`)) {
+        if (confirm(`Borrar por completo ao xogador "${u}" e os seus clubes?`)) {
             if (db) db.ref(`ranking/${u}`).remove();
             let dbLocal = JSON.parse(localStorage.getItem('portela_users_db') || '{}');
             delete dbLocal[u];
@@ -703,7 +798,9 @@
             let userRef = db.ref('ranking/' + name);
             userRef.once('value').then(snapshot => {
                 if (snapshot.exists()) {
-                    if (snapshot.val().pin === pin) iniciarSesionExitoso(name, snapshot.val());
+                    let val = snapshot.val();
+                    if (!val.jugador) val.jugador = name;
+                    if (val.pin === pin) iniciarSesionExitoso(name, val);
                     else errDiv.style.display = "block";
                 } else {
                     let newUser = { jugador: name, pin: pin, fechaReg: dataData, ultAct: dataHoxe, puntosTotales: 0, juegos: {} };
@@ -730,11 +827,13 @@
 
     function iniciarSesionExitoso(name, profileData) {
         currentUser = name;
-        userProfile = profileData || { puntosTotales: 0, juegos: {} };
+        userProfile = profileData || { jugador: name, puntosTotales: 0, juegos: {} };
+        if (!userProfile.jugador) userProfile.jugador = name;
         localStorage.setItem('portela_user', name);
         actualizarHeader();
         mostrarPantalla('screenMenu');
         escucharRanking();
+        escucharClubes();
     }
 
     function cargarDatosUsuario() {
@@ -742,12 +841,16 @@
             db.ref('ranking/' + currentUser).on('value', snapshot => {
                 if (snapshot.exists()) {
                     userProfile = snapshot.val();
+                    if (!userProfile.jugador) userProfile.jugador = currentUser;
                     if (!userProfile.juegos) userProfile.juegos = {};
                 }
             });
         } else {
             const dbLocal = JSON.parse(localStorage.getItem('portela_users_db') || '{}');
-            if (dbLocal[currentUser]) userProfile = dbLocal[currentUser];
+            if (dbLocal[currentUser]) {
+                userProfile = dbLocal[currentUser];
+                if (!userProfile.jugador) userProfile.jugador = currentUser;
+            }
         }
     }
 
@@ -760,7 +863,7 @@
     }
 
     function actualizarHeader() {
-        document.getElementById('userInfo').innerText = `Xogador: ${currentUser.toUpperCase()}`;
+        document.getElementById('userInfo').innerText = `Xogador: ${(currentUser || 'Anónimo').toUpperCase()}`;
     }
 
     function mostrarPantalla(id) {
@@ -801,16 +904,37 @@
         if (db) {
             db.ref('ranking').on('value', snapshot => {
                 let jugadores = [];
-                snapshot.forEach(child => { jugadores.push(child.val()); });
+                snapshot.forEach(child => {
+                    let jData = child.val();
+                    if (!jData.jugador) jData.jugador = child.key;
+                    jugadores.push(jData);
+                });
                 rawJugadoresRanking = jugadores;
                 if (currentTabRanking) renderizarRankingSegunTab();
             }, () => renderizarRankingLocal());
         } else renderizarRankingLocal();
     }
 
+    function escucharClubes() {
+        if (db) {
+            db.ref('clubes').on('value', snapshot => {
+                rawClubesDB = snapshot.val() || {};
+                actualizarListaClubesUI();
+                if (currentTabRanking === 'club') renderizarRankingSegunTab();
+            });
+        } else {
+            rawClubesDB = JSON.parse(localStorage.getItem('portela_clubs_db') || '{}');
+            actualizarListaClubesUI();
+            if (currentTabRanking === 'club') renderizarRankingSegunTab();
+        }
+    }
+
     function renderizarRankingLocal() {
         const dbLocal = JSON.parse(localStorage.getItem('portela_users_db') || '{}');
-        rawJugadoresRanking = Object.values(dbLocal);
+        rawJugadoresRanking = Object.values(dbLocal).map(j => {
+            if (!j.jugador && typeof j === 'object') j.jugador = "xogador";
+            return j;
+        });
         if (currentTabRanking) renderizarRankingSegunTab();
     }
 
@@ -819,6 +943,7 @@
             currentTabRanking = null;
             document.querySelectorAll('.ranking-tab').forEach(t => t.classList.remove('active'));
             document.getElementById('rankingList').innerHTML = "Selecciona unha pestana para amosar a listaxe...";
+            document.getElementById('clubSelectorBox').style.display = "none";
             return;
         }
 
@@ -827,10 +952,38 @@
         if (tab==='total') document.getElementById('tabTotal').classList.add('active');
         if (tab==='dia') document.getElementById('tabDia').classList.add('active');
         if (tab==='xogo') document.getElementById('tabXogo').classList.add('active');
+        if (tab==='club') document.getElementById('tabClub').classList.add('active');
         
         document.getElementById('rankingContainer').classList.add('open');
         document.getElementById('rankingArrow').innerText = "▼ Pechar";
+
+        if (tab === 'club') {
+            document.getElementById('clubSelectorBox').style.display = "block";
+            poblarSelectClubesRanking();
+        } else {
+            document.getElementById('clubSelectorBox').style.display = "none";
+        }
+
         renderizarRankingSegunTab();
+    }
+
+    function poblarSelectClubesRanking() {
+        let sel = document.getElementById('rankingClubSelect');
+        sel.innerHTML = "";
+        let meusClubes = Object.values(rawClubesDB).filter(c => c.membros && c.membros[currentUser]);
+        if (meusClubes.length === 0) {
+            let opt = document.createElement('option');
+            opt.value = "";
+            opt.innerText = "Non pertences a ningún club";
+            sel.appendChild(opt);
+        } else {
+            meusClubes.forEach(c => {
+                let opt = document.createElement('option');
+                opt.value = c.id;
+                opt.innerText = `Club: ${c.nome} (${c.codigo})`;
+                sel.appendChild(opt);
+            });
+        }
     }
 
     function renderizarRankingSegunTab() {
@@ -840,8 +993,9 @@
         if (currentTabRanking === 'total') {
             list.sort((a, b) => (b.puntosTotales || 0) - (a.puntosTotales || 0));
             list.forEach((j, index) => {
+                let nome = j.jugador || "Anónimo";
                 let f = j.fechaReg ? `<span class="user-date">(${j.fechaReg})</span>` : '';
-                html += `<div class="ranking-item"><span>${index + 1}. <strong>${j.jugador}</strong>${f}</span><span>${j.puntosTotales || 0} pts</span></div>`;
+                html += `<div class="ranking-item"><span>${index + 1}. <strong>${nome}</strong>${f}</span><span>${j.puntosTotales || 0} pts</span></div>`;
             });
         } else if (currentTabRanking === 'dia') {
             const hoxe = new Date().toISOString().split('T')[0];
@@ -850,15 +1004,17 @@
             if (listDia.length === 0) html = "<p style='text-align:center; font-size:0.8rem; color:var(--text-muted);'>Sen partidas rexistradas hoxe.</p>";
             else {
                 listDia.forEach((j, index) => {
-                    html += `<div class="ranking-item"><span>${index + 1}. <strong>${j.jugador}</strong></span><span>${j.puntosTotales || 0} pts</span></div>`;
+                    let nome = j.jugador || "Anónimo";
+                    html += `<div class="ranking-item"><span>${index + 1}. <strong>${nome}</strong></span><span>${j.puntosTotales || 0} pts</span></div>`;
                 });
             }
         } else if (currentTabRanking === 'xogo') {
             let maxMap = [];
             list.forEach(j => {
                 const jgs = j.juegos || {};
+                let nome = j.jugador || "Anónimo";
                 Object.keys(jgs).forEach(xogoKey => {
-                    maxMap.push({ xogo: xogoKey, xogador: j.jugador, pts: jgs[xogoKey] });
+                    maxMap.push({ xogo: xogoKey, xogador: nome, pts: jgs[xogoKey] });
                 });
             });
             maxMap.sort((a, b) => b.pts - a.pts);
@@ -868,9 +1024,155 @@
                     html += `<div class="ranking-item"><span><strong>${item.xogo}</strong> (${item.xogador})</span><span>${item.pts} pts</span></div>`;
                 });
             }
+        } else if (currentTabRanking === 'club') {
+            let clubId = document.getElementById('rankingClubSelect').value;
+            if (!clubId || !rawClubesDB[clubId]) {
+                html = "<p style='text-align:center; font-size:0.8rem; color:var(--text-muted);'>Selecciona un club válido para ver a clasificación.</p>";
+            } else {
+                let club = rawClubesDB[clubId];
+                let membros = Object.keys(club.membros || {});
+                let listMembros = list.filter(j => membros.includes(j.jugador));
+                listMembros.sort((a, b) => (b.puntosTotales || 0) - (a.puntosTotales || 0));
+
+                listMembros.forEach((j, index) => {
+                    let nome = j.jugador || "Anónimo";
+                    let isCreator = (nome === club.creador) ? " 👑" : "";
+                    html += `<div class="ranking-item"><span>${index + 1}. <strong>${nome}</strong>${isCreator}</span><span>${j.puntosTotales || 0} pts</span></div>`;
+                });
+            }
         }
 
         document.getElementById('rankingList').innerHTML = html || "<p style='text-align:center;'>Sen datos aínda</p>";
+    }
+
+    // XESTIÓN DE CLUBES DE AMIGOS
+    function abrirXestionClubs() {
+        mostrarPantalla('screenClubs');
+        actualizarListaClubesUI();
+    }
+
+    function crearNovoClub() {
+        let nome = document.getElementById('newClubNameInput').value.trim();
+        if (!nome) { alert("Escribe un nome para o club."); return; }
+
+        let codigo = Math.random().toString(36).substring(2, 8).toUpperCase();
+        let clubId = 'club_' + Date.now();
+
+        let novoClub = {
+            id: clubId,
+            nome: nome,
+            codigo: codigo,
+            creador: currentUser,
+            membros: { [currentUser]: true }
+        };
+
+        if (db) {
+            db.ref('clubes/' + clubId).set(novoClub);
+        } else {
+            rawClubesDB[clubId] = novoClub;
+            localStorage.setItem('portela_clubs_db', JSON.stringify(rawClubesDB));
+            actualizarListaClubesUI();
+        }
+
+        document.getElementById('newClubNameInput').value = "";
+        alert(`Club "${nome}" creado! Código para compartir: ${codigo}`);
+    }
+
+    function unirseAClub() {
+        let code = document.getElementById('joinClubCodeInput').value.trim().toUpperCase();
+        if (!code) { alert("Introduce un código de club."); return; }
+
+        let atopa = Object.values(rawClubesDB).find(c => c.codigo === code);
+        if (!atopa) { alert("Non se atopou ningún club con ese código."); return; }
+
+        if (db) {
+            db.ref(`clubes/${atopa.id}/membros/${currentUser}`).set(true);
+        } else {
+            if (!rawClubesDB[atopa.id].membros) rawClubesDB[atopa.id].membros = {};
+            rawClubesDB[atopa.id].membros[currentUser] = true;
+            localStorage.setItem('portela_clubs_db', JSON.stringify(rawClubesDB));
+            actualizarListaClubesUI();
+        }
+
+        document.getElementById('joinClubCodeInput').value = "";
+        alert(`Unícheste con éxito ao club "${atopa.nome}"!`);
+    }
+
+    function actualizarListaClubesUI() {
+        let box = document.getElementById('myClubsList');
+        if (!box) return;
+
+        let meusClubes = Object.values(rawClubesDB).filter(c => c.membros && c.membros[currentUser]);
+        if (meusClubes.length === 0) {
+            box.innerHTML = "<p style='text-align:center; font-size:0.85rem; color:var(--text-muted);'>Aínda non estás en ningún club.</p>";
+            return;
+        }
+
+        let html = "";
+        meusClubes.forEach(c => {
+            let isCreador = c.creador === currentUser;
+            html += `
+                <div class="club-card">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <strong style="color:var(--accent-yellow);">${c.nome}</strong>
+                        <span style="font-size:0.75rem; background:#334155; padding:2px 6px; border-radius:4px; color:var(--accent-blue);">Cód: ${c.codigo}</span>
+                    </div>
+                    <p style="font-size:0.75rem; color:var(--text-muted); margin:4px 0;">Creador: ${c.creador} ${isCreador ? '(Ti)' : ''}</p>
+                    <div style="font-size:0.8rem; margin:6px 0;">Membros:</div>
+                    <div style="max-height:80px; overflow-y:auto; padding-left:5px;">`;
+
+            Object.keys(c.membros || {}).forEach(m => {
+                let canKick = isCreador && m !== currentUser;
+                html += `
+                    <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.75rem; padding:2px 0;">
+                        <span>• ${m} ${m === c.creador ? '👑' : ''}</span>
+                        ${canKick ? `<button onclick="expulsarMembroClub('${c.id}', '${m}')" style="width:auto; padding:2px 6px; font-size:0.65rem; background:#991b1b; margin:0;">Expulsar</button>` : ''}
+                    </div>`;
+            });
+
+            html += `</div><div style="margin-top:8px;">`;
+            if (isCreador) {
+                html += `<button class="btn-danger" onclick="disolverClub('${c.id}')" style="padding:6px; font-size:0.75rem;">💥 Disolver Club</button>`;
+            } else {
+                html += `<button class="btn-alt" onclick="abandonarClub('${c.id}')" style="padding:6px; font-size:0.75rem;">🚪 Abandonar Club</button>`;
+            }
+            html += `</div></div>`;
+        });
+
+        box.innerHTML = html;
+    }
+
+    function expulsarMembroClub(clubId, membro) {
+        if (confirm(`Expulsar a ${membro} do club?`)) {
+            if (db) db.ref(`clubes/${clubId}/membros/${membro}`).remove();
+            else {
+                delete rawClubesDB[clubId].membros[membro];
+                localStorage.setItem('portela_clubs_db', JSON.stringify(rawClubesDB));
+                actualizarListaClubesUI();
+            }
+        }
+    }
+
+    function disolverClub(clubId) {
+        if (confirm("Estás seguro de disolver este club por completo?")) {
+            if (db) db.ref(`clubes/${clubId}`).remove();
+            else {
+                delete rawClubesDB[clubId];
+                localStorage.setItem('portela_clubs_db', JSON.stringify(rawClubesDB));
+                actualizarListaClubesUI();
+            }
+        }
+    }
+
+    function abandonarClub(clubId) {
+        if (confirm("Desexas abandonar este club?")) {
+            if (db) db.ref(`clubes/${clubId}/membros/${currentUser}`).remove();
+            else {
+                delete rawClubesDB[clubId].membros[currentUser];
+                localStorage.setItem('portela_clubs_db', JSON.stringify(rawClubesDB));
+                actualizarListaClubesUI();
+            }
+        }
     }
 
     function guardarResultado(nombreXogo, puntos) {
@@ -887,6 +1189,7 @@
 
         if (db) {
             db.ref('ranking/' + currentUser).update({
+                jugador: currentUser,
                 puntosTotales: novoTotal,
                 ultAct: hoxe,
                 [`juegos/${nombreXogo}`]: novoRecord
@@ -904,13 +1207,53 @@
 
     function abandonarPartida() {
         if (animFrame) cancelAnimationFrame(animFrame);
+        modoCampana = false;
         mostrarPantalla('screenMenu');
     }
 
     function jugarAleatorio() {
+        modoCampana = false;
         const catAlea = CATEGORIAS_BASE[Math.floor(Math.random() * CATEGORIAS_BASE.length)];
         const diffAlea = Math.floor(Math.random() * 3) + 1;
         iniciarXogoDirecto(catAlea.id, diffAlea);
+    }
+
+    function iniciarCampana(nivel) {
+        modoCampana = true;
+        campanaNivel = nivel;
+        campanaPuntosAcumulados = 0;
+        // Seleccionamos 5 minixogos aleatorios para a campaña
+        campanaListaXogos = [...CATEGORIAS_BASE].sort(() => Math.random() - 0.5).slice(0, 5);
+        campanaIndex = 0;
+        iniciarSeguinteMinixogoCampana();
+    }
+
+    function iniciarSeguinteMinixogoCampana() {
+        if (campanaIndex >= campanaListaXogos.length) {
+            rematarCampanaCompleta();
+            return;
+        }
+        let minixogo = campanaListaXogos[campanaIndex];
+        iniciarXogoDirecto(minixogo.id, campanaNivel);
+    }
+
+    function rematarCampanaCompleta() {
+        mostrarPantalla('screenGame');
+        document.getElementById('gameTitle').innerText = "🏆 CAMPAÑA COMPLETADA!";
+        document.getElementById('gameDesc').innerText = "Completaches con éxito a serie de 5 minixogos.";
+        document.getElementById('scoreSystemExp').innerText = "Suma total acumulada para o teu perfil.";
+
+        const area = document.getElementById('gameArea');
+        const ctrl = document.getElementById('gameControls');
+
+        area.innerHTML = `
+            <div class="result-box">
+                <h2 style="color:var(--accent-yellow);">Puntos Totales da Campaña</h2>
+                <div class="result-score">+${campanaPuntosAcumulados} pts</div>
+                <p style="color:var(--text-muted); font-size:0.85rem;">Os puntos foron engadidos ao teu ranking e club!</p>
+            </div>`;
+
+        ctrl.innerHTML = `<button onclick="mostrarPantalla('screenMenu')">🏠 Volver ao Menú Principal</button>`;
     }
 
     function iniciarXogoDirecto(typeId, level) {
@@ -918,10 +1261,11 @@
         const cat = CATEGORIAS_BASE.find(c => c.id === typeId) || CATEGORIAS_BASE[0];
         const nomesDiff = ["TRIVIAL", "NORMAL", "EXTREMODURO"];
         
+        let prefix = modoCampana ? `[Campaña ${campanaIndex+1}/5] ` : '';
         xogoActual = {
             id: typeId,
             level: level,
-            nome: `${cat.nome} (${nomesDiff[level-1]})`,
+            nome: `${prefix}${cat.nome} (${nomesDiff[level-1]})`,
             desc: cat.desc,
             exp: cat.exp
         };
@@ -946,6 +1290,9 @@
         else if (typeId === 'color') cargarXogoCorCorrecta(area, ctrl);
         else if (typeId === 'swipe') cargarXogoDesliza(area, ctrl);
         else if (typeId === 'pattern') cargarXogoPatron(area, ctrl);
+        else if (typeId === 'reverse_math') cargarXogoReverseMath(area, ctrl);
+        else if (typeId === 'balance') cargarXogoBalanza(area, ctrl);
+        else if (typeId === 'visual_find') cargarXogoVisualFind(area, ctrl);
     }
 
     // 1. BARRIÑA PRECISIÓN
@@ -1073,7 +1420,7 @@
         nextMath();
     }
 
-    // 4. REACCIÓN E VELOCIDADE (MÁIS DIFICULTADE E CÍRCULOS)
+    // 4. REACCIÓN E VELOCIDADE
     function cargarXogoReaccion(area, ctrl) {
         let rondasTotal = 5, rondaActual = 0, tempos = [];
         let numCircles = xogoActual.level === 1 ? 4 : (xogoActual.level === 2 ? 9 : 16);
@@ -1160,7 +1507,7 @@
         area.appendChild(grid);
     }
 
-    // 6. CONTADOR DE CAIXAS (TEXTO ROLDA ARRIBA E CAIXAS MÁIS GRANDES)
+    // 6. CONTADOR DE CAIXAS (+40% MÁIS GRANDES E AVANZO AUTOMÁTICO)
     function cargarXogoCaixas(area, ctrl) {
         let rolda = 0, totalRoldas = 3, acertosTotais = 0;
         const cores = ['#f59e0b', '#38bdf8', '#10b981', '#a855f7', '#ef4444', '#ec4899', '#f97316'];
@@ -1178,54 +1525,49 @@
             header.innerText = `Rolda ${rolda} de ${totalRoldas}`;
             area.appendChild(header);
 
-            let btnStart = document.createElement('button');
-            btnStart.innerText = `📦 Preme para ver as caixas (Rolda ${rolda})`;
-            ctrl.appendChild(btnStart);
+            // Caixas 40% máis grandes (aumentado de 42/34/28 a 60/48/40)
+            let boxSize = xogoActual.level === 1 ? 60 : (xogoActual.level === 2 ? 48 : 40);
+            let numBoxes = Math.floor(Math.random() * (xogoActual.level * 3)) + 4;
+            let placed = [];
 
-            btnStart.onclick = () => {
-                ctrl.innerHTML = '';
-                let boxSize = xogoActual.level === 1 ? 42 : (xogoActual.level === 2 ? 34 : 28);
-                let numBoxes = Math.floor(Math.random() * (xogoActual.level * 4)) + 4;
-                let placed = [];
-
-                for (let i = 0; i < numBoxes; i++) {
-                    let b = document.createElement('div');
-                    let color = cores[Math.floor(Math.random() * cores.length)];
-                    let max = 60, top = 0, left = 0;
-                    while (max-- > 0) {
-                        top = Math.random() * 120 + 35;
-                        left = Math.random() * 200 + 20;
-                        if (!placed.some(p => !(left + boxSize + 4 < p.left || left > p.left + boxSize + 4 || top + boxSize + 4 < p.top || top > p.top + boxSize + 4))) {
-                            placed.push({top, left});
-                            b.style.cssText = `width:${boxSize}px; height:${boxSize}px; background:${color}; border-radius:6px; position:absolute; top:${top}px; left:${left}px; border:2px solid #ffffffaa; box-shadow:0 2px 4px rgba(0,0,0,0.5);`;
-                            area.appendChild(b);
-                            break;
-                        }
+            for (let i = 0; i < numBoxes; i++) {
+                let b = document.createElement('div');
+                let color = cores[Math.floor(Math.random() * cores.length)];
+                let max = 60, top = 0, left = 0;
+                while (max-- > 0) {
+                    top = Math.random() * 100 + 35;
+                    left = Math.random() * 180 + 20;
+                    if (!placed.some(p => !(left + boxSize + 4 < p.left || left > p.left + boxSize + 4 || top + boxSize + 4 < p.top || top > p.top + boxSize + 4))) {
+                        placed.push({top, left});
+                        b.style.cssText = `width:${boxSize}px; height:${boxSize}px; background:${color}; border-radius:8px; position:absolute; top:${top}px; left:${left}px; border:2px solid #ffffffaa; box-shadow:0 3px 6px rgba(0,0,0,0.5);`;
+                        area.appendChild(b);
+                        break;
                     }
                 }
+            }
 
-                let tDisplay = xogoActual.level === 1 ? 2000 : (xogoActual.level === 2 ? 1400 : 900);
-                setTimeout(() => {
-                    area.innerHTML = '<h4 style="color:var(--text-muted); margin-top:20px;">Cantas caixas había na pantalla?</h4>';
-                    let inp = document.createElement('input');
-                    inp.type = 'number';
-                    inp.autofocus = true;
-                    area.appendChild(inp);
+            let tDisplay = xogoActual.level === 1 ? 2200 : (xogoActual.level === 2 ? 1600 : 1100);
+            setTimeout(() => {
+                area.innerHTML = '<h4 style="color:var(--text-muted); margin-top:20px;">Cantas caixas había na pantalla?</h4>';
+                let inp = document.createElement('input');
+                inp.type = 'number';
+                inp.autofocus = true;
+                inp.style.cssText = 'width:60%; font-size:1.6rem; margin-top:10px;';
+                area.appendChild(inp);
 
-                    let btnOk = document.createElement('button');
-                    btnOk.innerText = 'Responder';
-                    btnOk.onclick = () => {
-                        if (parseInt(inp.value) === placed.length) acertosTotais++;
+                inp.oninput = () => {
+                    if (parseInt(inp.value) === placed.length) {
+                        playBeep(700, 'sine', 0.1);
+                        acertosTotais++;
                         xogarRolda();
-                    };
-                    ctrl.appendChild(btnOk);
-                }, tDisplay);
-            };
+                    }
+                };
+            }, tDisplay);
         }
         xogarRolda();
     }
 
-    // 7. TEMPO EXACTO (3 DECIMAIS)
+    // 7. TEMPO EXACTO
     function cargarXogoTempoExacto(area, ctrl) {
         let target = xogoActual.level === 1 ? 5.0 : (xogoActual.level === 2 ? 7.0 : 10.0);
         area.innerHTML = `
@@ -1266,7 +1608,7 @@
         ctrl.appendChild(stopBtn);
     }
 
-    // 8. SUMA DE DADOS (DESTAPAR E INICIAR NA ROLDA 1)
+    // 8. SUMA DE DADOS (AVANZA AUTOMATICAMENTE AO RESPONDER CORRECTO)
     function cargarXogoDados(area, ctrl) {
         let totalRondas = 3, ronda = 0, tempos = [], acertos = 0;
 
@@ -1328,24 +1670,24 @@
             inp.type = 'number';
             inp.placeholder = 'Suma total dos puntos';
             inp.autofocus = true;
+            inp.style.cssText = 'width:65%; font-size:1.5rem;';
             area.appendChild(inp);
 
-            ctrl.innerHTML = '';
-            let btnOk = document.createElement('button');
-            btnOk.innerText = 'Confirmar Suma';
-            btnOk.onclick = () => {
-                let dur = (Date.now() - start) / 1000;
-                tempos.push(dur);
-                if (parseInt(inp.value) === totalDots) acertos++;
-                xogarRoldaDado();
+            inp.oninput = () => {
+                if (parseInt(inp.value) === totalDots) {
+                    let dur = (Date.now() - start) / 1000;
+                    tempos.push(dur);
+                    playBeep(700, 'sine', 0.1);
+                    acertos++;
+                    xogarRoldaDado();
+                }
             };
-            ctrl.appendChild(btnOk);
         }
 
         xogarRoldaDado();
     }
 
-    // 9. COR CORRECTA (AMPLIACIÓN DE CORES)
+    // 9. COR CORRECTA (6 OPCIÓNS E CIÁN CORRIXIDO)
     function cargarXogoCorCorrecta(area, ctrl) {
         let totalRondas = 5, ronda = 0, acertos = 0, tStart = Date.now();
         const cores = [
@@ -1356,7 +1698,7 @@
             { nome: 'VIOLETA', color: '#a855f7' },
             { nome: 'NARANXA', color: '#f97316' },
             { nome: 'ROSA', color: '#ec4899' },
-            { nome: 'CIANO', color: '#06b6d4' }
+            { nome: 'CIÁN', color: '#06b6d4' }
         ];
 
         function proximaRoldaCor() {
@@ -1367,22 +1709,25 @@
                 return;
             }
             ronda++;
-            let opcions = [...cores].sort(() => Math.random() - 0.5).slice(0, 4);
+            // 6 seleccións en lugar de 4
+            let opcions = [...cores].sort(() => Math.random() - 0.5).slice(0, 6);
             let idxTexto = Math.floor(Math.random() * opcions.length);
             let idxCor = Math.floor(Math.random() * opcions.length);
 
             area.innerHTML = `
                 <p style="color:var(--text-muted); margin:0;">Rolda ${ronda} de ${totalRondas}</p>
-                <h1 style="color:${opcions[idxCor].color}; font-size:2.6rem; margin:15px 0;">${opcions[idxTexto].nome}</h1>`;
+                <h1 style="color:${opcions[idxCor].color}; font-size:2.4rem; margin:12px 0;">${opcions[idxTexto].nome}</h1>`;
 
             let grid = document.createElement('div');
-            grid.className = 'grid-2x2';
+            grid.className = 'grid-3x2';
 
             opcions.forEach(c => {
                 let b = document.createElement('button');
                 b.innerText = c.nome;
                 b.style.background = c.color;
                 b.style.color = '#0f172a';
+                b.style.fontSize = '0.85rem';
+                b.style.padding = '10px 4px';
                 b.onclick = () => {
                     if (c.color === opcions[idxCor].color) {
                         playBeep(800, 'sine', 0.1);
@@ -1399,7 +1744,7 @@
         proximaRoldaCor();
     }
 
-    // 10. DESLIZA RÁPIDO! (FRECHAS ROTADAS E DESORDENADAS)
+    // 10. DESLIZA RÁPIDO! (LÓXICA DE ROTACIÓN CADRADA CON OPCIÓNS)
     function cargarXogoDesliza(area, ctrl) {
         let dirsBase = [
             { txt: '⬆️', code: 'UP' },
@@ -1416,15 +1761,30 @@
                 return;
             }
             actual++;
-            let target = dirsBase[Math.floor(Math.random() * dirsBase.length)];
-            
-            let rot = 0;
-            if (xogoActual.level === 2) rot = [0, 90, 180, 270][Math.floor(Math.random()*4)];
-            if (xogoActual.level === 3) rot = Math.floor(Math.random()*360);
+
+            let targetBase = dirsBase[Math.floor(Math.random() * dirsBase.length)];
+            let rotDeg = 0;
+
+            if (xogoActual.level === 2) {
+                let rots = [0, 90, 180, 270];
+                rotDeg = rots[Math.floor(Math.random() * rots.length)];
+            } else if (xogoActual.level === 3) {
+                let rots = [0, 90, 180, 270];
+                rotDeg = rots[Math.floor(Math.random() * rots.length)];
+            }
+
+            // Calculamos cara a onde apunta REALMENTE a frecha tras a rotación
+            let directionOrder = ['UP', 'RIGHT', 'DOWN', 'LEFT'];
+            let baseIdx = directionOrder.indexOf(targetBase.code);
+            let steps = (rotDeg / 90) % 4;
+            let finalIdx = (baseIdx + steps) % 4;
+            let finalDirectionCode = directionOrder[finalIdx];
 
             area.innerHTML = `
                 <p style="color:var(--text-muted); margin:0;">Rolda ${actual} de ${rondas}</p>
-                <h1 style="font-size:4.5rem; margin:10px 0; transform:rotate(${rot}deg); display:inline-block;">${target.txt}</h1>`;
+                <div style="margin:15px 0;">
+                    <span style="font-size:4rem; display:inline-block; transform:rotate(${rotDeg}deg); border:2px solid #334155; padding:10px 20px; border-radius:12px; background:#1e293b;">${targetBase.txt}</span>
+                </div>`;
 
             let grid = document.createElement('div');
             grid.className = 'grid-2x2';
@@ -1435,7 +1795,7 @@
                 b.className = 'swipe-btn';
                 b.innerText = d.txt;
                 b.onclick = () => {
-                    if (d.code === target.code) {
+                    if (d.code === finalDirectionCode) {
                         playBeep(700, 'sine', 0.08);
                         acertos++;
                     } else {
@@ -1450,7 +1810,7 @@
         segRolda();
     }
 
-    // 11. PATRÓN DE LUZ (3 ROLDAS PROGRESIVAS)
+    // 11. PATRÓN DE LUZ
     function cargarXogoPatron(area, ctrl) {
         let roldaMat = 0, totalRoldasMat = 3, acertosPasoTotais = 0;
 
@@ -1517,26 +1877,216 @@
         xogarRoldaPatron();
     }
 
+    // 12. CÁLCULO MENTAL INVERTIDO
+    function cargarXogoReverseMath(area, ctrl) {
+        let totalRondas = 3, ronda = 0, acertos = 0, tStart = Date.now();
+        let ops = ['+', '*', '-'];
+
+        function proximaRoldaInv() {
+            if (ronda >= totalRondas) {
+                let dur = ((Date.now() - tStart)/1000).toFixed(1);
+                rematarEAmosarPuntos(acertos * 50 * xogoActual.level, `${acertos}/${totalRondas} combinacións correctas.`, `Tempo total: ${dur}s`);
+                return;
+            }
+            ronda++;
+            let maxN = xogoActual.level === 1 ? 12 : (xogoActual.level === 2 ? 25 : 50);
+            let n1 = Math.floor(Math.random() * maxN) + 2;
+            let n2 = Math.floor(Math.random() * maxN) + 2;
+            let op = ops[Math.floor(Math.random() * (xogoActual.level === 1 ? 1 : 3))];
+
+            let res = 0;
+            if (op === '+') res = n1 + n2;
+            if (op === '*') res = n1 * n2;
+            if (op === '-') { if (n1 < n2) { let temp = n1; n1 = n2; n2 = temp; } res = n1 - n2; }
+
+            let targetText = `Resultado: ${res}`;
+            area.innerHTML = `
+                <p style="color:var(--text-muted); margin:0;">Rolda ${ronda} de ${totalRondas}</p>
+                <h2 style="color:var(--accent-yellow); font-size:2.2rem; margin:10px 0;">${targetText}</h2>
+                <p style="font-size:0.85rem; color:var(--accent-blue);">Atopa a combinación correcta:</p>`;
+
+            let correctString = `${n1} ${op} ${n2}`;
+            let options = [correctString];
+
+            while (options.length < 4) {
+                let fake1 = Math.floor(Math.random() * maxN) + 2;
+                let fake2 = Math.floor(Math.random() * maxN) + 2;
+                let fakeOp = ops[Math.floor(Math.random() * ops.length)];
+                let fakeStr = `${fake1} ${fakeOp} ${fake2}`;
+                if (!options.includes(fakeStr)) options.push(fakeStr);
+            }
+            options.sort(() => Math.random() - 0.5);
+
+            let grid = document.createElement('div');
+            grid.className = 'grid-2x2';
+
+            options.forEach(optStr => {
+                let b = document.createElement('button');
+                b.innerText = optStr;
+                b.onclick = () => {
+                    if (optStr === correctString) {
+                        playBeep(750, 'sine', 0.1);
+                        acertos++;
+                    } else {
+                        playBeep(180, 'sawtooth', 0.1);
+                    }
+                    proximaRoldaInv();
+                };
+                grid.appendChild(b);
+            });
+            area.appendChild(grid);
+        }
+        proximaRoldaInv();
+    }
+
+    // 13. BALANZA DE PESOS
+    function cargarXogoBalanza(area, ctrl) {
+        let totalRondas = 3, ronda = 0, acertos = 0, tStart = Date.now();
+        const figuras = ['🔴', '🔷', '⭐', '🔺'];
+
+        function proximaBalanza() {
+            if (ronda >= totalRondas) {
+                let dur = ((Date.now() - tStart)/1000).toFixed(1);
+                rematarEAmosarPuntos(acertos * 60 * xogoActual.level, `${acertos}/${totalRondas} deducións de peso acertadas.`, `Tempo total: ${dur}s`);
+                return;
+            }
+            ronda++;
+            let f1 = figuras[Math.floor(Math.random()*figuras.length)];
+            let f2 = figuras.find(f => f !== f1);
+
+            let p1 = Math.floor(Math.random()*10) + 1;
+            let p2 = Math.floor(Math.random()*10) + 1;
+            while(p1 === p2) p2 = Math.floor(Math.random()*10) + 1;
+
+            let heavier = p1 > p2 ? f1 : f2;
+
+            area.innerHTML = `
+                <p style="color:var(--text-muted); margin:0;">Rolda ${ronda} de ${totalRondas}</p>
+                <div style="background:#1e293b; border:1px solid #334155; padding:15px; border-radius:12px; margin:12px 0; width:100%;">
+                    <p style="font-size:1.1rem; margin:5px 0;">⚖️ Balanza:</p>
+                    <p style="font-size:1.4rem; font-weight:bold; color:var(--accent-yellow);">
+                        ${f1} ${p1 > p2 ? '⬇️ (Máis pesada)' : '⬆️ (Máis lixeira)'} frente a ${f2}
+                    </p>
+                </div>
+                <p style="font-size:0.9rem; color:var(--accent-blue);">Cal figura pesa MÁIS?</p>`;
+
+            let grid = document.createElement('div');
+            grid.className = 'grid-2x2';
+
+            [f1, f2].forEach(fig => {
+                let b = document.createElement('button');
+                b.style.fontSize = '1.8rem';
+                b.innerText = fig;
+                b.onclick = () => {
+                    if (fig === heavier) {
+                        playBeep(800, 'sine', 0.1);
+                        acertos++;
+                    } else {
+                        playBeep(200, 'sawtooth', 0.1);
+                    }
+                    proximaBalanza();
+                };
+                grid.appendChild(b);
+            });
+            area.appendChild(grid);
+        }
+        proximaBalanza();
+    }
+
+    // 14. O OBXECTO INTRUSO (TIRO AO BLANCO VISUAL)
+    function cargarXogoVisualFind(area, ctrl) {
+        let totalRondas = 3, ronda = 0, tempos = [];
+        const emojisBase = ['😃', '🐶', '🍕', '⚽', '🚗', '🐱', '🍏'];
+        const emojisIntruso = ['😉', '🐺', '🍔', '🏀', '🏎️', '🐯', '🍐'];
+
+        function proximaRoldaFind() {
+            if (ronda >= totalRondas) {
+                let mediaTime = (tempos.reduce((a,b)=>a+b,0)/totalRondas).toFixed(1);
+                let pts = Math.max(10, Math.round(500 - (mediaTime * 20)));
+                rematarEAmosarPuntos(pts * xogoActual.level, `Obxectivo atopado nas ${totalRondas} roldas!`, `Tempo medio de busca: ${mediaTime}s`);
+                return;
+            }
+            ronda++;
+            let idxTheme = Math.floor(Math.random() * emojisBase.length);
+            let normalEmoji = emojisBase[idxTheme];
+            let intrusoEmoji = emojisIntruso[idxTheme];
+
+            let count = xogoActual.level === 1 ? 12 : (xogoActual.level === 2 ? 16 : 20);
+            let items = Array(count - 1).fill(normalEmoji);
+            items.push(intrusoEmoji);
+            items.sort(() => Math.random() - 0.5);
+
+            area.innerHTML = `
+                <p style="color:var(--text-muted); margin:0;">Rolda ${ronda} de ${totalRondas}</p>
+                <p style="color:var(--accent-yellow); font-size:0.9rem; margin:4px 0;">Atopa o símbolo intruso diferente!</p>`;
+
+            let grid = document.createElement('div');
+            grid.className = 'grid-4x4';
+            let start = Date.now();
+
+            items.forEach(emoji => {
+                let b = document.createElement('div');
+                b.className = 'num-btn';
+                b.style.fontSize = '1.5rem';
+                b.innerText = emoji;
+                b.onclick = () => {
+                    if (emoji === intrusoEmoji) {
+                        let dur = (Date.now() - start) / 1000;
+                        tempos.push(dur);
+                        playBeep(850, 'sine', 0.1);
+                        proximaRoldaFind();
+                    } else {
+                        playBeep(180, 'sawtooth', 0.08);
+                    }
+                };
+                grid.appendChild(b);
+            });
+            area.appendChild(grid);
+        }
+        proximaRoldaFind();
+    }
+
     function rematarEAmosarPuntos(puntos, detalle, statExtra = "") {
         if (animFrame) cancelAnimationFrame(animFrame);
-        guardarResultado(xogoActual.nome, puntos);
-        
-        const area = document.getElementById('gameArea');
-        const ctrl = document.getElementById('gameControls');
 
-        area.innerHTML = `
-            <div class="result-box">
-                <h3 style="color:${puntos > 0 ? 'var(--accent-green)' : 'var(--accent-red)'}; margin:0;">
-                    ${puntos > 0 ? '¡Rolda Completada!' : 'Fin do Xogo'}
-                </h3>
-                <p style="color:var(--text-muted); font-size:0.9rem; margin:8px 0;">${detalle}</p>
-                <div class="result-score">+${puntos} pts</div>
-                ${statExtra ? `<div class="stats-detail">📊 <strong>Detalles do rendemento:</strong><br>${statExtra}</div>` : ''}
-            </div>`;
+        if (modoCampana) {
+            campanaPuntosAcumulados += puntos;
+            guardarResultado(xogoActual.nome, puntos);
+            campanaIndex++;
 
-        ctrl.innerHTML = `
-            <button onclick="iniciarXogoDirecto('${xogoActual.id}', ${xogoActual.level})">🔄 Xogar de Novo</button>
-            <button class="btn-alt" onclick="mostrarPantalla('screenMenu')">🏠 Volver ao Menú</button>`;
+            const area = document.getElementById('gameArea');
+            const ctrl = document.getElementById('gameControls');
+
+            area.innerHTML = `
+                <div class="result-box">
+                    <h3 style="color:${puntos > 0 ? 'var(--accent-green)' : 'var(--accent-red)'}; margin:0;">
+                        ${puntos > 0 ? '¡Minixogo Completado!' : 'Fin do Minixogo'}
+                    </h3>
+                    <p style="color:var(--text-muted); font-size:0.9rem; margin:8px 0;">${detalle}</p>
+                    <div class="result-score">+${puntos} pts</div>
+                    ${statExtra ? `<div class="stats-detail">📊 <strong>Detalles:</strong><br>${statExtra}</div>` : ''}
+                </div>`;
+
+            ctrl.innerHTML = `<button onclick="iniciarSeguinteMinixogoCampana()">➡️ Seguinte Minixogo da Campaña (${campanaIndex+1}/5)</button>`;
+        } else {
+            guardarResultado(xogoActual.nome, puntos);
+            const area = document.getElementById('gameArea');
+            const ctrl = document.getElementById('gameControls');
+
+            area.innerHTML = `
+                <div class="result-box">
+                    <h3 style="color:${puntos > 0 ? 'var(--accent-green)' : 'var(--accent-red)'}; margin:0;">
+                        ${puntos > 0 ? '¡Rolda Completada!' : 'Fin do Xogo'}
+                    </h3>
+                    <p style="color:var(--text-muted); font-size:0.9rem; margin:8px 0;">${detalle}</p>
+                    <div class="result-score">+${puntos} pts</div>
+                    ${statExtra ? `<div class="stats-detail">📊 <strong>Detalles do rendemento:</strong><br>${statExtra}</div>` : ''}
+                </div>`;
+
+            ctrl.innerHTML = `
+                <button onclick="iniciarXogoDirecto('${xogoActual.id}', ${xogoActual.level})">🔄 Xogar de Novo</button>
+                <button class="btn-alt" onclick="mostrarPantalla('screenMenu')">🏠 Volver ao Menú</button>`;
+        }
     }
 
     init();
