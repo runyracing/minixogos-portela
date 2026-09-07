@@ -325,7 +325,7 @@
     const firebaseConfig = {
         apiKey: "AIzaSyDY68e8tDZkcvrLiu2xoaVCDJIY_g1KP0w",
         authDomain: "minixogos-portela.firebaseapp.com",
-        databaseURL: "https://minixogos-portela-default-rtdb.firebaseio.com",
+        databaseURL: "https://minixogos-portela-default-rtdb.europe-west1.firebasedatabase.app/",
         projectId: "minixogos-portela",
         storageBucket: "minixogos-portela.firebasestorage.app",
         messagingSenderId: "610062616692",
@@ -451,7 +451,6 @@
 
         const dbLocal = JSON.parse(localStorage.getItem('portela_users_db') || '{}');
 
-        // Intento con Firebase se está activo
         if (db) {
             let userRef = db.ref('ranking/' + name);
             userRef.once('value').then(snapshot => {
@@ -593,7 +592,6 @@
         userProfile.puntosTotales = novoTotal;
         userProfile.juegos[nombreXogo] = novoRecord;
 
-        // Gardar en Firebase se está dispoñible
         if (db) {
             db.ref('ranking/' + currentUser).update({
                 puntosTotales: novoTotal,
@@ -601,7 +599,6 @@
             }).catch(() => {});
         }
 
-        // Gardar en LocalStorage como copia de seguridade
         const dbLocal = JSON.parse(localStorage.getItem('portela_users_db') || '{}');
         dbLocal[currentUser] = userProfile;
         localStorage.setItem('portela_users_db', JSON.stringify(dbLocal));
