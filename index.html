@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="gl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Minixogos Portela</title>
+    
+    <!-- Firebase Compat SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --card-bg: #1e293b;
+            --accent-yellow: #f59e0b;
+            --accent-blue: #38bdf8;
+            --accent-green: #10b981;
+            --accent-red: #ef4444;
+            --accent-purple: #a855f7;
+            --text-light: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
+
+        body {
+            margin: 0;
+            padding: 12px;
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 480px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        header {
+            text-align: center;
+            background: var(--card-bg);
+            padding: 14px;
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+            border: 1px solid #334155;
+        }
+
+        h1 {
+            margin: 0 0 4px 0;
+            font-size: 1.6rem;
+            color: var(--accent-yellow);
+            letter-spacing: 1px;
+        }
+
+        .user-info {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .card {
+            background: var(--card-bg);
+            padding: 18px;
+            border-radius: 16px;
+            text-align: center;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.3);
+            border: 1px solid #334155;
+        }
+
+        .screen { display: none; }
+        .screen.active { display: block; }
+
+        button {
+            background: var(--accent-blue);
+            color: #0f172a;
+            border: none;
+            padding: 12px 16px;
+            font-size: 0.95rem;
+            font-weight: bold;
+            border-radius: 10px;
+            width: 100%;
+            cursor: pointer;
+            margin-top: 8px;
+            transition: transform 0.1s, opacity 0.1s;
+        }
+
+        button:active { transform: scale(0.98); opacity: 0.9; }
+        button.btn-alt { background: #334155; color: var(--text-light); }
+        button.btn-random { background: var(--accent-purple); color: white; font-size: 1rem; padding: 14px; }
+        button.btn-profile { background: var(--accent-yellow); color: #0f172a; }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #334155;
+            background: #0f172a;
+            color: white;
+            font-size: 1rem;
+            box-sizing: border-box;
+            text-align: center;
+            margin-bottom: 8px;
+        }
+
+        .search-input {
+            text-align: left;
+            padding: 10px 14px;
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+        }
+
+        .category-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+            max-height: 320px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+
+        .category-item {
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 10px;
+            padding: 10px;
+            text-align: left;
+        }
+
+        .category-title {
+            font-size: 0.95rem;
+            font-weight: bold;
+            color: var(--accent-blue);
+            margin-bottom: 6px;
+        }
+
+        .games-subgrid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 6px;
+        }
+
+        .game-btn {
+            background: #334155;
+            color: var(--text-light);
+            font-size: 0.75rem;
+            padding: 8px;
+            margin: 0;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .board {
+            width: 100%;
+            min-height: 250px;
+            background: #0f172a;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+            margin: 12px 0;
+            padding: 15px;
+            border: 1px solid #1e293b;
+        }
+
+        .grid-3x3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            width: 80%;
+        }
+
+        .circle-btn {
+            aspect-ratio: 1;
+            background: #334155;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: inset 0 -4px 0 rgba(0,0,0,0.4);
+        }
+
+        .circle-btn.active {
+            background: var(--accent-yellow);
+            box-shadow: 0 0 20px var(--accent-yellow);
+        }
+
+        .grid-4x4 {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            width: 100%;
+        }
+
+        .num-btn {
+            background: var(--accent-blue);
+            color: #0f172a;
+            font-size: 1.1rem;
+            font-weight: bold;
+            height: 48px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        .num-btn.done { visibility: hidden; }
+
+        .ranking-box, .records-box {
+            background: #0f172a;
+            border-radius: 12px;
+            padding: 12px;
+            margin-top: 12px;
+            text-align: left;
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #334155;
+        }
+
+        .ranking-box h3, .records-box h3 {
+            margin: 0 0 8px 0;
+            font-size: 0.9rem;
+            text-align: center;
+            color: var(--accent-yellow);
+        }
+
+        .ranking-item, .record-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            border-bottom: 1px solid #1e293b;
+            font-size: 0.85rem;
+        }
+
+        .result-box {
+            text-align: center;
+            width: 100%;
+        }
+
+        .result-score {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--accent-yellow);
+            margin: 10px 0;
+        }
+
+        .err-msg { color: var(--accent-red); font-size: 0.85rem; margin-top: 5px; display: none; }
+
+        footer {
+            text-align: center;
+            margin-top: 6px;
+            margin-bottom: 12px;
+        }
+
+        .app-revision {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            opacity: 0.4;
+            letter-spacing: 0.5px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>MINIXOGOS PORTELA</h1>
+        <div class="user-info" id="userInfo">Sen identificar</div>
+    </header>
+
+    <!-- PANTALLA ACCESO -->
+    <div id="screenLogin" class="screen card active">
+        <h2>Acceso de Xogador</h2>
+        <p style="font-size: 0.85rem; color: var(--text-muted);">Escribe o teu Nome e un PIN de 6 díxitos para gardar os teus puntos.</p>
+        <input type="text" id="usernameInput" placeholder="O teu Nome / Apodo" maxlength="15">
+        <input type="password" id="pinInput" placeholder="PIN Secreto (6 números)" maxlength="6" pattern="\d*">
+        <div id="loginError" class="err-msg">PIN incorrecto para este usuario.</div>
+        <button onclick="autenticarUsuario()">Entrar a Xogar</button>
+    </div>
+
+    <!-- PANTALLA MENÚ PRINCIPAL -->
+    <div id="screenMenu" class="screen card">
+        <button class="btn-random" onclick="jugarAleatorio()">🎲 Xogo Aleatorio (1 de 500)</button>
+        <button class="btn-profile" onclick="abrirPerfil()">📊 O meu Perfil e Récords</button>
+        
+        <div style="margin-top: 12px;">
+            <input type="text" id="searchCat" class="search-input" placeholder="🔍 Buscar entre os 500 xogos..." oninput="filtrarCategorias()">
+            <div class="category-grid" id="categoryGrid"></div>
+        </div>
+
+        <div class="ranking-box">
+            <h3>🏆 Clasificación Xeral en Directo</h3>
+            <div id="rankingList">Cargando clasificación...</div>
+        </div>
+
+        <button class="btn-alt" onclick="cerrarSesion()" style="margin-top: 12px;">Cerrar Sesión</button>
+    </div>
+
+    <!-- PANTALLA PERFIL -->
+    <div id="screenProfile" class="screen card">
+        <h2>Perfil de Xogador</h2>
+        <p id="profileTotalScore" style="font-size: 1.3rem; font-weight: bold; color: var(--accent-yellow); margin: 5px 0;"></p>
+        
+        <div class="records-box">
+            <h3>🏅 As miñas Mellores Marcas</h3>
+            <div id="userRecordsList">Aínda non tes rexistros acumulados.</div>
+        </div>
+
+        <button onclick="mostrarPantalla('screenMenu')">Volver ao Menú</button>
+    </div>
+
+    <!-- PANTALLA DE XOGO -->
+    <div id="screenGame" class="screen card">
+        <h3 id="gameTitle" style="margin: 0; color: var(--accent-blue);">Cargando...</h3>
+        <p id="gameDesc" style="font-size: 0.85rem; color: var(--text-muted); margin: 6px 0;"></p>
+        
+        <div class="board" id="gameArea"></div>
+        <div id="gameControls"></div>
+    </div>
+
+    <footer>
+        <span class="app-revision">~#v0.1</span>
+    </footer>
+</div>
+
+<script>
+    // --- INTEGRACIÓN FIREBASE CONFIG ---
+    const firebaseConfig = {
+        apiKey: "AIzaSyDY68e8tDZkcvrLiu2xoaVCDJIY_g1KP0w",
+        authDomain: "minixogos-portela.firebaseapp.com",
+        databaseURL: "https://minixogos-portela-default-rtdb.europe-west1.firebasedatabase.app/",
+        projectId: "minixogos-portela",
+        storageBucket: "minixogos-portela.firebasestorage.app",
+        messagingSenderId: "610062616692",
+        appId: "1:610062616692:web:1004d65064538a61dc2921"
+    };
+
+    let db = null;
+    try {
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        db = firebase.database();
+    } catch(e) {
+        console.warn("Firebase non dispoñible, usando sistema local.");
+    }
+
+    // --- EFECTOS DE SON CON WEB AUDIO API ---
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playBeep(freq = 440, type = 'sine', duration = 0.1) {
+        try {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type;
+            osc.frequency.value = freq;
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + duration);
+            osc.stop(audioCtx.currentTime + duration);
+        } catch(e){}
+    }
+
+    // --- CATÁLOGO DE 500 XOGOS ---
+    const CATEGORIAS_BASE = [
+        { id: "react", nome: "⚡ Reacción e Velocidade", desc: "Toca o botón amarelo no menor tempo posíbel." },
+        { id: "order", nome: "🔢 Orde Numérica", desc: "Toca os números amosados en orde crecente." },
+        { id: "box", nome: "📦 Contador de Caixas", desc: "Memoriza cantas caixas aparecen antes de que se oculten." },
+        { id: "time", nome: "⏱️ Tempo Exacto!", desc: "Calcula a cegas cando se cumpre o tempo solicitado." },
+        { id: "dice", nome: "🎲 Suma de Dados", desc: "Suma o valor dos dados amosados en pantalla." },
+        { id: "color", nome: "🎨 Cor Correcta", desc: "Selecciona a cor coa que está escrita a palabra." },
+        { id: "swipe", nome: "👆 Desliza Rápido!", desc: "Adiviña e selecciona a dirección correcta." },
+        { id: "piano", nome: "🎹 Teclas ao Voo", desc: "Axilidade de pulsación continua." },
+        { id: "pattern", nome: "💡 Patrón de Luz", desc: "Memoriza e repite a secuencia de luz." },
+        { id: "compare", nome: "⚖️ Comparación Visual", desc: "Selecciona o lado co número ou volume maior." },
+        { id: "math", nome: "📐 Cálculo Mental", desc: "Resolución rápida de operacións sinxelas." },
+        { id: "memory", nome: "🧠 Parellas de Memoria", desc: "Atopa as parellas ocultas no taboleiro." }
+    ];
+
+    const CATÁLOGO_500 = [];
+    CATEGORIAS_BASE.forEach((cat, cIndex) => {
+        const xogosCategoria = [];
+        for (let i = 1; i <= 42; i++) {
+            const gameId = cIndex * 42 + i;
+            if (gameId <= 500) {
+                xogosCategoria.push({
+                    id: gameId,
+                    type: cat.id,
+                    level: i,
+                    nome: `${cat.nome.split(" ")[1]} - Nivel ${i}`,
+                    desc: `${cat.desc} (Dificultade ${i})`
+                });
+            }
+        }
+        CATÁLOGO_500.push({
+            nomeCat: cat.nome,
+            xogos: xogosCategoria
+        });
+    });
+
+    // --- ESTADO DA APLICACIÓN ---
+    let currentUser = "";
+    let userProfile = { puntosTotales: 0, pin: "", juegos: {} };
+
+    function init() {
+        renderizarCategorias(CATÁLOGO_500);
+        const savedUser = localStorage.getItem('portela_user');
+        if (savedUser) {
+            currentUser = savedUser;
+            cargarDatosUsuario();
+            actualizarHeader();
+            mostrarPantalla('screenMenu');
+            escucharRanking();
+        }
+    }
+
+    function renderizarCategorias(lista) {
+        const grid = document.getElementById('categoryGrid');
+        grid.innerHTML = "";
+        lista.forEach(cat => {
+            let htmlBtns = "";
+            cat.xogos.slice(0, 4).forEach(g => {
+                htmlBtns += `<button class="game-btn" onclick="iniciarXogoDirecto(${g.id})">Nivel ${g.level}</button>`;
+            });
+            grid.innerHTML += `
+                <div class="category-item">
+                    <div class="category-title">${cat.nomeCat} (${cat.xogos.length} Niveles)</div>
+                    <div class="games-subgrid">${htmlBtns}</div>
+                </div>`;
+        });
+    }
+
+    function filtrarCategorias() {
+        const query = document.getElementById('searchCat').value.toLowerCase();
+        const filtradas = CATÁLOGO_500.map(cat => {
+            const xogosCoincidentes = cat.xogos.filter(g => g.nome.toLowerCase().includes(query) || cat.nomeCat.toLowerCase().includes(query));
+            return { nomeCat: cat.nomeCat, xogos: xogosCoincidentes };
+        }).filter(cat => cat.xogos.length > 0);
+        renderizarCategorias(filtradas);
+    }
+
+    // --- AUTENTICACIÓN HÍBRIDA (FIREBASE + LOCAL) ---
+    function autenticarUsuario() {
+        const name = document.getElementById('usernameInput').value.trim().toLowerCase();
+        const pin = document.getElementById('pinInput').value.trim();
+        const errDiv = document.getElementById('loginError');
+        errDiv.style.display = "none";
+
+        if (!name || pin.length !== 6) {
+            alert("Introduce un nome e un PIN de 6 díxitos.");
+            return;
+        }
+
+        const dbLocal = JSON.parse(localStorage.getItem('portela_users_db') || '{}');
+
+        if (db) {
+            let userRef = db.ref('ranking/' + name);
+            userRef.once('value').then(snapshot => {
+                if (snapshot.exists()) {
+                    if (snapshot.val().pin === pin) {
+                        iniciarSesionExitoso(name, snapshot.val());
+                    } else {
+                        errDiv.style.display = "block";
+                    }
+                } else {
+                    let newUser = { jugador: name, pin: pin, puntosTotales: 0, juegos: {} };
+                    userRef.set(newUser);
+                    iniciarSesionExitoso(name, newUser);
+                }
+            }).catch(err => {
+                console.warn("Erro conectando a Firebase, usando LocalStorage:", err);
+                autenticarLocal(name, pin, dbLocal, errDiv);
+            });
+        } else {
+            autenticarLocal(name, pin, dbLocal, errDiv);
+        }
+    }
+
+    function autenticarLocal(name, pin, dbLocal, errDiv) {
+        if (dbLocal[name]) {
+            if (dbLocal[name].pin === pin) {
+                iniciarSesionExitoso(name, dbLocal[name]);
+            } else {
+                errDiv.style.display = "block";
+            }
+        } else {
+            const newUser = { jugador: name, pin: pin, puntosTotales: 0, juegos: {} };
+            dbLocal[name] = newUser;
+            localStorage.setItem('portela_users_db', JSON.stringify(dbLocal));
+            iniciarSesionExitoso(name, newUser);
+        }
+    }
+
+    function iniciarSesionExitoso(name, profileData) {
+        currentUser = name;
+        userProfile = profileData || { puntosTotales: 0, juegos: {} };
+        localStorage.setItem('portela_user', name);
+        actualizarHeader();
+        mostrarPantalla('screenMenu');
+        escucharRanking();
+    }
+
+    function cargarDatosUsuario() {
+        if (db && currentUser) {
+            db.ref('ranking/' + currentUser).on('value', snapshot => {
+                if (snapshot.exists()) {
+                    userProfile = snapshot.val();
+                    if (!userProfile.juegos) userProfile.juegos = {};
+                }
+            });
+        } else {
+            const dbLocal = JSON.parse(localStorage.getItem('portela_users_db') || '{}');
+            if (dbLocal[currentUser]) userProfile = dbLocal[currentUser];
+        }
+    }
+
+    function cerrarSesion() {
+        localStorage.removeItem('portela_user');
+        currentUser = "";
+        document.getElementById('usernameInput').value = "";
+        document.getElementById('pinInput').value = "";
+        mostrarPantalla('screenLogin');
+    }
+
+    function actualizarHeader() {
+        document.getElementById('userInfo').innerText = `Xogador: ${currentUser.toUpperCase()}`;
+    }
+
+    function mostrarPantalla(id) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+    }
+
+    function abrirPerfil() {
+        mostrarPantalla('screenProfile');
+        document.getElementById('profileTotalScore').innerText = `Puntuación Total: ${userProfile.puntosTotales || 0} pts`;
+        
+        let html = "";
+        const juegosMap = userProfile.juegos || {};
+        const keys = Object.keys(juegosMap);
+
+        if (keys.length === 0) {
+            html = "<p style='text-align:center;'>Aínda non completaches ningún minixogo.</p>";
+        } else {
+            keys.forEach(catKey => {
+                html += `<div class="record-item">
+                    <span>${catKey}</span>
+                    <span><strong>${juegosMap[catKey]} pts</strong></span>
+                </div>`;
+            });
+        }
+        document.getElementById('userRecordsList').innerHTML = html;
+    }
+
+    function escucharRanking() {
+        if (db) {
+            db.ref('ranking').on('value', snapshot => {
+                let jugadores = [];
+                snapshot.forEach(child => { jugadores.push(child.val()); });
+                renderizarRanking(jugadores);
+            }, () => {
+                renderizarRankingLocal();
+            });
+        } else {
+            renderizarRankingLocal();
+        }
+    }
+
+    function renderizarRankingLocal() {
+        const dbLocal = JSON.parse(localStorage.getItem('portela_users_db') || '{}');
+        renderizarRanking(Object.values(dbLocal));
+    }
+
+    function renderizarRanking(jugadores) {
+        jugadores.sort((a, b) => (b.puntosTotales || 0) - (a.puntosTotales || 0));
+        let html = "";
+        jugadores.forEach((j, index) => {
+            html += `<div class="ranking-item">
+                <span>${index + 1}. <strong>${j.jugador}</strong></span>
+                <span>${j.puntosTotales || 0} pts</span>
+            </div>`;
+        });
+        document.getElementById('rankingList').innerHTML = html || "<p style='text-align:center;'>Sen datos aínda</p>";
+    }
+
+    function guardarResultado(nombreXogo, puntos) {
+        if (!currentUser) return;
+
+        const novoTotal = (userProfile.puntosTotales || 0) + puntos;
+        if (!userProfile.juegos) userProfile.juegos = {};
+        const recordAnterior = userProfile.juegos[nombreXogo] || 0;
+        const novoRecord = Math.max(recordAnterior, puntos);
+
+        userProfile.puntosTotales = novoTotal;
+        userProfile.juegos[nombreXogo] = novoRecord;
+
+        if (db) {
+            db.ref('ranking/' + currentUser).update({
+                puntosTotales: novoTotal,
+                [`juegos/${nombreXogo}`]: novoRecord
+            }).catch(() => {});
+        }
+
+        const dbLocal = JSON.parse(localStorage.getItem('portela_users_db') || '{}');
+        dbLocal[currentUser] = userProfile;
+        localStorage.setItem('portela_users_db', JSON.stringify(dbLocal));
+
+        escucharRanking();
+    }
+
+    // --- LÓXICA DE XOGOS VISUAIS ---
+    let xogoActual = null;
+    let reactStartTime, reactTimeout;
+
+    function jugarAleatorio() {
+        const idAleatorio = Math.floor(Math.random() * 500) + 1;
+        iniciarXogoDirecto(idAleatorio);
+    }
+
+    function iniciarXogoDirecto(id) {
+        let xogoEncontrado = null;
+        for (let cat of CATÁLOGO_500) {
+            let f = cat.xogos.find(g => g.id === id);
+            if (f) { xogoEncontrado = f; break; }
+        }
+
+        if (!xogoEncontrado) xogoEncontrado = CATÁLOGO_500[0].xogos[0];
+        xogoActual = xogoEncontrado;
+
+        mostrarPantalla('screenGame');
+        document.getElementById('gameTitle').innerText = `${xogoActual.nome} (#${xogoActual.id})`;
+        document.getElementById('gameDesc').innerText = xogoActual.desc;
+
+        const area = document.getElementById('gameArea');
+        const ctrl = document.getElementById('gameControls');
+        area.innerHTML = ''; ctrl.innerHTML = '';
+
+        if (xogoActual.type === 'react') cargarXogoReaccion(area, ctrl);
+        else if (xogoActual.type === 'order') cargarXogoOrde(area, ctrl);
+        else if (xogoActual.type === 'box') cargarXogoCaixas(area, ctrl);
+        else cargarXogoXenerico(area, ctrl);
+    }
+
+    // 1. REACCIÓN
+    function cargarXogoReaccion(area, ctrl) {
+        let grid = document.createElement('div');
+        grid.className = 'grid-3x3';
+        for (let i = 0; i < 9; i++) {
+            let btn = document.createElement('div');
+            btn.className = 'circle-btn';
+            btn.onclick = () => {
+                if (btn.classList.contains('active')) {
+                    let tempo = ((Date.now() - reactStartTime) / 1000).toFixed(3);
+                    playBeep(880, 'sine', 0.2);
+                    rematarEAmosarPuntos(Math.max(10, Math.round(1000 - tempo * 300)), `Tempo de Reacción: ${tempo}s`);
+                }
+            };
+            grid.appendChild(btn);
+        }
+        area.appendChild(grid);
+
+        let startBtn = document.createElement('button');
+        startBtn.innerText = 'Comezar Rolda';
+        startBtn.onclick = () => {
+            startBtn.style.display = 'none';
+            let delay = Math.random() * 2000 + 1000;
+            reactTimeout = setTimeout(() => {
+                let circles = area.querySelectorAll('.circle-btn');
+                circles[Math.floor(Math.random() * 9)].classList.add('active');
+                playBeep(600, 'triangle', 0.15);
+                reactStartTime = Date.now();
+            }, delay);
+        };
+        ctrl.appendChild(startBtn);
+    }
+
+    // 2. ORDE NUMÉRICA
+    function cargarXogoOrde(area, ctrl) {
+        let currentNum = 1;
+        let startTime = Date.now();
+        let numbers = Array.from({length: 16}, (_, i) => i + 1).sort(() => Math.random() - 0.5);
+        
+        let grid = document.createElement('div');
+        grid.className = 'grid-4x4';
+
+        numbers.forEach(num => {
+            let btn = document.createElement('div');
+            btn.className = 'num-btn';
+            btn.innerText = num;
+            btn.onclick = () => {
+                if (num === currentNum) {
+                    playBeep(400 + (num * 30), 'sine', 0.08);
+                    btn.classList.add('done');
+                    currentNum++;
+                    if (currentNum > 16) {
+                        let totalTime = ((Date.now() - startTime) / 1000).toFixed(2);
+                        rematarEAmosarPuntos(Math.max(20, Math.round(500 - totalTime * 15)), `Completado en ${totalTime}s`);
+                    }
+                } else {
+                    playBeep(150, 'sawtooth', 0.15);
+                }
+            };
+            grid.appendChild(btn);
+        });
+        area.appendChild(grid);
+    }
+
+    // 3. CONTADOR DE CAIXAS
+    function cargarXogoCaixas(area, ctrl) {
+        let count = Math.floor(Math.random() * 8) + 4;
+        area.innerHTML = '';
+        
+        for (let i = 0; i < count; i++) {
+            let box = document.createElement('div');
+            box.style.cssText = `width:36px; height:36px; background:var(--accent-yellow); border-radius:6px; position:absolute; top:${Math.random()*160+20}px; left:${Math.random()*220+20}px;`;
+            area.appendChild(box);
+        }
+
+        setTimeout(() => {
+            area.innerHTML = '<h4 style="color:var(--text-muted)">Cantas caixas vaches?</h4>';
+            let input = document.createElement('input');
+            input.type = 'number';
+            input.placeholder = 'Número de caixas';
+            area.appendChild(input);
+
+            let btn = document.createElement('button');
+            btn.innerText = 'Confirmar Resposta';
+            btn.onclick = () => {
+                let val = parseInt(input.value);
+                if (val === count) {
+                    playBeep(800, 'sine', 0.2);
+                    rematarEAmosarPuntos(150, `¡Correcto! Había exactamente ${count} caixas.`);
+                } else {
+                    playBeep(200, 'sawtooth', 0.2);
+                    rematarEAmosarPuntos(0, `Incorrecto. Había ${count} caixas.`);
+                }
+            };
+            ctrl.appendChild(btn);
+        }, 1500);
+    }
+
+    // XENÉRICO VISUAL
+    function cargarXogoXenerico(area, ctrl) {
+        const a = Math.floor(Math.random() * 20) + 1;
+        const b = Math.floor(Math.random() * 20) + 1;
+        
+        area.innerHTML = `
+            <p style="font-size:1.1rem; margin-bottom:10px;">Resolución Rápida:</p>
+            <h2 style="color:var(--accent-yellow); margin:0;">${a} + ${b}</h2>
+            <input type="number" id="genAns" placeholder="A túa resposta" style="margin-top:15px; width:70%;">`;
+
+        let btn = document.createElement('button');
+        btn.innerText = 'Enviar Resposta';
+        btn.onclick = () => {
+            const val = parseInt(document.getElementById('genAns').value);
+            if (val === (a + b)) {
+                playBeep(800, 'sine', 0.2);
+                rematarEAmosarPuntos(100, "¡Resposta Correcta!");
+            } else {
+                playBeep(200, 'sawtooth', 0.2);
+                rematarEAmosarPuntos(0, `Incorrecto. A resposta era ${a + b}.`);
+            }
+        };
+        ctrl.appendChild(btn);
+    }
+
+    // RESULTADOS EN PANTALLA
+    function rematarEAmosarPuntos(puntos, detalle) {
+        guardarResultado(xogoActual.nome, puntos);
+        
+        const area = document.getElementById('gameArea');
+        const ctrl = document.getElementById('gameControls');
+
+        area.innerHTML = `
+            <div class="result-box">
+                <h3 style="color:${puntos > 0 ? 'var(--accent-green)' : 'var(--accent-red)'}; margin:0;">
+                    ${puntos > 0 ? '¡Rolda Completada!' : 'Fin do Xogo'}
+                </h3>
+                <p style="color:var(--text-muted); font-size:0.9rem; margin:8px 0;">${detalle}</p>
+                <div class="result-score">+${puntos} pts</div>
+            </div>`;
+
+        ctrl.innerHTML = `
+            <button onclick="iniciarXogoDirecto(${xogoActual.id})">🔄 Xogar de Novo</button>
+            <button class="btn-alt" onclick="mostrarPantalla('screenMenu')">🏠 Volver ao Menú</button>`;
+    }
+
+    init();
+</script>
+</body>
+</html>
