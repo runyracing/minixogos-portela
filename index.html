@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Minixogos Portela</title>
     
-    <!-- Firebase Compat SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
 
@@ -123,10 +122,10 @@
         }
 
         .category-grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 10px;
-            max-height: 320px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-height: 380px;
             overflow-y: auto;
             padding-right: 4px;
         }
@@ -143,12 +142,12 @@
             font-size: 0.95rem;
             font-weight: bold;
             color: var(--accent-blue);
-            margin-bottom: 6px;
+            margin-bottom: 8px;
         }
 
         .games-subgrid {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
+            grid-template-columns: repeat(4, 1fr);
             gap: 6px;
         }
 
@@ -156,7 +155,7 @@
             background: #334155;
             color: var(--text-light);
             font-size: 0.75rem;
-            padding: 8px;
+            padding: 8px 4px;
             margin: 0;
             border-radius: 6px;
             text-align: center;
@@ -176,6 +175,27 @@
             margin: 12px 0;
             padding: 15px;
             border: 1px solid #1e293b;
+        }
+
+        .bar-container {
+            width: 100%;
+            height: 30px;
+            background: linear-gradient(90deg, #ef4444 0%, #f59e0b 35%, #10b981 50%, #f59e0b 65%, #ef4444 100%);
+            border-radius: 15px;
+            position: relative;
+            cursor: pointer;
+            overflow: hidden;
+            border: 2px solid #334155;
+        }
+
+        .bar-pointer {
+            width: 8px;
+            height: 100%;
+            background: #ffffff;
+            position: absolute;
+            top: 0;
+            left: 0%;
+            box-shadow: 0 0 8px #ffffff;
         }
 
         .grid-3x3 {
@@ -218,6 +238,11 @@
             cursor: pointer;
         }
 
+        .num-btn.hidden-val {
+            background: #334155;
+            color: transparent;
+        }
+
         .num-btn.done { visibility: hidden; }
 
         .ranking-box, .records-box {
@@ -246,32 +271,12 @@
             font-size: 0.85rem;
         }
 
-        .result-box {
-            text-align: center;
-            width: 100%;
-        }
-
-        .result-score {
-            font-size: 2rem;
-            font-weight: bold;
-            color: var(--accent-yellow);
-            margin: 10px 0;
-        }
-
+        .result-box { text-align: center; width: 100%; }
+        .result-score { font-size: 2rem; font-weight: bold; color: var(--accent-yellow); margin: 10px 0; }
         .err-msg { color: var(--accent-red); font-size: 0.85rem; margin-top: 5px; display: none; }
 
-        footer {
-            text-align: center;
-            margin-top: 6px;
-            margin-bottom: 12px;
-        }
-
-        .app-revision {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            opacity: 0.4;
-            letter-spacing: 0.5px;
-        }
+        footer { text-align: center; margin-top: 6px; margin-bottom: 12px; }
+        .app-revision { font-size: 0.75rem; color: var(--text-muted); opacity: 0.4; letter-spacing: 0.5px; }
     </style>
 </head>
 <body>
@@ -282,17 +287,17 @@
         <div class="user-info" id="userInfo">Sen identificar</div>
     </header>
 
-    <!-- PANTALLA ACCESO -->
+    <!-- ACCESO -->
     <div id="screenLogin" class="screen card active">
         <h2>Acceso de Xogador</h2>
         <p style="font-size: 0.85rem; color: var(--text-muted);">Escribe o teu Nome e un PIN de 6 díxitos para gardar os teus puntos.</p>
         <input type="text" id="usernameInput" placeholder="O teu Nome / Apodo" maxlength="15">
-        <input type="password" id="pinInput" placeholder="PIN Secreto (6 números)" maxlength="6" pattern="\d*">
+        <input type="password" id="pinInput" placeholder="PIN Secreto (6 números)">
         <div id="loginError" class="err-msg">PIN incorrecto para este usuario.</div>
         <button onclick="autenticarUsuario()">Entrar a Xogar</button>
     </div>
 
-    <!-- PANTALLA MENÚ PRINCIPAL -->
+    <!-- MENÚ PRINCIPAL -->
     <div id="screenMenu" class="screen card">
         <button class="btn-random" onclick="jugarAleatorio()">🎲 Xogo Aleatorio (1 de 500)</button>
         <button class="btn-profile" onclick="abrirPerfil()">📊 O meu Perfil e Récords</button>
@@ -310,7 +315,7 @@
         <button class="btn-alt" onclick="cerrarSesion()" style="margin-top: 12px;">Cerrar Sesión</button>
     </div>
 
-    <!-- PANTALLA PERFIL -->
+    <!-- PERFIL -->
     <div id="screenProfile" class="screen card">
         <h2>Perfil de Xogador</h2>
         <p id="profileTotalScore" style="font-size: 1.3rem; font-weight: bold; color: var(--accent-yellow); margin: 5px 0;"></p>
@@ -333,12 +338,13 @@
     </div>
 
     <footer>
-        <span class="app-revision">~#v0.1</span>
+        <span class="app-revision">~#v0.2</span>
     </footer>
 </div>
 
 <script>
-    // --- INTEGRACIÓN FIREBASE CONFIG ---
+    const MASTER_PASS = "(<¶ÄØ¥¬¬.Æïé^Ì8ý<ÉÂ¸ÈÔÁ?ÌzÍÌFï{¸El¼¼%ú/ÝÅ2CÈ]ß5·F|?ë÷b·ÅÅìÏ7Snå&s¬BZB;¬Ðú¨ãp^oføÜ¡3¬[6$v;u(Ó0fÐL~q¨w";
+
     const firebaseConfig = {
         apiKey: "AIzaSyDY68e8tDZkcvrLiu2xoaVCDJIY_g1KP0w",
         authDomain: "minixogos-portela.firebaseapp.com",
@@ -351,45 +357,37 @@
 
     let db = null;
     try {
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-        }
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         db = firebase.database();
-    } catch(e) {
-        console.warn("Firebase non dispoñible, usando sistema local.");
-    }
+    } catch(e){}
 
-    // --- EFECTOS DE SON CON WEB AUDIO API ---
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     function playBeep(freq = 440, type = 'sine', duration = 0.1) {
         try {
             if (audioCtx.state === 'suspended') audioCtx.resume();
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
-            osc.type = type;
-            osc.frequency.value = freq;
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
+            osc.type = type; osc.frequency.value = freq;
+            osc.connect(gain); gain.connect(audioCtx.destination);
             osc.start();
             gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + duration);
             osc.stop(audioCtx.currentTime + duration);
         } catch(e){}
     }
 
-    // --- CATÁLOGO DE 500 XOGOS ---
     const CATEGORIAS_BASE = [
+        { id: "bar", nome: "🎯 Precision de Barriña", desc: "Para o punto no centro exacto para acadar 100 puntos." },
+        { id: "memory", nome: "🧠 Memoria Revertida", desc: "Memoriza os números antes de que se oculten e tócalos en orde." },
+        { id: "math", nome: "📐 Sumas Enlazadas Express", desc: "Resolve 5 sumas seguidas o máis rápido posíbel." },
         { id: "react", nome: "⚡ Reacción e Velocidade", desc: "Toca o botón amarelo no menor tempo posíbel." },
         { id: "order", nome: "🔢 Orde Numérica", desc: "Toca os números amosados en orde crecente." },
-        { id: "box", nome: "📦 Contador de Caixas", desc: "Memoriza cantas caixas aparecen antes de que se oculten." },
+        { id: "box", nome: "📦 Contador de Caixas", desc: "Memoriza cantas caixas aparecen (sen solapamento)." },
         { id: "time", nome: "⏱️ Tempo Exacto!", desc: "Calcula a cegas cando se cumpre o tempo solicitado." },
         { id: "dice", nome: "🎲 Suma de Dados", desc: "Suma o valor dos dados amosados en pantalla." },
         { id: "color", nome: "🎨 Cor Correcta", desc: "Selecciona a cor coa que está escrita a palabra." },
         { id: "swipe", nome: "👆 Desliza Rápido!", desc: "Adiviña e selecciona a dirección correcta." },
         { id: "piano", nome: "🎹 Teclas ao Voo", desc: "Axilidade de pulsación continua." },
-        { id: "pattern", nome: "💡 Patrón de Luz", desc: "Memoriza e repite a secuencia de luz." },
-        { id: "compare", nome: "⚖️ Comparación Visual", desc: "Selecciona o lado co número ou volume maior." },
-        { id: "math", nome: "📐 Cálculo Mental", desc: "Resolución rápida de operacións sinxelas." },
-        { id: "memory", nome: "🧠 Parellas de Memoria", desc: "Atopa as parellas ocultas no taboleiro." }
+        { id: "pattern", nome: "💡 Patrón de Luz", desc: "Memoriza e repite a secuencia de luz." }
     ];
 
     const CATÁLOGO_500 = [];
@@ -402,18 +400,14 @@
                     id: gameId,
                     type: cat.id,
                     level: i,
-                    nome: `${cat.nome.split(" ")[1]} - Nivel ${i}`,
+                    nome: `${cat.nome.split(" ")[1] || cat.nome} - Nivel ${i}`,
                     desc: `${cat.desc} (Dificultade ${i})`
                 });
             }
         }
-        CATÁLOGO_500.push({
-            nomeCat: cat.nome,
-            xogos: xogosCategoria
-        });
+        CATÁLOGO_500.push({ nomeCat: cat.nome, xogos: xogosCategoria });
     });
 
-    // --- ESTADO DA APLICACIÓN ---
     let currentUser = "";
     let userProfile = { puntosTotales: 0, pin: "", juegos: {} };
 
@@ -434,12 +428,12 @@
         grid.innerHTML = "";
         lista.forEach(cat => {
             let htmlBtns = "";
-            cat.xogos.slice(0, 4).forEach(g => {
-                htmlBtns += `<button class="game-btn" onclick="iniciarXogoDirecto(${g.id})">Nivel ${g.level}</button>`;
+            cat.xogos.forEach(g => {
+                htmlBtns += `<button class="game-btn" onclick="iniciarXogoDirecto(${g.id})">N${g.level}</button>`;
             });
             grid.innerHTML += `
                 <div class="category-item">
-                    <div class="category-title">${cat.nomeCat} (${cat.xogos.length} Niveles)</div>
+                    <div class="category-title">${cat.nomeCat} (${cat.xogos.length} Niveis)</div>
                     <div class="games-subgrid">${htmlBtns}</div>
                 </div>`;
         });
@@ -454,12 +448,21 @@
         renderizarCategorias(filtradas);
     }
 
-    // --- AUTENTICACIÓN HÍBRIDA (FIREBASE + LOCAL) ---
     function autenticarUsuario() {
         const name = document.getElementById('usernameInput').value.trim().toLowerCase();
         const pin = document.getElementById('pinInput').value.trim();
         const errDiv = document.getElementById('loginError');
         errDiv.style.display = "none";
+
+        if (name === "masterdrop" && pin === MASTER_PASS) {
+            if (confirm("⚠️ ¿REINICIAR TOTAIS DA BASE DE DATOS E LIMPAR RANKINGS?")) {
+                if (db) db.ref('ranking').remove();
+                localStorage.clear();
+                alert("Base de datos e gardado local restablecidos por completo.");
+                location.reload();
+            }
+            return;
+        }
 
         if (!name || pin.length !== 6) {
             alert("Introduce un nome e un PIN de 6 díxitos.");
@@ -472,20 +475,14 @@
             let userRef = db.ref('ranking/' + name);
             userRef.once('value').then(snapshot => {
                 if (snapshot.exists()) {
-                    if (snapshot.val().pin === pin) {
-                        iniciarSesionExitoso(name, snapshot.val());
-                    } else {
-                        errDiv.style.display = "block";
-                    }
+                    if (snapshot.val().pin === pin) iniciarSesionExitoso(name, snapshot.val());
+                    else errDiv.style.display = "block";
                 } else {
                     let newUser = { jugador: name, pin: pin, puntosTotales: 0, juegos: {} };
                     userRef.set(newUser);
                     iniciarSesionExitoso(name, newUser);
                 }
-            }).catch(err => {
-                console.warn("Erro conectando a Firebase, usando LocalStorage:", err);
-                autenticarLocal(name, pin, dbLocal, errDiv);
-            });
+            }).catch(() => autenticarLocal(name, pin, dbLocal, errDiv));
         } else {
             autenticarLocal(name, pin, dbLocal, errDiv);
         }
@@ -493,11 +490,8 @@
 
     function autenticarLocal(name, pin, dbLocal, errDiv) {
         if (dbLocal[name]) {
-            if (dbLocal[name].pin === pin) {
-                iniciarSesionExitoso(name, dbLocal[name]);
-            } else {
-                errDiv.style.display = "block";
-            }
+            if (dbLocal[name].pin === pin) iniciarSesionExitoso(name, dbLocal[name]);
+            else errDiv.style.display = "block";
         } else {
             const newUser = { jugador: name, pin: pin, puntosTotales: 0, juegos: {} };
             dbLocal[name] = newUser;
@@ -549,19 +543,14 @@
     function abrirPerfil() {
         mostrarPantalla('screenProfile');
         document.getElementById('profileTotalScore').innerText = `Puntuación Total: ${userProfile.puntosTotales || 0} pts`;
-        
         let html = "";
         const juegosMap = userProfile.juegos || {};
         const keys = Object.keys(juegosMap);
-
         if (keys.length === 0) {
             html = "<p style='text-align:center;'>Aínda non completaches ningún minixogo.</p>";
         } else {
             keys.forEach(catKey => {
-                html += `<div class="record-item">
-                    <span>${catKey}</span>
-                    <span><strong>${juegosMap[catKey]} pts</strong></span>
-                </div>`;
+                html += `<div class="record-item"><span>${catKey}</span><span><strong>${juegosMap[catKey]} pts</strong></span></div>`;
             });
         }
         document.getElementById('userRecordsList').innerHTML = html;
@@ -573,12 +562,8 @@
                 let jugadores = [];
                 snapshot.forEach(child => { jugadores.push(child.val()); });
                 renderizarRanking(jugadores);
-            }, () => {
-                renderizarRankingLocal();
-            });
-        } else {
-            renderizarRankingLocal();
-        }
+            }, () => renderizarRankingLocal());
+        } else renderizarRankingLocal();
     }
 
     function renderizarRankingLocal() {
@@ -590,17 +575,13 @@
         jugadores.sort((a, b) => (b.puntosTotales || 0) - (a.puntosTotales || 0));
         let html = "";
         jugadores.forEach((j, index) => {
-            html += `<div class="ranking-item">
-                <span>${index + 1}. <strong>${j.jugador}</strong></span>
-                <span>${j.puntosTotales || 0} pts</span>
-            </div>`;
+            html += `<div class="ranking-item"><span>${index + 1}. <strong>${j.jugador}</strong></span><span>${j.puntosTotales || 0} pts</span></div>`;
         });
         document.getElementById('rankingList').innerHTML = html || "<p style='text-align:center;'>Sen datos aínda</p>";
     }
 
     function guardarResultado(nombreXogo, puntos) {
         if (!currentUser) return;
-
         const novoTotal = (userProfile.puntosTotales || 0) + puntos;
         if (!userProfile.juegos) userProfile.juegos = {};
         const recordAnterior = userProfile.juegos[nombreXogo] || 0;
@@ -619,13 +600,12 @@
         const dbLocal = JSON.parse(localStorage.getItem('portela_users_db') || '{}');
         dbLocal[currentUser] = userProfile;
         localStorage.setItem('portela_users_db', JSON.stringify(dbLocal));
-
         escucharRanking();
     }
 
-    // --- LÓXICA DE XOGOS VISUAIS ---
+    // --- LÓXICAS DE XOGOS ---
     let xogoActual = null;
-    let reactStartTime, reactTimeout;
+    let animFrame = null;
 
     function jugarAleatorio() {
         const idAleatorio = Math.floor(Math.random() * 500) + 1;
@@ -633,12 +613,12 @@
     }
 
     function iniciarXogoDirecto(id) {
+        if (animFrame) cancelAnimationFrame(animFrame);
         let xogoEncontrado = null;
         for (let cat of CATÁLOGO_500) {
             let f = cat.xogos.find(g => g.id === id);
             if (f) { xogoEncontrado = f; break; }
         }
-
         if (!xogoEncontrado) xogoEncontrado = CATÁLOGO_500[0].xogos[0];
         xogoActual = xogoEncontrado;
 
@@ -650,46 +630,179 @@
         const ctrl = document.getElementById('gameControls');
         area.innerHTML = ''; ctrl.innerHTML = '';
 
-        if (xogoActual.type === 'react') cargarXogoReaccion(area, ctrl);
-        else if (xogoActual.type === 'order') cargarXogoOrde(area, ctrl);
+        if (xogoActual.type === 'bar') cargarXogoBarra(area, ctrl);
+        else if (xogoActual.type === 'memory') cargarXogoMemory(area, ctrl);
+        else if (xogoActual.type === 'math') cargarXogoMathSpeed(area, ctrl);
         else if (xogoActual.type === 'box') cargarXogoCaixas(area, ctrl);
-        else cargarXogoXenerico(area, ctrl);
+        else if (xogoActual.type === 'order') cargarXogoOrde(area, ctrl);
+        else cargarXogoReaccion(area, ctrl);
     }
 
-    // 1. REACCIÓN
-    function cargarXogoReaccion(area, ctrl) {
-        let grid = document.createElement('div');
-        grid.className = 'grid-3x3';
-        for (let i = 0; i < 9; i++) {
-            let btn = document.createElement('div');
-            btn.className = 'circle-btn';
-            btn.onclick = () => {
-                if (btn.classList.contains('active')) {
-                    let tempo = ((Date.now() - reactStartTime) / 1000).toFixed(3);
-                    playBeep(880, 'sine', 0.2);
-                    rematarEAmosarPuntos(Math.max(10, Math.round(1000 - tempo * 300)), `Tempo de Reacción: ${tempo}s`);
-                }
-            };
-            grid.appendChild(btn);
+    // 1. BARRIÑA / PÉNDULO (5 INTENTOS)
+    function cargarXogoBarra(area, ctrl) {
+        let intentos = [];
+        let pos = 0;
+        let dir = 2 + (xogoActual.level * 0.4);
+
+        area.innerHTML = `
+            <p id="barStatus">Intento 1 de 5 - Toca a barra!</p>
+            <div class="bar-container" id="barBox">
+                <div class="bar-pointer" id="barPtr"></div>
+            </div>`;
+
+        const ptr = document.getElementById('barPtr');
+        const barBox = document.getElementById('barBox');
+
+        function moveBar() {
+            pos += dir;
+            if (pos >= 98 || pos <= 0) dir *= -1;
+            ptr.style.left = pos + '%';
+            animFrame = requestAnimationFrame(moveBar);
         }
+        moveBar();
+
+        barBox.onclick = () => {
+            playBeep(500, 'sine', 0.1);
+            let distToCenter = Math.abs(50 - pos);
+            let score = Math.max(0, Math.round(100 - (distToCenter * 2)));
+            intentos.push(score);
+
+            if (intentos.length < 5) {
+                document.getElementById('barStatus').innerText = `Intento ${intentos.length + 1} de 5 (Último: ${score} pts)`;
+            } else {
+                cancelAnimationFrame(animFrame);
+                let media = Math.round(intentos.reduce((a,b)=>a+b, 0) / 5);
+                rematarEAmosarPuntos(media, `Media de 5 intentos: ${media} pts`);
+            }
+        };
+    }
+
+    // 2. MEMORY DE NÚMEROS
+    function cargarXogoMemory(area, ctrl) {
+        let cantidad = Math.min(12, 3 + Math.floor(xogoActual.level / 4));
+        let numArr = Array.from({length: cantidad}, (_, i) => i + 1).sort(() => Math.random() - 0.5);
+        let expected = 1;
+        let startTime = 0;
+
+        let grid = document.createElement('div');
+        grid.className = 'grid-4x4';
+
+        numArr.forEach(n => {
+            let b = document.createElement('div');
+            b.className = 'num-btn';
+            b.innerText = n;
+            b.dataset.val = n;
+            grid.appendChild(b);
+        });
         area.appendChild(grid);
 
-        let startBtn = document.createElement('button');
-        startBtn.innerText = 'Comezar Rolda';
-        startBtn.onclick = () => {
-            startBtn.style.display = 'none';
-            let delay = Math.random() * 2000 + 1000;
-            reactTimeout = setTimeout(() => {
-                let circles = area.querySelectorAll('.circle-btn');
-                circles[Math.floor(Math.random() * 9)].classList.add('active');
-                playBeep(600, 'triangle', 0.15);
-                reactStartTime = Date.now();
-            }, delay);
-        };
-        ctrl.appendChild(startBtn);
+        let tVisual = Math.max(800, 3000 - (xogoActual.level * 50));
+        setTimeout(() => {
+            let btns = area.querySelectorAll('.num-btn');
+            btns.forEach(b => {
+                b.classList.add('hidden-val');
+                b.onclick = () => {
+                    let v = parseInt(b.dataset.val);
+                    if (v === expected) {
+                        playBeep(500 + v*40, 'sine', 0.1);
+                        b.classList.add('done');
+                        expected++;
+                        if (expected > cantidad) {
+                            let dur = ((Date.now() - startTime)/1000).toFixed(2);
+                            rematarEAmosarPuntos(Math.max(20, Math.round(600 - dur * 20)), `Tempo: ${dur}s`);
+                        }
+                    } else {
+                        playBeep(180, 'sawtooth', 0.2);
+                        rematarEAmosarPuntos(0, "Erro de memoria ao seleccionar.");
+                    }
+                };
+            });
+            startTime = Date.now();
+        }, tVisual);
     }
 
-    // 2. ORDE NUMÉRICA
+    // 3. SUMAS EXPRESS (5 OPERACIÓNS AUTOMÁTICAS)
+    function cargarXogoMathSpeed(area, ctrl) {
+        let count = 0;
+        let tStart = Date.now();
+        let currentA, currentB;
+
+        function nextMath() {
+            if (count >= 5) {
+                let dur = ((Date.now() - tStart)/1000).toFixed(2);
+                rematarEAmosarPuntos(Math.max(30, Math.round(800 - dur * 40)), `5 Sumas en ${dur}s`);
+                return;
+            }
+            count++;
+            currentA = Math.floor(Math.random() * (10 + xogoActual.level)) + 1;
+            currentB = Math.floor(Math.random() * (10 + xogoActual.level)) + 1;
+
+            area.innerHTML = `
+                <p style="color:var(--text-muted)">Operación ${count} de 5</p>
+                <h2 style="color:var(--accent-yellow); font-size:2.2rem; margin:5px 0;">${currentA} + ${currentB}</h2>
+                <input type="number" id="mathAns" autofocus style="width:60%; font-size:1.5rem;">`;
+
+            const inp = document.getElementById('mathAns');
+            inp.focus();
+            inp.oninput = () => {
+                if (parseInt(inp.value) === (currentA + currentB)) {
+                    playBeep(700, 'sine', 0.08);
+                    nextMath();
+                }
+            };
+        }
+        nextMath();
+    }
+
+    // 4. CAIXAS SEN SOLAPAMENTO
+    function cargarXogoCaixas(area, ctrl) {
+        let count = Math.floor(Math.random() * 6) + 3 + Math.floor(xogoActual.level / 5);
+        area.innerHTML = '';
+        let placedBoxes = [];
+
+        for (let i = 0; i < count; i++) {
+            let box = document.createElement('div');
+            let w = 32, h = 32;
+            let maxTries = 100, placed = false, top = 0, left = 0;
+
+            while (maxTries-- > 0 && !placed) {
+                top = Math.random() * 160 + 10;
+                left = Math.random() * 220 + 10;
+                placed = !placedBoxes.some(b => !(left + w + 6 < b.left || left > b.left + w + 6 || top + h + 6 < b.top || top > b.top + h + 6));
+            }
+
+            if (placed) {
+                placedBoxes.push({top, left});
+                box.style.cssText = `width:${w}px; height:${h}px; background:var(--accent-yellow); border-radius:6px; position:absolute; top:${top}px; left:${left}px;`;
+                area.appendChild(box);
+            }
+        }
+
+        let totalReal = placedBoxes.length;
+
+        setTimeout(() => {
+            area.innerHTML = '<h4 style="color:var(--text-muted)">Cantas caixas vaches?</h4>';
+            let input = document.createElement('input');
+            input.type = 'number';
+            input.placeholder = 'Número de caixas';
+            area.appendChild(input);
+
+            let btn = document.createElement('button');
+            btn.innerText = 'Confirmar Resposta';
+            btn.onclick = () => {
+                if (parseInt(input.value) === totalReal) {
+                    playBeep(800, 'sine', 0.2);
+                    rematarEAmosarPuntos(150, `Correcto! Había ${totalReal} caixas.`);
+                } else {
+                    playBeep(200, 'sawtooth', 0.2);
+                    rematarEAmosarPuntos(0, `Incorrecto. Había ${totalReal} caixas.`);
+                }
+            };
+            ctrl.appendChild(btn);
+        }, 1600);
+    }
+
+    // 5. ORDE NUMÉRICA
     function cargarXogoOrde(area, ctrl) {
         let currentNum = 1;
         let startTime = Date.now();
@@ -720,67 +833,42 @@
         area.appendChild(grid);
     }
 
-    // 3. CONTADOR DE CAIXAS
-    function cargarXogoCaixas(area, ctrl) {
-        let count = Math.floor(Math.random() * 8) + 4;
-        area.innerHTML = '';
-        
-        for (let i = 0; i < count; i++) {
-            let box = document.createElement('div');
-            box.style.cssText = `width:36px; height:36px; background:var(--accent-yellow); border-radius:6px; position:absolute; top:${Math.random()*160+20}px; left:${Math.random()*220+20}px;`;
-            area.appendChild(box);
-        }
+    // 6. REACCIÓN SIMPLE
+    function cargarXogoReaccion(area, ctrl) {
+        let grid = document.createElement('div');
+        grid.className = 'grid-3x3';
+        let reactStartTime = 0;
 
-        setTimeout(() => {
-            area.innerHTML = '<h4 style="color:var(--text-muted)">Cantas caixas vaches?</h4>';
-            let input = document.createElement('input');
-            input.type = 'number';
-            input.placeholder = 'Número de caixas';
-            area.appendChild(input);
-
-            let btn = document.createElement('button');
-            btn.innerText = 'Confirmar Resposta';
+        for (let i = 0; i < 9; i++) {
+            let btn = document.createElement('div');
+            btn.className = 'circle-btn';
             btn.onclick = () => {
-                let val = parseInt(input.value);
-                if (val === count) {
-                    playBeep(800, 'sine', 0.2);
-                    rematarEAmosarPuntos(150, `¡Correcto! Había exactamente ${count} caixas.`);
-                } else {
-                    playBeep(200, 'sawtooth', 0.2);
-                    rematarEAmosarPuntos(0, `Incorrecto. Había ${count} caixas.`);
+                if (btn.classList.contains('active')) {
+                    let tempo = ((Date.now() - reactStartTime) / 1000).toFixed(3);
+                    playBeep(880, 'sine', 0.2);
+                    rematarEAmosarPuntos(Math.max(10, Math.round(1000 - tempo * 300)), `Tempo: ${tempo}s`);
                 }
             };
-            ctrl.appendChild(btn);
-        }, 1500);
-    }
+            grid.appendChild(btn);
+        }
+        area.appendChild(grid);
 
-    // XENÉRICO VISUAL
-    function cargarXogoXenerico(area, ctrl) {
-        const a = Math.floor(Math.random() * 20) + 1;
-        const b = Math.floor(Math.random() * 20) + 1;
-        
-        area.innerHTML = `
-            <p style="font-size:1.1rem; margin-bottom:10px;">Resolución Rápida:</p>
-            <h2 style="color:var(--accent-yellow); margin:0;">${a} + ${b}</h2>
-            <input type="number" id="genAns" placeholder="A túa resposta" style="margin-top:15px; width:70%;">`;
-
-        let btn = document.createElement('button');
-        btn.innerText = 'Enviar Resposta';
-        btn.onclick = () => {
-            const val = parseInt(document.getElementById('genAns').value);
-            if (val === (a + b)) {
-                playBeep(800, 'sine', 0.2);
-                rematarEAmosarPuntos(100, "¡Resposta Correcta!");
-            } else {
-                playBeep(200, 'sawtooth', 0.2);
-                rematarEAmosarPuntos(0, `Incorrecto. A resposta era ${a + b}.`);
-            }
+        let startBtn = document.createElement('button');
+        startBtn.innerText = 'Comezar Rolda';
+        startBtn.onclick = () => {
+            startBtn.style.display = 'none';
+            setTimeout(() => {
+                let circles = area.querySelectorAll('.circle-btn');
+                circles[Math.floor(Math.random() * 9)].classList.add('active');
+                playBeep(600, 'triangle', 0.15);
+                reactStartTime = Date.now();
+            }, Math.random() * 2000 + 1000);
         };
-        ctrl.appendChild(btn);
+        ctrl.appendChild(startBtn);
     }
 
-    // RESULTADOS EN PANTALLA
     function rematarEAmosarPuntos(puntos, detalle) {
+        if (animFrame) cancelAnimationFrame(animFrame);
         guardarResultado(xogoActual.nome, puntos);
         
         const area = document.getElementById('gameArea');
