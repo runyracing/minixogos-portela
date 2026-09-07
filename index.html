@@ -1,287 +1,331 @@
 <!DOCTYPE html>
 <html lang="gl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>Minixogos Portela</title>
-  <!-- Firebase CDN -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
-  <style>
-    :root {
-      --bg-dark: #121824;
-      --card-bg: #1e293b;
-      --accent-yellow: #f59e0b;
-      --accent-blue: #3b82f6;
-      --accent-green: #10b981;
-      --accent-red: #ef4444;
-      --text-light: #f8fafc;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Minixogos Portela</title>
+    
+    <!-- Firebase Compat SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
 
-    * {
-      box-sizing: border-box;
-      user-select: none;
-      -webkit-user-select: none;
-      touch-action: manipulation;
-    }
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --card-bg: #1e293b;
+            --accent-yellow: #f59e0b;
+            --accent-blue: #38bdf8;
+            --accent-green: #10b981;
+            --accent-red: #ef4444;
+            --accent-purple: #a855f7;
+            --text-light: #f8fafc;
+            --text-muted: #94a3b8;
+        }
 
-    body {
-      margin: 0;
-      padding: 0;
-      background-color: var(--bg-dark);
-      color: var(--text-light);
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      min-height: 100vh;
-      overflow-x: hidden;
-    }
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
 
-    header {
-      width: 100%;
-      padding: 15px;
-      background: #0f172a;
-      text-align: center;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-    }
+        body {
+            margin: 0;
+            padding: 12px;
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
 
-    h1 {
-      margin: 0;
-      font-size: 1.8rem;
-      letter-spacing: 2px;
-      color: var(--accent-yellow);
-    }
+        .container {
+            width: 100%;
+            max-width: 480px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
 
-    .container {
-      width: 100%;
-      max-width: 500px;
-      padding: 15px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      flex-grow: 1;
-    }
+        header {
+            text-align: center;
+            background: var(--card-bg);
+            padding: 14px;
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+            border: 1px solid #334155;
+        }
 
-    /* Menú Seleccionar Xogo */
-    .grid-games {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 12px;
-      width: 100%;
-      margin-top: 10px;
-    }
+        h1 {
+            margin: 0 0 4px 0;
+            font-size: 1.6rem;
+            color: var(--accent-yellow);
+            letter-spacing: 1px;
+        }
 
-    .game-card {
-      background: var(--card-bg);
-      border-radius: 12px;
-      padding: 15px;
-      text-align: center;
-      cursor: pointer;
-      border: 2px solid transparent;
-      transition: all 0.2s ease;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.2);
-    }
+        .user-info {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
 
-    .game-card:hover, .game-card:active {
-      border-color: var(--accent-yellow);
-      transform: translateY(-3px);
-    }
+        .card {
+            background: var(--card-bg);
+            padding: 18px;
+            border-radius: 16px;
+            text-align: center;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.3);
+            border: 1px solid #334155;
+        }
 
-    .game-card h3 {
-      margin: 8px 0 4px 0;
-      font-size: 1.1rem;
-    }
+        .screen { display: none; }
+        .screen.active { display: block; }
 
-    .game-card p {
-      margin: 0;
-      font-size: 0.75rem;
-      color: #94a3b8;
-    }
+        /* Botóns e Inputs */
+        button {
+            background: var(--accent-blue);
+            color: #0f172a;
+            border: none;
+            padding: 12px 16px;
+            font-size: 0.95rem;
+            font-weight: bold;
+            border-radius: 10px;
+            width: 100%;
+            cursor: pointer;
+            margin-top: 8px;
+            transition: transform 0.1s, opacity 0.1s;
+        }
 
-    .icon {
-      font-size: 2rem;
-    }
+        button:active { transform: scale(0.98); opacity: 0.9; }
+        button.btn-alt { background: #334155; color: var(--text-light); }
+        button.btn-random { background: var(--accent-purple); color: white; font-size: 1rem; padding: 14px; }
+        button.btn-profile { background: var(--accent-yellow); color: #0f172a; }
 
-    /* Area de Xogo */
-    #game-stage {
-      display: none;
-      width: 100%;
-      background: var(--card-bg);
-      border-radius: 16px;
-      padding: 20px;
-      flex-direction: column;
-      align-items: center;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-      position: relative;
-    }
+        input {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #334155;
+            background: #0f172a;
+            color: white;
+            font-size: 1rem;
+            box-sizing: border-box;
+            text-align: center;
+            margin-bottom: 8px;
+        }
 
-    .btn-back {
-      position: absolute;
-      top: 12px;
-      left: 12px;
-      background: #334155;
-      color: white;
-      border: none;
-      padding: 6px 12px;
-      border-radius: 6px;
-      cursor: pointer;
-    }
+        .search-input {
+            text-align: left;
+            padding: 10px 14px;
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+        }
 
-    .game-title {
-      font-size: 1.6rem;
-      margin: 10px 0;
-      text-align: center;
-    }
+        /* Menú Categorías e Xogos */
+        .category-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+            max-height: 320px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
 
-    .game-desc {
-      font-size: 0.85rem;
-      color: #cbd5e1;
-      text-align: center;
-      margin-bottom: 15px;
-    }
+        .category-item {
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 10px;
+            padding: 10px;
+            text-align: left;
+        }
 
-    /* Comúns a minixogos */
-    .board {
-      width: 100%;
-      height: 280px;
-      background: #0f172a;
-      border-radius: 12px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      position: relative;
-      overflow: hidden;
-    }
+        .category-title {
+            font-size: 0.95rem;
+            font-weight: bold;
+            color: var(--accent-blue);
+            margin-bottom: 6px;
+        }
 
-    .btn-main {
-      background: var(--accent-yellow);
-      color: #000;
-      font-weight: bold;
-      border: none;
-      padding: 12px 24px;
-      border-radius: 8px;
-      font-size: 1rem;
-      cursor: pointer;
-      margin-top: 15px;
-    }
+        .games-subgrid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 6px;
+        }
 
-    /* Estilos Xogo 1: Reacción */
-    .grid-3x3 {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 15px;
-      width: 80%;
-    }
+        .game-btn {
+            background: #334155;
+            color: var(--text-light);
+            font-size: 0.75rem;
+            padding: 8px;
+            margin: 0;
+            border-radius: 6px;
+            text-align: center;
+        }
 
-    .circle-btn {
-      aspect-ratio: 1;
-      background: #334155;
-      border-radius: 50%;
-      cursor: pointer;
-      box-shadow: inset 0 -4px 0 rgba(0,0,0,0.4);
-    }
+        /* Pantalla de Xogo e Taboleiro Visual */
+        .board {
+            width: 100%;
+            min-height: 250px;
+            background: #0f172a;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+            margin: 12px 0;
+            padding: 15px;
+            border: 1px solid #1e293b;
+        }
 
-    .circle-btn.active {
-      background: var(--accent-yellow);
-      box-shadow: 0 0 20px var(--accent-yellow);
-    }
+        .grid-3x3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            width: 80%;
+        }
 
-    /* Estilos Xogo 2: Orde Numérica */
-    .grid-4x4 {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 8px;
-      width: 90%;
-      height: 90%;
-    }
+        .circle-btn {
+            aspect-ratio: 1;
+            background: #334155;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: inset 0 -4px 0 rgba(0,0,0,0.4);
+        }
 
-    .num-btn {
-      background: var(--accent-blue);
-      color: white;
-      font-size: 1.2rem;
-      font-weight: bold;
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-    }
+        .circle-btn.active {
+            background: var(--accent-yellow);
+            box-shadow: 0 0 20px var(--accent-yellow);
+        }
 
-    .num-btn.done {
-      visibility: hidden;
-    }
+        .grid-4x4 {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            width: 100%;
+        }
 
-    /* Input respostas */
-    .input-box {
-      width: 100%;
-      display: flex;
-      gap: 10px;
-      margin-top: 15px;
-    }
+        .num-btn {
+            background: var(--accent-blue);
+            color: #0f172a;
+            font-size: 1.1rem;
+            font-weight: bold;
+            height: 48px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
 
-    .input-box input {
-      flex: 1;
-      padding: 10px;
-      border-radius: 8px;
-      border: 1px solid #475569;
-      background: #0f172a;
-      color: white;
-      font-size: 1.1rem;
-      text-align: center;
-    }
-  </style>
+        .num-btn.done { visibility: hidden; }
+
+        /* Ranking e Perfil */
+        .ranking-box, .records-box {
+            background: #0f172a;
+            border-radius: 12px;
+            padding: 12px;
+            margin-top: 12px;
+            text-align: left;
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #334155;
+        }
+
+        .ranking-box h3, .records-box h3 {
+            margin: 0 0 8px 0;
+            font-size: 0.9rem;
+            text-align: center;
+            color: var(--accent-yellow);
+        }
+
+        .ranking-item, .record-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            border-bottom: 1px solid #1e293b;
+            font-size: 0.85rem;
+        }
+
+        .result-box {
+            text-align: center;
+            width: 100%;
+        }
+
+        .result-score {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--accent-yellow);
+            margin: 10px 0;
+        }
+
+        .err-msg { color: var(--accent-red); font-size: 0.85rem; margin-top: 5px; display: none; }
+    </style>
 </head>
 <body>
 
-  <header>
-    <h1>MINIXOGOS PORTELA</h1>
-  </header>
+<div class="container">
+    <header>
+        <h1>MINIXOGOS PORTELA</h1>
+        <div class="user-info" id="userInfo">Sen identificar</div>
+    </header>
 
-  <div class="container">
+    <!-- PANTALLA ACCESO -->
+    <div id="screenLogin" class="screen card active">
+        <h2>Acceso de Xogador</h2>
+        <p style="font-size: 0.85rem; color: var(--text-muted);">Escribe o teu Nome e un PIN de 6 díxitos para gardar os teus puntos.</p>
+        <input type="text" id="usernameInput" placeholder="O teu Nome / Apodo" maxlength="15">
+        <input type="password" id="pinInput" placeholder="PIN Secreto (6 números)" maxlength="6" pattern="\d*">
+        <div id="loginError" class="err-msg">O PIN é incorrecto para este xogador.</div>
+        <button onclick="autenticarUsuario()">Entrar a Xogar</button>
+    </div>
 
-    <!-- MENÚ PRINCIPAL -->
-    <div id="game-menu" class="grid-games">
-      <div class="game-card" onclick="startReaccion()">
-        <div class="icon">⚡</div>
-        <h3>Reacción!</h3>
-        <p>Reflexos rápidos</p>
-      </div>
+    <!-- PANTALLA MENÚ PRINCIPAL -->
+    <div id="screenMenu" class="screen card">
+        <button class="btn-random" onclick="jugarAleatorio()">🎲 Xogo Aleatorio (1 de 500)</button>
+        <button class="btn-profile" onclick="abrirPerfil()">📊 O meu Perfil e Récords</button>
+        
+        <div style="margin-top: 12px;">
+            <input type="text" id="searchCat" class="search-input" placeholder="🔍 Buscar entre os 500 xogos..." oninput="filtrarCategorias()">
+            <div class="category-grid" id="categoryGrid"></div>
+        </div>
 
-      <div class="game-card" onclick="startOrde()">
-        <div class="icon">🔢</div>
-        <h3>Orde Numérica</h3>
-        <p>Do 1 ao 16 en orde</p>
-      </div>
+        <div class="ranking-box">
+            <h3>🏆 Clasificación Xeral en Directo</h3>
+            <div id="rankingList">Cargando datos...</div>
+        </div>
 
-      <div class="game-card" onclick="startCaixas()">
-        <div class="icon">📦</div>
-        <h3>Contador Caixas</h3>
-        <p>Memoria visual rápida</p>
-      </div>
+        <button class="btn-alt" onclick="cerrarSesion()" style="margin-top: 12px;">Cerrar Sesión</button>
+    </div>
 
-      <div class="game-card" onclick="startTempo()">
-        <div class="icon">⏱️</div>
-        <h3>Tempo Exacto!</h3>
-        <p>Calcula o tempo a cegas</p>
-      </div>
+    <!-- PANTALLA PERFIL -->
+    <div id="screenProfile" class="screen card">
+        <h2>Perfil de Xogador</h2>
+        <p id="profileTotalScore" style="font-size: 1.3rem; font-weight: bold; color: var(--accent-yellow); margin: 5px 0;"></p>
+        
+        <div class="records-box">
+            <h3> As miñas Mellores Marcas</h3>
+            <div id="userRecordsList">Aínda non tes rexistros acumulados.</div>
+        </div>
+
+        <button onclick="mostrarPantalla('screenMenu')">Volver ao Menú</button>
     </div>
 
     <!-- PANTALLA DE XOGO -->
-    <div id="game-stage">
-      <button class="btn-back" onclick="showMenu()">← Menú</button>
-      <h2 id="stage-title" class="game-title">Título</h2>
-      <p id="stage-desc" class="game-desc">Instrucións...</p>
-
-      <div id="stage-board" class="board"></div>
-
-      <div id="stage-controls"></div>
+    <div id="screenGame" class="screen card">
+        <h3 id="gameTitle" style="margin: 0; color: var(--accent-blue);">Cargando...</h3>
+        <p id="gameDesc" style="font-size: 0.85rem; color: var(--text-muted); margin: 6px 0;"></p>
+        
+        <div class="board" id="gameArea"></div>
+        <div id="gameControls"></div>
     </div>
+</div>
 
-  </div>
-
-  <script>
-    // --- FIREBASE CONFIG ---
+<script>
+    // --- CONFIGURACIÓN E INICIALIZACIÓN DE FIREBASE ---
         const firebaseConfig = {
             apiKey: "AIzaSyDY68e8tDZkcvrLiu2xoaVCDJIY_g1KP0w",
             authDomain: "minixogos-portela.firebaseapp.com",
@@ -291,248 +335,403 @@
             appId: "1:610062616692:web:1004d65064538a61dc2921"
         };
 
-    // Inicializar Firebase só se non está inicializado
     if (!firebase.apps.length) {
-      firebase.initializeApp(firebaseConfig);
+        firebase.initializeApp(firebaseConfig);
     }
     const db = firebase.database();
 
     // --- EFECTOS DE SON CON WEB AUDIO API ---
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     function playBeep(freq = 440, type = 'sine', duration = 0.1) {
-      if (audioCtx.state === 'suspended') audioCtx.resume();
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      osc.type = type;
-      osc.frequency.value = freq;
-      osc.connect(gain);
-      gain.connect(audioCtx.destination);
-      osc.start();
-      gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + duration);
-      osc.stop(audioCtx.currentTime + duration);
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.value = freq;
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + duration);
+        osc.stop(audioCtx.currentTime + duration);
     }
 
-    // --- CONTROL DE PANTALLAS ---
-    const menu = document.getElementById('game-menu');
-    const stage = document.getElementById('game-stage');
-    const board = document.getElementById('stage-board');
-    const title = document.getElementById('stage-title');
-    const desc = document.getElementById('stage-desc');
-    const controls = document.getElementById('stage-controls');
+    // --- XERACIÓN CATÁLOGO DE 500 XOGOS ---
+    const CATEGORIAS_BASE = [
+        { id: "react", nome: "⚡ Reacción e Velocidade", desc: "Toca o botón amarelo no menor tempo posíbel." },
+        { id: "order", nome: "🔢 Orde Numérica", desc: "Toca os números amosados en orde crecente." },
+        { id: "box", nome: "📦 Contador de Caixas", desc: "Memoriza cantas caixas aparecen antes de que se oculten." },
+        { id: "time", nome: "⏱️ Tempo Exacto!", desc: "Calcula a cegas cando se cumpre o tempo solicitado." },
+        { id: "dice", nome: "🎲 Suma de Dados", desc: "Suma o valor dos dados amosados en pantalla." },
+        { id: "color", nome: "🎨 Cor Correcta", desc: "Selecciona a cor coa que está escrita a palabra." },
+        { id: "swipe", nome: "👆 Desliza Rápido!", desc: "Adiviña e selecciona a dirección correcta." },
+        { id: "piano", nome: "🎹 Teclas ao Voo", desc: "Axilidade de pulsación continua." },
+        { id: "pattern", nome: "💡 Patrón de Luz", desc: "Memoriza e repite a secuencia de luz." },
+        { id: "compare", nome: "⚖️ Comparación Visual", desc: "Selecciona o lado co número ou volume maior." },
+        { id: "math", nome: "📐 Cálculo Mental", desc: "Resolución rápida de operacioóns sinxelas." },
+        { id: "memory", nome: "🧠 Parellas de Memoria", desc: "Atopa as parellas ocultas no taboleiro." }
+    ];
 
-    function showMenu() {
-      stage.style.display = 'none';
-      menu.style.display = 'grid';
-      board.innerHTML = '';
-      controls.innerHTML = '';
-    }
-
-    function setupStage(gameTitle, gameDesc) {
-      menu.style.display = 'none';
-      stage.style.display = 'flex';
-      title.innerText = gameTitle;
-      desc.innerText = gameDesc;
-      board.innerHTML = '';
-      controls.innerHTML = '';
-    }
-
-    function saveScore(gameName, score) {
-      const user = prompt("Xogo rematado! Escribe o teu nome para a clasificación:") || "Anónimo";
-      db.ref('puntuacions/' + gameName).push({
-        Xogador: user,
-        Puntos: score,
-        Data: new Date().toISOString()
-      });
-    }
-
-    // ==========================================
-    // 1. MINIXOGO: REACCIÓN!
-    // ==========================================
-    let reactTimeout, reactStartTime;
-    function startReaccion() {
-      setupStage('REACCIÓN!', 'Unha cela se iluminará en amarelo. Tócala o máis rápido que poidas!');
-
-      let grid = document.createElement('div');
-      grid.className = 'grid-3x3';
-      for(let i=0; i<9; i++) {
-        let btn = document.createElement('div');
-        btn.className = 'circle-btn';
-        btn.dataset.id = i;
-        btn.onclick = () => handleReactClick(btn);
-        grid.appendChild(btn);
-      }
-      board.appendChild(grid);
-
-      let startBtn = document.createElement('button');
-      startBtn.className = 'btn-main';
-      startBtn.innerText = 'Comezar!';
-      startBtn.onclick = () => prepareReactRound(startBtn);
-      controls.appendChild(startBtn);
-    }
-
-    function prepareReactRound(btn) {
-      btn.style.display = 'none';
-      const circles = document.querySelectorAll('.circle-btn');
-      circles.forEach(c => c.classList.remove('active'));
-
-      let delay = Math.random() * 2000 + 1000;
-      reactTimeout = setTimeout(() => {
-        let randIdx = Math.floor(Math.random() * 9);
-        circles[randIdx].classList.add('active');
-        playBeep(600, 'triangle', 0.15);
-        reactStartTime = Date.now();
-      }, delay);
-    }
-
-    function handleReactClick(btn) {
-      if (btn.classList.contains('active')) {
-        let time = (Date.now() - reactStartTime) / 1000;
-        btn.classList.remove('active');
-        playBeep(880, 'sine', 0.2);
-        alert(`Tempo de reacción: ${time.toFixed(3)}s`);
-        saveScore('Reaccion', time.toFixed(3) + "s");
-        showMenu();
-      }
-    }
-
-    // ==========================================
-    // 2. MINIXOGO: ORDE NUMÉRICA
-    // ==========================================
-    let currentNum = 1;
-    let ordeStartTime;
-    function startOrde() {
-      setupStage('ORDE NUMÉRICA', 'Toca os números do 1 ao 16 en orde crecente o máis rápido posíbel.');
-      currentNum = 1;
-
-      let numbers = Array.from({length: 16}, (_, i) => i + 1).sort(() => Math.random() - 0.5);
-      let grid = document.createElement('div');
-      grid.className = 'grid-4x4';
-
-      numbers.forEach(num => {
-        let btn = document.createElement('div');
-        btn.className = 'num-btn';
-        btn.innerText = num;
-        btn.onclick = () => {
-          if (num === currentNum) {
-            playBeep(400 + (num * 30), 'sine', 0.08);
-            btn.classList.add('done');
-            currentNum++;
-            if (currentNum > 16) {
-              let totalTime = ((Date.now() - ordeStartTime) / 1000).toFixed(2);
-              playBeep(1000, 'square', 0.3);
-              alert(`Conseguido en: ${totalTime} segundos!`);
-              saveScore('OrdeNumerica', totalTime + "s");
-              showMenu();
+    const CATÁLOGO_500 = [];
+    CATEGORIAS_BASE.forEach((cat, cIndex) => {
+        const xogosCategoria = [];
+        for (let i = 1; i <= 42; i++) {
+            const gameId = cIndex * 42 + i;
+            if (gameId <= 500) {
+                xogosCategoria.push({
+                    id: gameId,
+                    type: cat.id,
+                    level: i,
+                    nome: `${cat.nome.split(" ")[1]} - Nivel ${i}`,
+                    desc: `${cat.desc} (Dificultade ${i})`
+                });
             }
-          } else {
-            playBeep(150, 'sawtooth', 0.2);
-          }
+        }
+        CATÁLOGO_500.push({
+            nomeCat: cat.nome,
+            xogos: xogosCategoria
+        });
+    });
+
+    // --- ESTADO DA APLICACIÓN ---
+    let currentUser = "";
+    let userProfile = { puntosTotales: 0, juegos: {} };
+
+    function init() {
+        renderizarCategorias(CATÁLOGO_500);
+        const savedUser = localStorage.getItem('portela_user');
+        if (savedUser) {
+            currentUser = savedUser;
+            actualizarHeader();
+            mostrarPantalla('screenMenu');
+            escucharRankingGlobal();
+            cargarDatosUsuario();
+        }
+    }
+
+    function renderizarCategorias(lista) {
+        const grid = document.getElementById('categoryGrid');
+        grid.innerHTML = "";
+        lista.forEach(cat => {
+            let htmlBtns = "";
+            cat.xogos.slice(0, 4).forEach(g => { // Amosamos os primeiros 4 por categoría na vista rápida
+                htmlBtns += `<button class="game-btn" onclick="iniciarXogoDirecto(${g.id})">Nivel ${g.level}</button>`;
+            });
+            grid.innerHTML += `
+                <div class="category-item">
+                    <div class="category-title">${cat.nomeCat} (${cat.xogos.length} Niveles)</div>
+                    <div class="games-subgrid">${htmlBtns}</div>
+                </div>`;
+        });
+    }
+
+    function filtrarCategorias() {
+        const query = document.getElementById('searchCat').value.toLowerCase();
+        const filtradas = CATÁLOGO_500.map(cat => {
+            const xogosCoincidentes = cat.xogos.filter(g => g.nome.toLowerCase().includes(query) || cat.nomeCat.toLowerCase().includes(query));
+            return { nomeCat: cat.nomeCat, xogos: xogosCoincidentes };
+        }).filter(cat => cat.xogos.length > 0);
+        renderizarCategorias(filtradas);
+    }
+
+    // --- SISTEMA DE AUTENTICACIÓN E FIREBASE ---
+    async function autenticarUsuario() {
+        const name = document.getElementById('usernameInput').value.trim().toLowerCase();
+        const pin = document.getElementById('pinInput').value.trim();
+        const errDiv = document.getElementById('loginError');
+        errDiv.style.display = "none";
+
+        if (!name || pin.length !== 6) {
+            alert("Introduce un nome e un PIN de 6 díxitos.");
+            return;
+        }
+
+        const userRef = db.ref('ranking/' + name);
+        userRef.once('value', snapshot => {
+            if (snapshot.exists()) {
+                if (snapshot.val().pin === pin) {
+                    iniciarSesionExitoso(name);
+                } else {
+                    errDiv.style.display = "block";
+                }
+            } else {
+                userRef.set({
+                    jugador: name,
+                    pin: pin,
+                    puntosTotales: 0,
+                    juegos: {}
+                });
+                iniciarSesionExitoso(name);
+            }
+        });
+    }
+
+    function iniciarSesionExitoso(name) {
+        currentUser = name;
+        localStorage.setItem('portela_user', name);
+        actualizarHeader();
+        mostrarPantalla('screenMenu');
+        escucharRankingGlobal();
+        cargarDatosUsuario();
+    }
+
+    function cerrarSesion() {
+        localStorage.removeItem('portela_user');
+        currentUser = "";
+        document.getElementById('usernameInput').value = "";
+        document.getElementById('pinInput').value = "";
+        mostrarPantalla('screenLogin');
+    }
+
+    function actualizarHeader() {
+        document.getElementById('userInfo').innerText = `Xogador: ${currentUser.toUpperCase()}`;
+    }
+
+    function mostrarPantalla(id) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+    }
+
+    function cargarDatosUsuario() {
+        if (!currentUser) return;
+        db.ref('ranking/' + currentUser).on('value', snapshot => {
+            if (snapshot.exists()) {
+                userProfile = snapshot.val();
+                if (!userProfile.juegos) userProfile.juegos = {};
+            }
+        });
+    }
+
+    function abrirPerfil() {
+        mostrarPantalla('screenProfile');
+        document.getElementById('profileTotalScore').innerText = `Puntuación Total: ${userProfile.puntosTotales || 0} pts`;
+        
+        let html = "";
+        const juegosMap = userProfile.juegos || {};
+        const keys = Object.keys(juegosMap);
+
+        if (keys.length === 0) {
+            html = "<p style='text-align:center;'>Aínda non completaches ningún minixogo.</p>";
+        } else {
+            keys.forEach(catKey => {
+                html += `<div class="record-item">
+                    <span>${catKey}</span>
+                    <span><strong>${juegosMap[catKey]} pts</strong></span>
+                </div>`;
+            });
+        }
+        document.getElementById('userRecordsList').innerHTML = html;
+    }
+
+    function escucharRankingGlobal() {
+        db.ref('ranking').on('value', snapshot => {
+            let jugadores = [];
+            snapshot.forEach(child => {
+                jugadores.push(child.val());
+            });
+            jugadores.sort((a, b) => (b.puntosTotales || 0) - (a.puntosTotales || 0));
+
+            let html = "";
+            jugadores.forEach((j, index) => {
+                html += `<div class="ranking-item">
+                    <span>${index + 1}. <strong>${j.jugador}</strong></span>
+                    <span>${j.puntosTotales || 0} pts</span>
+                </div>`;
+            });
+            document.getElementById('rankingList').innerHTML = html || "<p style='text-align:center;'>Sen datos aínda</p>";
+        });
+    }
+
+    function guardarResultado(nombreXogo, puntos) {
+        if (!currentUser) return;
+        const novoTotal = (userProfile.puntosTotales || 0) + puntos;
+        const recordAnterior = userProfile.juegos[nombreXogo] || 0;
+        const novoRecord = Math.max(recordAnterior, puntos);
+
+        db.ref('ranking/' + currentUser).update({
+            puntosTotales: novoTotal,
+            [`juegos/${nombreXogo}`]: novoRecord
+        });
+    }
+
+    // --- LÓXICA DE XOGOS VISUAIS ---
+    let xogoActual = null;
+    let reactStartTime, reactTimeout;
+
+    function jugarAleatorio() {
+        const idAleatorio = Math.floor(Math.random() * 500) + 1;
+        iniciarXogoDirecto(idAleatorio);
+    }
+
+    function iniciarXogoDirecto(id) {
+        let xogoEncontrado = null;
+        for (let cat of CATÁLOGO_500) {
+            let f = cat.xogos.find(g => g.id === id);
+            if (f) { xogoEncontrado = f; break; }
+        }
+
+        if (!xogoEncontrado) xogoEncontrado = CATÁLOGO_500[0].xogos[0];
+        xogoActual = xogoEncontrado;
+
+        mostrarPantalla('screenGame');
+        document.getElementById('gameTitle').innerText = `${xogoActual.nome} (#${xogoActual.id})`;
+        document.getElementById('gameDesc').innerText = xogoActual.desc;
+
+        const area = document.getElementById('gameArea');
+        const ctrl = document.getElementById('gameControls');
+        area.innerHTML = ''; ctrl.innerHTML = '';
+
+        // Router segundo o tipo de minixogo
+        if (xogoActual.type === 'react') cargarXogoReaccion(area, ctrl);
+        else if (xogoActual.type === 'order') cargarXogoOrde(area, ctrl);
+        else if (xogoActual.type === 'box') cargarXogoCaixas(area, ctrl);
+        else cargarXogoXenerico(area, ctrl);
+    }
+
+    // 1. REACCIÓN
+    function cargarXogoReaccion(area, ctrl) {
+        let grid = document.createElement('div');
+        grid.className = 'grid-3x3';
+        for (let i = 0; i < 9; i++) {
+            let btn = document.createElement('div');
+            btn.className = 'circle-btn';
+            btn.onclick = () => {
+                if (btn.classList.contains('active')) {
+                    let tempo = ((Date.now() - reactStartTime) / 1000).toFixed(3);
+                    playBeep(880, 'sine', 0.2);
+                    rematarEAmosarPuntos(Math.max(10, Math.round(1000 - tempo * 300)), `Tempo de Reacción: ${tempo}s`);
+                }
+            };
+            grid.appendChild(btn);
+        }
+        area.appendChild(grid);
+
+        let startBtn = document.createElement('button');
+        startBtn.innerText = 'Comezar Rolda';
+        startBtn.onclick = () => {
+            startBtn.style.display = 'none';
+            let delay = Math.random() * 2000 + 1000;
+            reactTimeout = setTimeout(() => {
+                let circles = area.querySelectorAll('.circle-btn');
+                circles[Math.floor(Math.random() * 9)].classList.add('active');
+                playBeep(600, 'triangle', 0.15);
+                reactStartTime = Date.now();
+            }, delay);
         };
-        grid.appendChild(btn);
-      });
-
-      board.appendChild(grid);
-      ordeStartTime = Date.now();
+        ctrl.appendChild(startBtn);
     }
 
-    // ==========================================
-    // 3. MINIXOGO: CONTADOR DE CAIXAS
-    // ==========================================
-    function startCaixas() {
-      setupStage('CONTADOR DE CAIXAS', 'Observa as caixas e di cantas vaches antes de que desaparezan.');
+    // 2. ORDE NUMÉRICA
+    function cargarXogoOrde(area, ctrl) {
+        let currentNum = 1;
+        let startTime = Date.now();
+        let numbers = Array.from({length: 16}, (_, i) => i + 1).sort(() => Math.random() - 0.5);
+        
+        let grid = document.createElement('div');
+        grid.className = 'grid-4x4';
 
-      let count = Math.floor(Math.random() * 8) + 4;
-      board.innerHTML = '';
-
-      for(let i=0; i<count; i++) {
-        let box = document.createElement('div');
-        box.style.width = '40px';
-        box.style.height = '40px';
-        box.style.background = '#f59e0b';
-        box.style.borderRadius = '6px';
-        box.style.position = 'absolute';
-        box.style.top = Math.random() * 200 + 20 + 'px';
-        box.style.left = Math.random() * 250 + 20 + 'px';
-        box.style.boxShadow = '0 4px 0 #b45309';
-        board.appendChild(box);
-      }
-
-      setTimeout(() => {
-        board.innerHTML = '<h3 style="color:#94a3b8">Cantas caixas había?</h3>';
-        let boxInput = document.createElement('div');
-        boxInput.className = 'input-box';
-        boxInput.innerHTML = `
-          <input type="number" id="box-ans" placeholder="Número">
-          <button class="btn-main" style="margin:0" onclick="checkCaixas(${count})">Enviar</button>
-        `;
-        controls.appendChild(boxInput);
-      }, 1500);
+        numbers.forEach(num => {
+            let btn = document.createElement('div');
+            btn.className = 'num-btn';
+            btn.innerText = num;
+            btn.onclick = () => {
+                if (num === currentNum) {
+                    playBeep(400 + (num * 30), 'sine', 0.08);
+                    btn.classList.add('done');
+                    currentNum++;
+                    if (currentNum > 16) {
+                        let totalTime = ((Date.now() - startTime) / 1000).toFixed(2);
+                        rematarEAmosarPuntos(Math.max(20, Math.round(500 - totalTime * 15)), `Completado en ${totalTime}s`);
+                    }
+                } else {
+                    playBeep(150, 'sawtooth', 0.15);
+                }
+            };
+            grid.appendChild(btn);
+        });
+        area.appendChild(grid);
     }
 
-    function checkCaixas(correct) {
-      let val = parseInt(document.getElementById('box-ans').value);
-      if (val === correct) {
-        playBeep(800, 'sine', 0.2);
-        alert('Correcto! Tes boa memoria visual.');
-        saveScore('ContadorCaixas', 'Axeitado');
-      } else {
-        playBeep(200, 'sawtooth', 0.2);
-        alert(`Incorrecto! Había ${correct} caixas.`);
-      }
-      showMenu();
-    }
+    // 3. CONTADOR DE CAIXAS
+    function cargarXogoCaixas(area, ctrl) {
+        let count = Math.floor(Math.random() * 8) + 4;
+        area.innerHTML = '';
+        
+        for (let i = 0; i < count; i++) {
+            let box = document.createElement('div');
+            box.style.cssText = `width:36px; height:36px; background:var(--accent-yellow); border-radius:6px; position:absolute; top:${Math.random()*160+20}px; left:${Math.random()*220+20}px;`;
+            area.appendChild(box);
+        }
 
-    // ==========================================
-    // 4. MINIXOGO: TEMPO EXACTO!
-    // ==========================================
-    let tempoStart, barElem;
-    function startTempo() {
-      setupStage('TEMPO EXACTO!', 'Calcula mentalmente cando a barra chegue exactamente a 5 segundos.');
-
-      let barBg = document.createElement('div');
-      barBg.style.width = '80%';
-      barBg.style.height = '20px';
-      barBg.style.background = '#334155';
-      barBg.style.borderRadius = '10px';
-      barBg.style.overflow = 'hidden';
-
-      barElem = document.createElement('div');
-      barElem.style.width = '100%';
-      barElem.style.height = '100%';
-      barElem.style.background = '#10b981';
-      barBg.appendChild(barElem);
-
-      board.appendChild(barBg);
-
-      let btn = document.createElement('button');
-      btn.className = 'btn-main';
-      btn.innerText = 'COMEZAR / PARAR';
-      btn.onclick = () => handleTempoControl(btn);
-      controls.appendChild(btn);
-    }
-
-    let isTempoRunning = false;
-    function handleTempoControl(btn) {
-      if (!isTempoRunning) {
-        isTempoRunning = true;
-        tempoStart = Date.now();
-        barElem.style.transition = 'width 5s linear';
-        barElem.style.width = '0%';
-
-        // Ocultar a barra a partir dos 2.5 segundos
         setTimeout(() => {
-          if (isTempoRunning) barElem.style.opacity = '0';
-        }, 2500);
-      } else {
-        let elapsed = (Date.now() - tempoStart) / 1000;
-        let diff = Math.abs(5.0 - elapsed).toFixed(2);
-        playBeep(600, 'sine', 0.2);
-        alert(`Paraches en ${elapsed.toFixed(2)}s! Diferenza: ${diff}s`);
-        saveScore('TempoExacto', diff + "s erro");
-        isTempoRunning = false;
-        showMenu();
-      }
+            area.innerHTML = '<h4 style="color:var(--text-muted)">Cantas caixas vaches?</h4>';
+            let input = document.createElement('input');
+            input.type = 'number';
+            input.placeholder = 'Número de caixas';
+            area.appendChild(input);
+
+            let btn = document.createElement('button');
+            btn.innerText = 'Confirmar Resposta';
+            btn.onclick = () => {
+                let val = parseInt(input.value);
+                if (val === count) {
+                    playBeep(800, 'sine', 0.2);
+                    rematarEAmosarPuntos(150, `¡Correcto! Había exactamente ${count} caixas.`);
+                } else {
+                    playBeep(200, 'sawtooth', 0.2);
+                    rematarEAmosarPuntos(0, `Incorrecto. Había ${count} caixas.`);
+                }
+            };
+            ctrl.appendChild(btn);
+        }, 1500);
     }
-  </script>
+
+    // TIPO XENÉRICO VISUAL
+    function cargarXogoXenerico(area, ctrl) {
+        const a = Math.floor(Math.random() * 20) + 1;
+        const b = Math.floor(Math.random() * 20) + 1;
+        
+        area.innerHTML = `
+            <p style="font-size:1.1rem; margin-bottom:10px;">Resolución Rápida:</p>
+            <h2 style="color:var(--accent-yellow); margin:0;">${a} + ${b}</h2>
+            <input type="number" id="genAns" placeholder="A túa resposta" style="margin-top:15px; width:70%;">`;
+
+        let btn = document.createElement('button');
+        btn.innerText = 'Enviar Resposta';
+        btn.onclick = () => {
+            const val = parseInt(document.getElementById('genAns').value);
+            if (val === (a + b)) {
+                playBeep(800, 'sine', 0.2);
+                rematarEAmosarPuntos(100, "¡Resposta Correcta!");
+            } else {
+                playBeep(200, 'sawtooth', 0.2);
+                rematarEAmosarPuntos(0, `Incorrecto. A resposta era ${a + b}.`);
+            }
+        };
+        ctrl.appendChild(btn);
+    }
+
+    // PANTALLA DE RESULTADOS INTEGRADA (SEN POPUPS)
+    function rematarEAmosarPuntos(puntos, detalle) {
+        guardarResultado(xogoActual.nome, puntos);
+        
+        const area = document.getElementById('gameArea');
+        const ctrl = document.getElementById('gameControls');
+
+        area.innerHTML = `
+            <div class="result-box">
+                <h3 style="color:${puntos > 0 ? 'var(--accent-green)' : 'var(--accent-red)'}; margin:0;">
+                    ${puntos > 0 ? '¡Rolda Completada!' : 'Fin do Xogo'}
+                </h3>
+                <p style="color:var(--text-muted); font-size:0.9rem; margin:8px 0;">${detalle}</p>
+                <div class="result-score">+${puntos} pts</div>
+            </div>`;
+
+        ctrl.innerHTML = `
+            <button onclick="iniciarXogoDirecto(${xogoActual.id})">🔄 Xogar de Novo</button>
+            <button class="btn-alt" onclick="mostrarPantalla('screenMenu')">🏠 Volver ao Menú</button>`;
+    }
+
+    init();
+</script>
 </body>
 </html>
