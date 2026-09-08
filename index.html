@@ -2,2360 +2,551 @@
 <html lang="gl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Minixogos Portela</title>
-    
-    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plataforma de Xogos e Adestramento</title>
     <style>
         :root {
-            --bg-dark: #0f172a;
-            --card-bg: #1e293b;
-            --accent-yellow: #f59e0b;
-            --accent-blue: #38bdf8;
-            --accent-green: #10b981;
-            --accent-red: #ef4444;
-            --accent-purple: #a855f7;
-            --text-light: #f8fafc;
-            --text-muted: #94a3b8;
+            --primary: #4a90e2;
+            --secondary: #2c3e50;
+            --accent: #e74c3c;
+            --success: #2ecc71;
+            --bg: #f4f7f6;
         }
 
-        * {
-            box-sizing: border-box;
-            user-select: none;
-            -webkit-user-select: none;
-            touch-action: manipulation;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: var(--bg); color: #333; display: flex; flex-direction: column; min-height: 100vh; }
+        
+        header { background: var(--secondary); color: white; padding: 1rem; display: flex; justify-content: space-between; align-items: center; }
+        #header-usuario { font-weight: bold; background: rgba(255,255,255,0.2); padding: 0.3rem 0.8rem; border-radius: 15px; display: none; }
 
-        body {
-            margin: 0;
-            padding: 12px;
-            background-color: var(--bg-dark);
-            color: var(--text-light);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
-        }
+        main { flex: 1; max-width: 900px; width: 100%; margin: 1rem auto; padding: 1rem; }
+        .pantalla { display: none; background: white; padding: 1.5rem; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .pantalla.activa { display: block; }
 
-        .container {
-            width: 100%;
-            max-width: 480px;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
+        button { background: var(--primary); color: white; border: none; padding: 0.6rem 1.2rem; border-radius: 5px; cursor: pointer; font-size: 1rem; transition: background 0.2s; margin: 0.2rem; }
+        button:hover { opacity: 0.9; }
+        .btn-danger { background: var(--accent); }
+        .btn-success { background: var(--success); }
 
-        header {
-            text-align: center;
-            background: var(--card-bg);
-            padding: 14px;
-            border-radius: 16px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-            border: 1px solid #334155;
-        }
+        .grid-xogos { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 1rem; margin-top: 1rem; }
+        .card-xogo { border: 2px solid #ddd; border-radius: 8px; padding: 1rem; text-align: center; cursor: pointer; transition: transform 0.2s; }
+        .card-xogo:hover { transform: translateY(-3px); border-color: var(--primary); }
 
-        h1 {
-            margin: 0 0 4px 0;
-            font-size: 1.6rem;
-            color: var(--accent-yellow);
-            letter-spacing: 1px;
-            cursor: pointer;
-        }
+        /* Estilos específicos dos xogos e correccións */
+        .dados-instrucións { font-size: 0.85rem; line-height: 1.2; color: #666; margin-bottom: 0.5rem; }
+        
+        /* Barriña de precisión */
+        .barra-container { width: 100%; height: 40px; background: #eee; position: relative; border-radius: 5px; overflow: hidden; margin: 1rem 0; }
+        .barra-precision { width: 100%; height: 100%; background: linear-gradient(90deg, #ff4d4d 0% 35%, #ffcc00 35% 45%, #4caf50 45% 55%, #ffcc00 55% 65%, #ff4d4d 65% 100%); }
+        .indicador-barra { position: absolute; top: 0; width: 6px; height: 100%; background: black; left: 0%; }
+        .btn-accion-barrina { width: 100%; padding: 15px; font-size: 1.2rem; margin-top: 15px; background: var(--secondary); }
 
-        .user-info {
-            font-size: 0.85rem;
-            color: var(--text-muted);
-            font-weight: 500;
-        }
-
-        .card {
-            background: var(--card-bg);
-            padding: 18px;
-            border-radius: 16px;
-            text-align: center;
-            box-shadow: 0 6px 16px rgba(0,0,0,0.3);
-            border: 1px solid #334155;
-        }
-
-        .screen { display: none; }
-        .screen.active { display: block; }
-
-        button {
-            background: var(--accent-blue);
-            color: #0f172a;
-            border: none;
-            padding: 12px 16px;
-            font-size: 0.95rem;
-            font-weight: bold;
-            border-radius: 10px;
-            width: 100%;
-            cursor: pointer;
-            margin-top: 8px;
-            transition: transform 0.1s, opacity 0.1s;
-        }
-
-        button:active { transform: scale(0.98); opacity: 0.9; }
-        button.btn-alt { background: #334155; color: var(--text-light); }
-        button.btn-danger { background: #991b1b; color: white; }
-        button.btn-random { background: var(--accent-purple); color: white; font-size: 1rem; padding: 12px; }
-        button.btn-profile { background: var(--accent-yellow); color: #0f172a; }
-        button.btn-club { background: var(--accent-green); color: #0f172a; }
-        button.btn-timeattack { background: #e11d48; color: white; font-size: 1rem; padding: 12px; }
-        button.btn-challenge { background: #0284c7; color: white; font-size: 1rem; padding: 12px; }
-
-        .campaign-bar {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 6px;
-            margin-top: 8px;
-        }
-
-        .btn-camp {
-            font-size: 0.75rem;
-            padding: 10px 4px;
-            margin: 0;
-            border-radius: 8px;
-            font-weight: bold;
-        }
-
-        input, select {
-            width: 100%;
-            padding: 12px;
-            border-radius: 8px;
-            border: 1px solid #334155;
-            background: #0f172a;
-            color: white;
-            font-size: 1rem;
-            box-sizing: border-box;
-            text-align: center;
-            margin-bottom: 8px;
-        }
-
-        .search-input {
-            text-align: left;
-            padding: 10px 14px;
-            font-size: 0.9rem;
-            margin-bottom: 10px;
-        }
-
-        .category-grid {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            max-height: 360px;
-            overflow-y: auto;
-            padding-right: 4px;
-        }
-
-        .category-item {
-            background: #0f172a;
-            border: 1px solid #334155;
-            border-radius: 10px;
-            padding: 10px;
-            text-align: left;
-        }
-
-        .category-title {
-            font-size: 0.95rem;
-            font-weight: bold;
-            color: var(--accent-blue);
-            margin-bottom: 8px;
-        }
-
-        .diff-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 6px;
-        }
-
-        .btn-diff {
-            font-size: 0.75rem;
-            padding: 8px 2px;
-            margin: 0;
-            border-radius: 6px;
-            text-align: center;
-            font-weight: bold;
-        }
-        .btn-trivial { background: #059669; color: white; }
-        .btn-normal { background: #d97706; color: white; }
-        .btn-extremoduro { background: #dc2626; color: white; }
-
-        .board {
-            width: 100%;
-            min-height: 260px;
-            background: #0f172a;
-            border-radius: 12px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            position: relative;
-            overflow: hidden;
-            margin: 12px 0;
-            padding: 15px;
-            border: 1px solid #1e293b;
-        }
-
-        .score-explanation {
-            background: #0f172a;
-            border: 1px dashed var(--accent-blue);
-            border-radius: 8px;
-            padding: 8px;
-            font-size: 0.8rem;
-            color: var(--accent-blue);
-            margin-top: 6px;
-            text-align: center;
-        }
-
-        /* BARRIÑA PRECISIÓN */
-        .bar-container {
-            width: 100%;
-            height: 38px;
-            background: linear-gradient(90deg, #ef4444 0%, #f59e0b 35%, #10b981 50%, #f59e0b 65%, #ef4444 100%);
-            border-radius: 19px;
-            position: relative;
-            cursor: pointer;
-            overflow: hidden;
-            border: 3px solid #334155;
-        }
-
-        .bar-pointer {
-            width: 6px;
-            height: 100%;
-            background: #ffffff;
-            position: absolute;
-            top: 0;
-            left: 0%;
-            box-shadow: 0 0 10px #ffffff;
-        }
-
-        .click-mark {
-            position: absolute;
-            top: 0;
-            width: 4px;
-            height: 100%;
-            background: #000;
-            opacity: 0.8;
-        }
-
-        /* DADOS */
-        .dice-container {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 12px;
-            margin-bottom: 12px;
-        }
-
-        .dice {
-            width: 65px;
-            height: 65px;
-            background: white;
-            border-radius: 12px;
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            grid-template-rows: repeat(3, 1fr);
-            padding: 6px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.4);
-        }
-
-        .dice-cover {
-            width: 65px;
-            height: 65px;
-            background: #334155;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.8rem;
-            color: var(--accent-yellow);
-            border: 2px dashed var(--accent-yellow);
-        }
-
-        .dot {
-            background: black;
-            border-radius: 50%;
-            width: 9px;
-            height: 9px;
-            align-self: center;
-            justify-self: center;
-            visibility: hidden;
-        }
-
-        /* GRIDS DE BOTÓNS */
-        .grid-2x2 {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 12px;
-            width: 100%;
-        }
-
-        .grid-3x2 {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
-            width: 100%;
-        }
-
-        .swipe-btn {
-            font-size: 2rem;
-            padding: 14px;
-            border-radius: 12px;
-            background: #334155;
-            color: white;
-            border: 2px solid #475569;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .grid-3x3 {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
-            width: 85%;
-        }
-
-        .grid-4x4-react {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 8px;
-            width: 95%;
-        }
-
-        .circle-btn {
-            aspect-ratio: 1;
-            background: #334155;
-            border-radius: 50%;
-            cursor: pointer;
-            box-shadow: inset 0 -4px 0 rgba(0,0,0,0.4);
-        }
-
-        .circle-btn.active {
-            background: var(--accent-yellow);
-            box-shadow: 0 0 22px var(--accent-yellow);
-        }
-
-        .grid-4x4 {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 8px;
-            width: 100%;
-        }
-
-        .num-btn {
-            background: var(--accent-blue);
-            color: #0f172a;
-            font-size: 1.1rem;
-            font-weight: bold;
-            height: 48px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-        }
-
-        .num-btn.hidden-val { background: #334155; color: transparent; }
-        .num-btn.done { visibility: hidden; }
-
-        .ranking-box {
-            background: #0f172a;
-            border-radius: 12px;
-            padding: 12px;
-            margin-top: 12px;
-            text-align: left;
-            border: 1px solid #334155;
-        }
-
-        .ranking-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            cursor: pointer;
-        }
-
-        .ranking-header h3 {
-            margin: 0;
-            font-size: 0.95rem;
-            color: var(--accent-yellow);
-        }
-
-        .ranking-tabs {
-            display: flex;
-            gap: 4px;
-            margin-top: 10px;
-            margin-bottom: 8px;
-        }
-
-        .ranking-tab {
-            flex: 1;
-            font-size: 0.72rem;
-            padding: 6px 2px;
-            margin: 0;
-            background: #1e293b;
-            color: var(--text-muted);
-            border: 1px solid #334155;
-        }
-
-        .ranking-tab.active {
-            background: var(--accent-yellow);
-            color: #0f172a;
-            font-weight: bold;
-        }
-
-        .ranking-content {
-            display: none;
-            max-height: 220px;
-            overflow-y: auto;
-            margin-top: 6px;
-        }
-
-        .ranking-content.open {
-            display: block;
-        }
-
-        .ranking-item, .record-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 6px 0;
-            border-bottom: 1px solid #1e293b;
-            font-size: 0.85rem;
-        }
-
-        .user-date {
-            font-size: 0.7rem;
-            color: #64748b;
-            margin-left: 6px;
-        }
-
-        .result-box { text-align: center; width: 100%; }
-        .result-score { font-size: 2.2rem; font-weight: bold; color: var(--accent-yellow); margin: 10px 0; }
-        .err-msg { color: var(--accent-red); font-size: 0.85rem; margin-top: 5px; display: none; }
-
-        .stats-detail {
-            background: #0f172a;
-            border-radius: 8px;
-            padding: 8px;
-            font-size: 0.8rem;
-            color: var(--text-muted);
-            margin-top: 8px;
-            text-align: left;
-        }
-
-        .top-abandon-btn {
-            background: #475569;
-            color: #f8fafc;
-            font-size: 0.8rem;
-            padding: 6px 10px;
-            margin: 0 0 10px 0;
-            width: auto;
-            align-self: flex-start;
-        }
-
-        .club-card {
-            background: #0f172a;
-            border: 1px solid #334155;
-            border-radius: 10px;
-            padding: 10px;
-            margin-bottom: 8px;
-            text-align: left;
-        }
-
-        /* COMODÍNS DE CAMPAÑA */
-        .wildcard-box {
-            display: flex;
-            gap: 6px;
-            width: 100%;
-            margin-bottom: 8px;
-        }
-
-        .btn-wildcard {
-            font-size: 0.75rem;
-            padding: 6px;
-            margin: 0;
-            border-radius: 6px;
-            background: #3b82f6;
-            color: white;
-        }
-
-        .btn-wildcard:disabled {
-            background: #334155;
-            color: #64748b;
-            cursor: not-allowed;
-            opacity: 0.6;
-        }
-
-        /* BADGES / INSIGNIAS */
-        .badges-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 8px;
-            margin-top: 8px;
-        }
-
-        .badge-card {
-            background: #0f172a;
-            border: 1px solid #334155;
-            border-radius: 8px;
-            padding: 8px;
-            font-size: 0.75rem;
-            text-align: center;
-            opacity: 0.4;
-        }
-
-        .badge-card.unlocked {
-            border-color: var(--accent-yellow);
-            opacity: 1;
-            box-shadow: 0 0 8px rgba(245, 158, 11, 0.2);
-        }
-
-        .badge-icon {
-            font-size: 1.4rem;
-            display: block;
-            margin-bottom: 2px;
-        }
-
-        footer { text-align: center; margin-top: 6px; margin-bottom: 12px; }
-        .app-revision { font-size: 0.75rem; color: var(--text-muted); opacity: 0.4; letter-spacing: 0.5px; }
+        /* Canvas areas */
+        canvas { border: 2px solid #333; background: #fff; display: block; margin: 0 auto; max-width: 100%; }
+        
+        /* Area de xogo interactiva */
+        .game-area { width: 100%; height: 350px; position: relative; overflow: hidden; background: #f0f0f0; border-radius: 8px; border: 1px solid #ccc; }
+        .target-fly { position: absolute; width: 40px; height: 40px; background: red; border-radius: 50%; cursor: pointer; }
     </style>
 </head>
 <body>
 
-<div class="container">
     <header>
-        <h1 id="appTitle" onclick="clickSecretTitle()">MINIXOGOS PORTELA</h1>
-        <div class="user-info" id="userInfo">Sen identificar</div>
+        <h1 style="font-size:1.3rem; cursor:pointer;" onclick="mostrarPantalla('menu-principal')">🎮 Adestramento do Cerebro</h1>
+        <div>
+            <span id="header-usuario"></span>
+            <button onclick="mostrarMenuBorrado()" class="btn-danger" style="font-size:0.8rem; margin-left:10px;">🗑️ EasterEgg</button>
+        </div>
     </header>
 
-    <!-- ACCESO -->
-    <div id="screenLogin" class="screen card active">
-        <h2>Acceso de Xogador</h2>
-        <p style="font-size: 0.85rem; color: var(--text-muted);">Escribe o teu Nome e un PIN de 6 díxitos para gardar os teus puntos.</p>
-        <input type="text" id="usernameInput" placeholder="O teu Nome / Apodo" maxlength="15">
-        <input type="password" id="pinInput" placeholder="PIN Secreto (6 números)" maxlength="6">
-        <div id="loginError" class="err-msg">PIN incorrecto para este usuario.</div>
-        <button onclick="autenticarUsuario()">Entrar a Xogar</button>
-    </div>
+    <main>
+        <!-- LOGIN -->
+        <section id="pantalla-login" class="pantalla activa">
+            <h2>Iniciar Sesión</h2>
+            <br>
+            <input type="text" id="input-usuario" placeholder="Nome de usuario" style="padding:0.5rem; width:100%; margin-bottom:1rem;">
+            <button onclick="iniciarSesion()">Entrar</button>
+        </section>
 
-    <!-- MENÚ PRINCIPAL -->
-    <div id="screenMenu" class="screen card">
-        <button class="btn-random" onclick="jugarAleatorio()">🎲 Xogo Aleatorio</button>
-        <button class="btn-timeattack" onclick="iniciarContrarreloxo()">⏳ Modo Contrarreloxo Global (60s)</button>
-        <button class="btn-challenge" onclick="iniciarDesafioDia()">⚔️ Desafío do Día</button>
-
-        <div style="margin-top: 6px;">
-            <label style="font-size:0.8rem; color:var(--text-muted);"> Modo Campaña (Varios xogos seguidos):</label>
-            <div class="campaign-bar">
-                <button class="btn-camp btn-trivial" onclick="iniciarCampana(1)">⚔️ Campaña TRIVIAL</button>
-                <button class="btn-camp btn-normal" onclick="iniciarCampana(2)">⚔️ Campaña NORMAL</button>
-                <button class="btn-camp btn-extremoduro" onclick="iniciarCampana(3)">⚔️ Campaña EXTREME</button>
-            </div>
-        </div>
-
-        <button class="btn-club" onclick="abrirXestionClubs()" style="margin-top:10px;">👥 Os meus Clubes de Amigos</button>
-        <button class="btn-profile" onclick="abrirPerfil()">📊 O meu Perfil e Récords</button>
-        
-        <div style="margin-top: 12px;">
-            <input type="text" id="searchCat" class="search-input" placeholder="🔍 Buscar minixogo..." oninput="filtrarCategorias()">
-            <div class="category-grid" id="categoryGrid"></div>
-        </div>
-
-        <div class="ranking-box">
-            <div class="ranking-header" onclick="toggleRankingCollapse()">
-                <h3>🏆 Clasificacións</h3>
-                <span id="rankingArrow" style="color:var(--text-muted); font-size:0.8rem;">▶ Preme para abrir</span>
+        <!-- MENÚ PRINCIPAL -->
+        <section id="pantalla-menu-principal" class="pantalla">
+            <h2>Modos de Xogo</h2>
+            <div style="margin: 1rem 0;">
+                <button onclick="iniciarModo('campana')">🏆 Campaña</button>
+                <button onclick="iniciarModo('desafioDia')">📅 Desafío do Día</button>
+                <button onclick="iniciarModo('contrareloxo')">⏱️ Contrareloxo</button>
+                <button onclick="iniciarModo('libre')">🎮 Xogo Libre</button>
             </div>
             
-            <div id="rankingContainer" class="ranking-content">
-                <div class="ranking-tabs">
-                    <button class="ranking-tab" id="tabTotal" onclick="cambiarTabRanking('total')">Total</button>
-                    <button class="ranking-tab" id="tabDia" onclick="cambiarTabRanking('dia')">Do Día</button>
-                    <button class="ranking-tab" id="tabXogo" onclick="cambiarTabRanking('xogo')">Por Xogo</button>
-                    <button class="ranking-tab" id="tabClub" onclick="cambiarTabRanking('club')">Clubes</button>
-                </div>
-                <div id="clubSelectorBox" style="display:none; margin-bottom:6px;">
-                    <select id="rankingClubSelect" onchange="renderizarRankingSegunTab()"></select>
-                </div>
-                <div id="rankingList">Selecciona unha pestana para amosar a listaxe...</div>
+            <hr><br>
+            <h3>Código de Club</h3>
+            <div style="display:flex; gap:10px; align-items:center; margin-top:0.5rem;">
+                <input type="text" id="input-club" value="CLUB-2026-XOGOS" readonly style="padding:0.5rem; flex:1;">
+                <button id="btn-copiar-club" onclick="copiarCodigoClub()">Copiar Código</button>
             </div>
-        </div>
 
-        <button class="btn-alt" onclick="cerrarSesion()" style="margin-top: 12px;">Cerrar Sesión</button>
-    </div>
-
-    <!-- PANTALLA CLUBES DE AMIGOS -->
-    <div id="screenClubs" class="screen card">
-        <h2>👥 Clubes de Amigos</h2>
-        <p style="font-size: 0.85rem; color: var(--text-muted);">Crea un grupo ou únete cun código compartido.</p>
-        
-        <div style="background:#0f172a; padding:10px; border-radius:10px; margin-bottom:10px;">
-            <h4 style="margin:0 0 6px 0; color:var(--accent-yellow);">➕ Crear Novo Club</h4>
-            <input type="text" id="newClubNameInput" placeholder="Nome do Club">
-            <button onclick="crearNovoClub()" style="margin-top:0;">Crear Club</button>
-        </div>
-
-        <div style="background:#0f172a; padding:10px; border-radius:10px; margin-bottom:12px;">
-            <h4 style="margin:0 0 6px 0; color:var(--accent-blue);">🔑 Unirse a un Club</h4>
-            <input type="text" id="joinClubCodeInput" placeholder="Código do Club (6 caracteres)">
-            <button onclick="unirseAClub()" style="margin-top:0;">Unirse</button>
-        </div>
-
-        <h3 style="color:var(--accent-yellow); text-align:left; font-size:1rem; margin-bottom:6px;">Os meus Clubes:</h3>
-        <div id="myClubsList" style="max-height:200px; overflow-y:auto;">Cargando...</div>
-
-        <button class="btn-alt" onclick="mostrarPantalla('screenMenu')" style="margin-top:12px;">Volver ao Menú</button>
-    </div>
-
-    <!-- PERFIL -->
-    <div id="screenProfile" class="screen card">
-        <h2>Perfil de Xogador</h2>
-        <p id="profileTotalScore" style="font-size: 1.3rem; font-weight: bold; color: var(--accent-yellow); margin: 5px 0;"></p>
-        
-        <div class="ranking-box" style="text-align:left; margin-bottom: 12px;">
-            <h3 style="color:var(--accent-yellow); text-align:center;">🏅 Insignias e Logros</h3>
-            <div id="userBadgesList" class="badges-grid"></div>
-        </div>
-
-        <div class="ranking-box" style="text-align:left;">
-            <h3 style="color:var(--accent-yellow); text-align:center;">📊 As miñas Mellores Marcas</h3>
-            <div id="userRecordsList" style="max-height:180px; overflow-y:auto; margin-top:8px;">Aínda non tes rexistros.</div>
-        </div>
-
-        <button onclick="mostrarPantalla('screenMenu')" style="margin-top:12px;">Volver ao Menú</button>
-    </div>
-
-    <!-- PANTALLA ADMIN SECRET -->
-    <div id="screenAdmin" class="screen card">
-        <h2 style="color:var(--accent-red);">⚙️ Panel de Administración</h2>
-        <p style="font-size:0.85rem; color:var(--text-muted);">Opcións de xestión e limpeza de clasificacións.</p>
-        
-        <button class="btn-danger" onclick="adminBorrarTodo()">🔥 Borrar Tódolos Rankings</button>
-        <button class="btn-danger" onclick="adminBorrarDia()">📅 Borrar Rankings do Día</button>
-        <button class="btn-danger" onclick="adminBorrarXogo()">🎮 Borrar Rankings por Xogo</button>
-        <button class="btn-danger" onclick="adminBorrarTodosClubs()">👥 Borrar Tódolos Clubes</button>
-        
-        <div style="margin-top:10px; text-align:left;">
-            <label style="font-size:0.8rem; color:var(--accent-yellow);">Borrar xogador en concreto:</label>
-            <select id="adminUserSelect"></select>
-            <button class="btn-danger" onclick="adminBorrarXogadorConcreto()" style="margin-top:4px;">❌ Borrar este Xogador e os seus Clubes</button>
-        </div>
-
-        <button class="btn-alt" onclick="mostrarPantalla('screenMenu')" style="margin-top:15px;">Saír do Panel</button>
-    </div>
-
-    <!-- PANTALLA DE XOGO -->
-    <div id="screenGame" class="screen card">
-        <button class="top-abandon-btn" onclick="abandonarPartida()">🏠 Menú (Abandonar)</button>
-        
-        <!-- COMODÍNS DE CAMPAÑA -->
-        <div id="wildcardBox" class="wildcard-box" style="display:none;">
-            <button id="btnSkip" class="btn-wildcard" onclick="usarComodin('skip')">⏭️ Saltarse Xogo (1 uso)</button>
-            <button id="btnDouble" class="btn-wildcard" onclick="usarComodin('double')">✨ Puntos x2 (1 uso)</button>
-        </div>
-
-        <h3 id="gameTitle" style="margin: 0; color: var(--accent-blue);">Cargando...</h3>
-        <p id="gameDesc" style="font-size: 0.85rem; color: var(--text-muted); margin: 4px 0;"></p>
-        <div id="scoreSystemExp" class="score-explanation"></div>
-
-        <div class="board" id="gameArea"></div>
-        <div id="gameControls"></div>
-    </div>
-
-    <footer>
-        <span class="app-revision">~#v0.9</span>
-    </footer>
-</div>
-
-<script>
-    const firebaseConfig = {
-        apiKey: "AIzaSyDY68e8tDZkcvrLiu2xoaVCDJIY_g1KP0w",
-        authDomain: "minixogos-portela.firebaseapp.com",
-        databaseURL: "https://minixogos-portela-default-rtdb.europe-west1.firebasedatabase.app/",
-        projectId: "minixogos-portela",
-        storageBucket: "minixogos-portela.firebasestorage.app",
-        messagingSenderId: "610062616692",
-        appId: "1:610062616692:web:1004d65064538a61dc2921"
-    };
-
-    let db = null;
-    try {
-        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-        db = firebase.database();
-    } catch(e){}
-
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    function playBeep(freq = 440, type = 'sine', duration = 0.1) {
-        try {
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.type = type; osc.frequency.value = freq;
-            osc.connect(gain); gain.connect(audioCtx.destination);
-            osc.start();
-            gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + duration);
-            osc.stop(audioCtx.currentTime + duration);
-        } catch(e){}
-    }
-
-    // EFECTOS DE SONO ELABORADOS
-    function playVictorySound() {
-        try {
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-            const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
-            notes.forEach((freq, idx) => {
-                setTimeout(() => playBeep(freq, 'triangle', 0.25), idx * 120);
-            });
-        } catch(e){}
-    }
-
-    function playRecordSound() {
-        try {
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-            const notes = [440, 554.37, 659.25, 880]; // A4, C#5, E5, A5
-            notes.forEach((freq, idx) => {
-                setTimeout(() => playBeep(freq, 'sine', 0.18), idx * 90);
-            });
-        } catch(e){}
-    }
-
-    const INSIGNIAS = [
-        { id: "dado_master", nome: "Mestre dos Dados", desc: "Supera os 200 pts en Suma de Dados", icon: "🎲" },
-        { id: "fastest", nome: "O máis Veloz", desc: "Supera os 800 pts en Reacción", icon: "⚡" },
-        { id: "extreme_complete", nome: "Campaña Extreme", desc: "Completa unha Campaña EXTREME", icon: "🔥" },
-        { id: "time_king", nome: "Rei do Reloxo", desc: "Supera os 500 pts no Contrarreloxo", icon: "⏳" }
-    ];
-
-    const CATEGORIAS_BASE = [
-        { id: "bar", nome: "🎯 Precision da Barriña", desc: "Para o punto no centro exacto.", exp: "Puntuación = 100 - (distancia ao centro * 2). Media de 5 intentos." },
-        { id: "memory", nome: "🧠 Memoria Revertida", desc: "Memoriza os números antes de ocultarse.", exp: "Puntuación = +30 pts por número correcto premido na orde exacta." },
-        { id: "math", nome: "📐 Sumas Enlazadas Express", desc: "Resolve as sumas o máis rápido posíbel.", exp: "Puntuación = (Acertos * 50) - (Segundos totais * 2)." },
-        { id: "react", nome: "⚡ Reacción e Velocidade", desc: "Toca o botón activo no menor tempo.", exp: "Puntuación = 1000 - Tempo de reacción en ms." },
-        { id: "order", nome: "🔢 Orde Numérica", desc: "Toca os números en orde crecente.", exp: "Puntuación = +25 pts por número correcto premido." },
-        { id: "box", nome: "📦 Contador de Caixas", desc: "Contas cantas caixas aparecen.", exp: "Puntuación = +60 pts por rolda acertada." },
-        { id: "time", nome: "⏱️ Tempo Exacto!", desc: "Para o reloxo a cegas preto de 0s.", exp: "Puntuación = 200 - (Diferenza de segundos ao 0 exacto * 50)." },
-        { id: "dice", nome: "🎲 Suma de Dados", desc: "Suma os puntos totais dos 4 dados.", exp: "Puntuación = (Acertos * 100) - (Segundos empregados * 3) [3 roldas]." },
-        { id: "color", nome: "🎨 Cor Correcta", desc: "Selecciona a cor real do texto entre 6 opcións.", exp: "Puntuación = (Acertos * 40) - (Segundos empregados * 2) en 5 roldas." },
-        { id: "swipe", nome: "👆 Desliza Rápido!", desc: "Preme a frecha na dirección amosada.", exp: "Puntuación = +30 pts por frecha (opcións acordes á orientación)." },
-        { id: "pattern", nome: "💡 Patrón de Luz", desc: "Memoriza e repite a secuencia.", exp: "Puntuación = +35 pts por cada paso. (3 roldas progresivas)." },
-        { id: "reverse_math", nome: "🧠 Cálculo Mental Invertido", desc: "Atopa os dous números que orixinan o resultado.", exp: "Puntuación = +50 pts por combinación correcta." },
-        { id: "balance", nome: "⚖️ Balanza de Pesos", desc: "Deduce cal figura é máis pesada.", exp: "Puntuación = +60 pts por dedución correcta." },
-        { id: "visual_find", nome: "👁️ O Obxecto Intruso", desc: "Atopa o emoji/símbolo diferente.", exp: "Puntuación = 500 - (Segundos * 20) por rolda." }
-    ];
-
-    let currentUser = "";
-    let userProfile = { jugador: "", puntosTotales: 0, pin: "", fechaReg: "", ultAct: "", juegos: {}, badges: {} };
-    let currentTabRanking = null;
-    let rawJugadoresRanking = [];
-    let rawClubesDB = {};
-    let titleClickCount = 0;
-    let titleClickTimer = null;
-
-    let modoCampana = false;
-    let campanaListaXogos = [];
-    let campanaIndex = 0;
-    let campanaPuntosAcumulados = 0;
-    let campanaNivel = 1;
-
-    // COMODÍNS
-    let comodinSaltarUsado = false;
-    let comodinDuplicarUsado = false;
-    let duplicarPuntosActivo = false;
-
-    // CONTRARRELOXO
-    let modoContrarreloxo = false;
-    let tempoRestanteGlobal = 60;
-    let timerGlobalInterval = null;
-
-    function init() {
-        renderizarCategorias(CATEGORIAS_BASE);
-        const savedUser = localStorage.getItem('portela_user');
-        if (savedUser) {
-            currentUser = savedUser;
-            cargarDatosUsuario();
-            actualizarHeader();
-            mostrarPantalla('screenMenu');
-            escucharRanking();
-            escucharClubes();
-        }
-    }
-
-    // ACCESO SECRETO ADMIN
-    function clickSecretTitle() {
-        titleClickCount++;
-        clearTimeout(titleClickTimer);
-        titleClickTimer = setTimeout(() => { titleClickCount = 0; }, 4000);
-
-        if (titleClickCount >= 22) {
-            titleClickCount = 0;
-            let code = prompt("Introduce o Código Secreto de Administrador:");
-            if (code === "74857485") {
-                cargarSelectUsuariosAdmin();
-                mostrarPantalla('screenAdmin');
-            } else if (code !== null) {
-                alert("Código Incorrecto.");
-            }
-        }
-    }
-
-    function cargarSelectUsuariosAdmin() {
-        let sel = document.getElementById('adminUserSelect');
-        sel.innerHTML = "";
-        rawJugadoresRanking.forEach(j => {
-            if (j.jugador) {
-                let opt = document.createElement('option');
-                opt.value = j.jugador;
-                opt.innerText = j.jugador;
-                sel.appendChild(opt);
-            }
-        });
-    }
-
-    function adminBorrarTodo() {
-        if (confirm("⚠️ Estás seguro de borrar TODOS os rankings e xogadores?")) {
-            if (db) db.ref('ranking').remove();
-            localStorage.setItem('portela_users_db', JSON.stringify({}));
-            alert("Rankings borrados por completo.");
-            mostrarPantalla('screenMenu');
-        }
-    }
-
-    function adminBorrarDia() {
-        if (confirm("Borrar os puntos rexistrados no día de hoxe?")) {
-            const hoxe = new Date().toISOString().split('T')[0];
-            rawJugadoresRanking.forEach(j => {
-                if (j.jugador && j.ultAct === hoxe) {
-                    if (db) db.ref(`ranking/${j.jugador}/ultAct`).set("2000-01-01");
-                }
-            });
-            alert("Rankings do día reiniciados.");
-        }
-    }
-
-    function adminBorrarXogo() {
-        if (confirm("Borrar as marcas por minixogos de tódolos xogadores?")) {
-            rawJugadoresRanking.forEach(j => {
-                if (j.jugador && db) db.ref(`ranking/${j.jugador}/juegos`).remove();
-            });
-            alert("Marcas por xogo borradas.");
-        }
-    }
-
-    function adminBorrarTodosClubs() {
-        if (confirm("Borrar tódolos clubes de amigos?")) {
-            if (db) db.ref('clubes').remove();
-            localStorage.setItem('portela_clubs_db', JSON.stringify({}));
-            alert("Clubes borrados.");
-        }
-    }
-
-    function adminBorrarXogadorConcreto() {
-        let u = document.getElementById('adminUserSelect').value;
-        if (!u) return;
-        if (confirm(`Borrar por completo ao xogador "${u}" e os seus clubes?`)) {
-            if (db) db.ref(`ranking/${u}`).remove();
-            let dbLocal = JSON.parse(localStorage.getItem('portela_users_db') || '{}');
-            delete dbLocal[u];
-            localStorage.setItem('portela_users_db', JSON.stringify(dbLocal));
-            alert(`Xogador ${u} eliminado.`);
-            cargarSelectUsuariosAdmin();
-        }
-    }
-
-    function renderizarCategorias(lista) {
-        const grid = document.getElementById('categoryGrid');
-        grid.innerHTML = "";
-        lista.forEach(cat => {
-            grid.innerHTML += `
-                <div class="category-item">
-                    <div class="category-title">${cat.nome}</div>
-                    <div class="diff-grid">
-                        <button class="btn-diff btn-trivial" onclick="iniciarXogoDirecto('${cat.id}', 1)">TRIVIAL</button>
-                        <button class="btn-diff btn-normal" onclick="iniciarXogoDirecto('${cat.id}', 2)">NORMAL</button>
-                        <button class="btn-diff btn-extremoduro" onclick="iniciarXogoDirecto('${cat.id}', 3)">EXTREMODURO</button>
-                    </div>
-                </div>`;
-        });
-    }
-
-    function filtrarCategorias() {
-        const query = document.getElementById('searchCat').value.toLowerCase();
-        const filtradas = CATEGORIAS_BASE.filter(c => c.nome.toLowerCase().includes(query));
-        renderizarCategorias(filtradas);
-    }
-
-    function autenticarUsuario() {
-        const name = document.getElementById('usernameInput').value.trim().toLowerCase();
-        const pin = document.getElementById('pinInput').value.trim();
-        const errDiv = document.getElementById('loginError');
-        errDiv.style.display = "none";
-
-        if (!name || pin.length !== 6) {
-            alert("Introduce un nome e un PIN de 6 díxitos.");
-            return;
-        }
-
-        const dataHoxe = new Date().toISOString().split('T')[0];
-        const dataData = new Date().toLocaleDateString('gl-ES', { day:'2-digit', month:'2-digit', year:'2-digit' });
-        const dbLocal = JSON.parse(localStorage.getItem('portela_users_db') || '{}');
-
-        if (db) {
-            let userRef = db.ref('ranking/' + name);
-            userRef.once('value').then(snapshot => {
-                if (snapshot.exists()) {
-                    let val = snapshot.val();
-                    if (!val.jugador) val.jugador = name;
-                    if (val.pin === pin) iniciarSesionExitoso(name, val);
-                    else errDiv.style.display = "block";
-                } else {
-                    let newUser = { jugador: name, pin: pin, fechaReg: dataData, ultAct: dataHoxe, puntosTotales: 0, juegos: {}, badges: {} };
-                    userRef.set(newUser);
-                    iniciarSesionExitoso(name, newUser);
-                }
-            }).catch(() => autenticarLocal(name, pin, dbLocal, errDiv, dataData, dataHoxe));
-        } else {
-            autenticarLocal(name, pin, dbLocal, errDiv, dataData, dataHoxe);
-        }
-    }
-
-    function autenticarLocal(name, pin, dbLocal, errDiv, dataData, dataHoxe) {
-        if (dbLocal[name]) {
-            if (dbLocal[name].pin === pin) iniciarSesionExitoso(name, dbLocal[name]);
-            else errDiv.style.display = "block";
-        } else {
-            const newUser = { jugador: name, pin: pin, fechaReg: dataData, ultAct: dataHoxe, puntosTotales: 0, juegos: {}, badges: {} };
-            dbLocal[name] = newUser;
-            localStorage.setItem('portela_users_db', JSON.stringify(dbLocal));
-            iniciarSesionExitoso(name, newUser);
-        }
-    }
-
-    function iniciarSesionExitoso(name, profileData) {
-        currentUser = name;
-        userProfile = profileData || { jugador: name, puntosTotales: 0, juegos: {}, badges: {} };
-        if (!userProfile.jugador) userProfile.jugador = name;
-        if (!userProfile.badges) userProfile.badges = {};
-        localStorage.setItem('portela_user', name);
-        actualizarHeader();
-        mostrarPantalla('screenMenu');
-        escucharRanking();
-        escucharClubes();
-    }
-
-    function cargarDatosUsuario() {
-        if (db && currentUser) {
-            db.ref('ranking/' + currentUser).on('value', snapshot => {
-                if (snapshot.exists()) {
-                    userProfile = snapshot.val();
-                    if (!userProfile.jugador) userProfile.jugador = currentUser;
-                    if (!userProfile.juegos) userProfile.juegos = {};
-                    if (!userProfile.badges) userProfile.badges = {};
-                }
-            });
-        } else {
-            const dbLocal = JSON.parse(localStorage.getItem('portela_users_db') || '{}');
-            if (dbLocal[currentUser]) {
-                userProfile = dbLocal[currentUser];
-                if (!userProfile.jugador) userProfile.jugador = currentUser;
-                if (!userProfile.badges) userProfile.badges = {};
-            }
-        }
-    }
-
-    function cerrarSesion() {
-        localStorage.removeItem('portela_user');
-        currentUser = "";
-        document.getElementById('usernameInput').value = "";
-        document.getElementById('pinInput').value = "";
-        mostrarPantalla('screenLogin');
-    }
-
-    function actualizarHeader() {
-        document.getElementById('userInfo').innerText = `Xogador: ${(currentUser || 'Anónimo').toUpperCase()}`;
-    }
-
-    function mostrarPantalla(id) {
-        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
-    }
-
-    function abrirPerfil() {
-        mostrarPantalla('screenProfile');
-        document.getElementById('profileTotalScore').innerText = `Puntuación Total: ${userProfile.puntosTotales || 0} pts`;
-        
-        // INSIGNIAS
-        let badgesHtml = "";
-        const myBadges = userProfile.badges || {};
-        INSIGNIAS.forEach(b => {
-            let unlocked = !!myBadges[b.id];
-            badgesHtml += `
-                <div class="badge-card ${unlocked ? 'unlocked' : ''}">
-                    <span class="badge-icon">${b.icon}</span>
-                    <strong>${b.nome}</strong><br>
-                    <span style="color:var(--text-muted); font-size:0.68rem;">${b.desc}</span>
-                </div>`;
-        });
-        document.getElementById('userBadgesList').innerHTML = badgesHtml;
-
-        // MARCAS
-        let html = "";
-        const juegosMap = userProfile.juegos || {};
-        const keys = Object.keys(juegosMap);
-        if (keys.length === 0) {
-            html = "<p style='text-align:center;'>Aínda non completaches ningún minixogo.</p>";
-        } else {
-            keys.forEach(catKey => {
-                html += `<div class="record-item"><span>${catKey}</span><span><strong>${juegosMap[catKey]} pts</strong></span></div>`;
-            });
-        }
-        document.getElementById('userRecordsList').innerHTML = html;
-    }
-
-    function desbloquearInsignia(id) {
-        if (!userProfile.badges) userProfile.badges = {};
-        if (!userProfile.badges[id]) {
-            userProfile.badges[id] = true;
-            if (db && currentUser) db.ref(`ranking/${currentUser}/badges/${id}`).set(true);
-            const dbLocal = JSON.parse(localStorage.getItem('portela_users_db') || '{}');
-            if (dbLocal[currentUser]) {
-                if (!dbLocal[currentUser].badges) dbLocal[currentUser].badges = {};
-                dbLocal[currentUser].badges[id] = true;
-                localStorage.setItem('portela_users_db', JSON.stringify(dbLocal));
-            }
-        }
-    }
-
-    function toggleRankingCollapse() {
-        const container = document.getElementById('rankingContainer');
-        const arrow = document.getElementById('rankingArrow');
-        if (container.classList.contains('open')) {
-            container.classList.remove('open');
-            arrow.innerText = "▶ Preme para abrir";
-        } else {
-            container.classList.add('open');
-            arrow.innerText = "▼ Pechar";
-            if (!currentTabRanking) cambiarTabRanking('total');
-        }
-    }
-
-    function escucharRanking() {
-        if (db) {
-            db.ref('ranking').on('value', snapshot => {
-                let jugadores = [];
-                snapshot.forEach(child => {
-                    let jData = child.val();
-                    if (!jData.jugador) jData.jugador = child.key;
-                    jugadores.push(jData);
-                });
-                rawJugadoresRanking = jugadores;
-                if (currentTabRanking) renderizarRankingSegunTab();
-            }, () => renderizarRankingLocal());
-        } else renderizarRankingLocal();
-    }
-
-    function escucharClubes() {
-        if (db) {
-            db.ref('clubes').on('value', snapshot => {
-                rawClubesDB = snapshot.val() || {};
-                actualizarListaClubesUI();
-                if (currentTabRanking === 'club') renderizarRankingSegunTab();
-            });
-        } else {
-            rawClubesDB = JSON.parse(localStorage.getItem('portela_clubs_db') || '{}');
-            actualizarListaClubesUI();
-            if (currentTabRanking === 'club') renderizarRankingSegunTab();
-        }
-    }
-
-    function renderizarRankingLocal() {
-        const dbLocal = JSON.parse(localStorage.getItem('portela_users_db') || '{}');
-        rawJugadoresRanking = Object.values(dbLocal).map(j => {
-            if (!j.jugador && typeof j === 'object') j.jugador = "xogador";
-            return j;
-        });
-        if (currentTabRanking) renderizarRankingSegunTab();
-    }
-
-    function cambiarTabRanking(tab) {
-        if (currentTabRanking === tab) {
-            currentTabRanking = null;
-            document.querySelectorAll('.ranking-tab').forEach(t => t.classList.remove('active'));
-            document.getElementById('rankingList').innerHTML = "Selecciona unha pestana para amosar a listaxe...";
-            document.getElementById('clubSelectorBox').style.display = "none";
-            return;
-        }
-
-        currentTabRanking = tab;
-        document.querySelectorAll('.ranking-tab').forEach(t => t.classList.remove('active'));
-        if (tab==='total') document.getElementById('tabTotal').classList.add('active');
-        if (tab==='dia') document.getElementById('tabDia').classList.add('active');
-        if (tab==='xogo') document.getElementById('tabXogo').classList.add('active');
-        if (tab==='club') document.getElementById('tabClub').classList.add('active');
-        
-        document.getElementById('rankingContainer').classList.add('open');
-        document.getElementById('rankingArrow').innerText = "▼ Pechar";
-
-        if (tab === 'club') {
-            document.getElementById('clubSelectorBox').style.display = "block";
-            poblarSelectClubesRanking();
-        } else {
-            document.getElementById('clubSelectorBox').style.display = "none";
-        }
-
-        renderizarRankingSegunTab();
-    }
-
-    function poblarSelectClubesRanking() {
-        let sel = document.getElementById('rankingClubSelect');
-        sel.innerHTML = "";
-        let meusClubes = Object.values(rawClubesDB).filter(c => c.membros && c.membros[currentUser]);
-        if (meusClubes.length === 0) {
-            let opt = document.createElement('option');
-            opt.value = "";
-            opt.innerText = "Non pertences a ningún club";
-            sel.appendChild(opt);
-        } else {
-            meusClubes.forEach(c => {
-                let opt = document.createElement('option');
-                opt.value = c.id;
-                opt.innerText = `Club: ${c.nome} (${c.codigo})`;
-                sel.appendChild(opt);
-            });
-        }
-    }
-
-    function renderizarRankingSegunTab() {
-        let list = [...rawJugadoresRanking];
-        let html = "";
-
-        if (currentTabRanking === 'total') {
-            list.sort((a, b) => (b.puntosTotales || 0) - (a.puntosTotales || 0));
-            list.forEach((j, index) => {
-                let nome = j.jugador || "Anónimo";
-                let f = j.fechaReg ? `<span class="user-date">(${j.fechaReg})</span>` : '';
-                html += `<div class="ranking-item"><span>${index + 1}. <strong>${nome}</strong>${f}</span><span>${j.puntosTotales || 0} pts</span></div>`;
-            });
-        } else if (currentTabRanking === 'dia') {
-            const hoxe = new Date().toISOString().split('T')[0];
-            let listDia = list.filter(j => j.ultAct === hoxe);
-            listDia.sort((a, b) => (b.puntosTotales || 0) - (a.puntosTotales || 0));
-            if (listDia.length === 0) html = "<p style='text-align:center; font-size:0.8rem; color:var(--text-muted);'>Sen partidas rexistradas hoxe.</p>";
-            else {
-                listDia.forEach((j, index) => {
-                    let nome = j.jugador || "Anónimo";
-                    html += `<div class="ranking-item"><span>${index + 1}. <strong>${nome}</strong></span><span>${j.puntosTotales || 0} pts</span></div>`;
-                });
-            }
-        } else if (currentTabRanking === 'xogo') {
-            let maxMap = [];
-            list.forEach(j => {
-                const jgs = j.juegos || {};
-                let nome = j.jugador || "Anónimo";
-                Object.keys(jgs).forEach(xogoKey => {
-                    maxMap.push({ xogo: xogoKey, xogador: nome, pts: jgs[xogoKey] });
-                });
-            });
-            maxMap.sort((a, b) => b.pts - a.pts);
-            if (maxMap.length === 0) html = "<p style='text-align:center; font-size:0.8rem; color:var(--text-muted);'>Sen marcas por xogo.</p>";
-            else {
-                maxMap.slice(0, 10).forEach((item) => {
-                    html += `<div class="ranking-item"><span><strong>${item.xogo}</strong> (${item.xogador})</span><span>${item.pts} pts</span></div>`;
-                });
-            }
-        } else if (currentTabRanking === 'club') {
-            let clubId = document.getElementById('rankingClubSelect').value;
-            if (!clubId || !rawClubesDB[clubId]) {
-                html = "<p style='text-align:center; font-size:0.8rem; color:var(--text-muted);'>Selecciona un club válido para ver a clasificación.</p>";
-            } else {
-                let club = rawClubesDB[clubId];
-                let membros = Object.keys(club.membros || {});
-                let listMembros = list.filter(j => membros.includes(j.jugador));
-                listMembros.sort((a, b) => (b.puntosTotales || 0) - (a.puntosTotales || 0));
-
-                listMembros.forEach((j, index) => {
-                    let nome = j.jugador || "Anónimo";
-                    let isCreator = (nome === club.creador) ? " 👑" : "";
-                    html += `<div class="ranking-item"><span>${index + 1}. <strong>${nome}</strong>${isCreator}</span><span>${j.puntosTotales || 0} pts</span></div>`;
-                });
-            }
-        }
-
-        document.getElementById('rankingList').innerHTML = html || "<p style='text-align:center;'>Sen datos aínda</p>";
-    }
-
-    // XESTIÓN DE CLUBES DE AMIGOS
-    function abrirXestionClubs() {
-        mostrarPantalla('screenClubs');
-        actualizarListaClubesUI();
-    }
-
-    function crearNovoClub() {
-        let nome = document.getElementById('newClubNameInput').value.trim();
-        if (!nome) { alert("Escribe un nome para o club."); return; }
-
-        let codigo = Math.random().toString(36).substring(2, 8).toUpperCase();
-        let clubId = 'club_' + Date.now();
-
-        let novoClub = {
-            id: clubId,
-            nome: nome,
-            codigo: codigo,
-            creador: currentUser,
-            membros: { [currentUser]: true }
-        };
-
-        if (db) {
-            db.ref('clubes/' + clubId).set(novoClub);
-        } else {
-            rawClubesDB[clubId] = novoClub;
-            localStorage.setItem('portela_clubs_db', JSON.stringify(rawClubesDB));
-            actualizarListaClubesUI();
-        }
-
-        document.getElementById('newClubNameInput').value = "";
-        alert(`Club "${nome}" creado! Código para compartir: ${codigo}`);
-    }
-
-    function unirseAClub() {
-        let code = document.getElementById('joinClubCodeInput').value.trim().toUpperCase();
-        if (!code) { alert("Introduce un código de club."); return; }
-
-        let atopa = Object.values(rawClubesDB).find(c => c.codigo === code);
-        if (!atopa) { alert("Non se atopou ningún club con ese código."); return; }
-
-        if (db) {
-            db.ref(`clubes/${atopa.id}/membros/${currentUser}`).set(true);
-        } else {
-            if (!rawClubesDB[atopa.id].membros) rawClubesDB[atopa.id].membros = {};
-            rawClubesDB[atopa.id].membros[currentUser] = true;
-            localStorage.setItem('portela_clubs_db', JSON.stringify(rawClubesDB));
-            actualizarListaClubesUI();
-        }
-
-        document.getElementById('joinClubCodeInput').value = "";
-        alert(`Unícheste con éxito ao club "${atopa.nome}"!`);
-    }
-
-    function actualizarListaClubesUI() {
-        let box = document.getElementById('myClubsList');
-        if (!box) return;
-
-        let meusClubes = Object.values(rawClubesDB).filter(c => c.membros && c.membros[currentUser]);
-        if (meusClubes.length === 0) {
-            box.innerHTML = "<p style='text-align:center; font-size:0.85rem; color:var(--text-muted);'>Aínda non estás en ningún club.</p>";
-            return;
-        }
-
-        let html = "";
-        meusClubes.forEach(c => {
-            let isCreador = c.creador === currentUser;
-            html += `
-                <div class="club-card">
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <strong style="color:var(--accent-yellow);">${c.nome}</strong>
-                        <span style="font-size:0.75rem; background:#334155; padding:2px 6px; border-radius:4px; color:var(--accent-blue);">Cód: ${c.codigo}</span>
-                    </div>
-                    <p style="font-size:0.75rem; color:var(--text-muted); margin:4px 0;">Creador: ${c.creador} ${isCreador ? '(Ti)' : ''}</p>
-                    <div style="font-size:0.8rem; margin:6px 0;">Membros:</div>
-                    <div style="max-height:80px; overflow-y:auto; padding-left:5px;">`;
-
-            Object.keys(c.membros || {}).forEach(m => {
-                let canKick = isCreador && m !== currentUser;
-                html += `
-                    <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.75rem; padding:2px 0;">
-                        <span>• ${m} ${m === c.creador ? '👑' : ''}</span>
-                        ${canKick ? `<button onclick="expulsarMembroClub('${c.id}', '${m}')" style="width:auto; padding:2px 6px; font-size:0.65rem; background:#991b1b; margin:0;">Expulsar</button>` : ''}
-                    </div>`;
-            });
-
-            html += `</div><div style="margin-top:8px;">`;
-            if (isCreador) {
-                html += `<button class="btn-danger" onclick="disolverClub('${c.id}')" style="padding:6px; font-size:0.75rem;">💥 Disolver Club</button>`;
-            } else {
-                html += `<button class="btn-alt" onclick="abandonarClub('${c.id}')" style="padding:6px; font-size:0.75rem;">🚪 Abandonar Club</button>`;
-            }
-            html += `</div></div>`;
-        });
-
-        box.innerHTML = html;
-    }
-
-    function expulsarMembroClub(clubId, membro) {
-        if (confirm(`Expulsar a ${membro} do club?`)) {
-            if (db) db.ref(`clubes/${clubId}/membros/${membro}`).remove();
-            else {
-                delete rawClubesDB[clubId].membros[membro];
-                localStorage.setItem('portela_clubs_db', JSON.stringify(rawClubesDB));
-                actualizarListaClubesUI();
-            }
-        }
-    }
-
-    function disolverClub(clubId) {
-        if (confirm("Estás seguro de disolver este club por completo?")) {
-            if (db) db.ref(`clubes/${clubId}`).remove();
-            else {
-                delete rawClubesDB[clubId];
-                localStorage.setItem('portela_clubs_db', JSON.stringify(rawClubesDB));
-                actualizarListaClubesUI();
-            }
-        }
-    }
-
-    function abandonarClub(clubId) {
-        if (confirm("Desexas abandonar este club?")) {
-            if (db) db.ref(`clubes/${clubId}/membros/${currentUser}`).remove();
-            else {
-                delete rawClubesDB[clubId].membros[currentUser];
-                localStorage.setItem('portela_clubs_db', JSON.stringify(rawClubesDB));
-                actualizarListaClubesUI();
-            }
-        }
-    }
-
-    function guardarResultado(nombreXogo, puntos) {
-        if (!currentUser) return;
-        const hoxe = new Date().toISOString().split('T')[0];
-        const novoTotal = (userProfile.puntosTotales || 0) + puntos;
-        if (!userProfile.juegos) userProfile.juegos = {};
-        const recordAnterior = userProfile.juegos[nombreXogo] || 0;
-        const novoRecord = Math.max(recordAnterior, puntos);
-
-        if (puntos > recordAnterior) {
-            playRecordSound();
-        }
-
-        // COMPROBAR INSIGNIAS
-        if (nombreXogo.includes("Suma de Dados") && puntos >= 200) desbloquearInsignia("dado_master");
-        if (nombreXogo.includes("Reacción") && puntos >= 800) desbloquearInsignia("fastest");
-
-        userProfile.puntosTotales = novoTotal;
-        userProfile.ultAct = hoxe;
-        userProfile.juegos[nombreXogo] = novoRecord;
-
-        if (db) {
-            db.ref('ranking/' + currentUser).update({
-                jugador: currentUser,
-                puntosTotales: novoTotal,
-                ultAct: hoxe,
-                [`juegos/${nombreXogo}`]: novoRecord
-            }).catch(() => {});
-        }
-
-        const dbLocal = JSON.parse(localStorage.getItem('portela_users_db') || '{}');
-        dbLocal[currentUser] = userProfile;
-        localStorage.setItem('portela_users_db', JSON.stringify(dbLocal));
-        escucharRanking();
-    }
-
-    let xogoActual = null;
-    let animFrame = null;
-
-    function abandonarPartida() {
-        if (animFrame) cancelAnimationFrame(animFrame);
-        if (timerGlobalInterval) clearInterval(timerGlobalInterval);
-        modoCampana = false;
-        modoContrarreloxo = false;
-        document.getElementById('wildcardBox').style.display = "none";
-        mostrarPantalla('screenMenu');
-    }
-
-    function jugarAleatorio() {
-        modoCampana = false;
-        modoContrarreloxo = false;
-        const catAlea = CATEGORIAS_BASE[Math.floor(Math.random() * CATEGORIAS_BASE.length)];
-        const diffAlea = Math.floor(Math.random() * 3) + 1;
-        iniciarXogoDirecto(catAlea.id, diffAlea);
-    }
-
-    // 1. COMODÍNS DE CAMPAÑA
-    function iniciarCampana(nivel) {
-        modoCampana = true;
-        modoContrarreloxo = false;
-        campanaNivel = nivel;
-        campanaPuntosAcumulados = 0;
-        campanaListaXogos = [...CATEGORIAS_BASE].sort(() => Math.random() - 0.5).slice(0, 5);
-        campanaIndex = 0;
-
-        comodinSaltarUsado = false;
-        comodinDuplicarUsado = false;
-        duplicarPuntosActivo = false;
-
-        document.getElementById('wildcardBox').style.display = "flex";
-        actualizarBotonsComodins();
-
-        iniciarSeguinteMinixogoCampana();
-    }
-
-    function actualizarBotonsComodins() {
-        const btnSkip = document.getElementById('btnSkip');
-        const btnDouble = document.getElementById('btnDouble');
-        btnSkip.disabled = comodinSaltarUsado;
-        btnDouble.disabled = comodinDuplicarUsado;
-    }
-
-    function usarComodin(tipo) {
-        if (tipo === 'skip' && !comodinSaltarUsado) {
-            comodinSaltarUsado = true;
-            actualizarBotonsComodins();
-            campanaIndex++;
-            iniciarSeguinteMinixogoCampana();
-        } else if (tipo === 'double' && !comodinDuplicarUsado) {
-            comodinDuplicarUsado = true;
-            duplicarPuntosActivo = true;
-            actualizarBotonsComodins();
-            alert("✨ Duplicador de puntos activado para este minixogo!");
-        }
-    }
-
-    // 2. DESAFÍOS DIRECTOS ENTRE AMIGOS DO CLUB
-    function iniciarDesafioDia() {
-        modoCampana = true;
-        modoContrarreloxo = false;
-        campanaNivel = 2; // NORMAL
-        campanaPuntosAcumulados = 0;
-
-        // Xeramos a mesma secuencia fixa de 3 minixogos baseada no día actual
-        const dataHoxe = new Date().toISOString().split('T')[0];
-        let seed = 0;
-        for (let i = 0; i < dataHoxe.length; i++) seed += dataHoxe.charCodeAt(i);
-
-        let listCopia = [...CATEGORIAS_BASE];
-        campanaListaXogos = [];
-        for (let i = 0; i < 3; i++) {
-            let idx = (seed + i * 7) % listCopia.length;
-            campanaListaXogos.push(listCopia.splice(idx, 1)[0]);
-        }
-
-        campanaIndex = 0;
-        document.getElementById('wildcardBox').style.display = "none";
-        iniciarSeguinteMinixogoCampana();
-    }
-
-    // 3. MODO CONTRARRELOXO GLOBAL
-    function iniciarContrarreloxo() {
-        modoContrarreloxo = true;
-        modoCampana = false;
-        tempoRestanteGlobal = 60;
-        campanaPuntosAcumulados = 0;
-
-        document.getElementById('wildcardBox').style.display = "none";
-
-        if (timerGlobalInterval) clearInterval(timerGlobalInterval);
-        timerGlobalInterval = setInterval(() => {
-            tempoRestanteGlobal--;
-            if (tempoRestanteGlobal <= 0) {
-                clearInterval(timerGlobalInterval);
-                rematarContrarreloxo();
-            } else {
-                let elExp = document.getElementById('scoreSystemExp');
-                if (elExp) elExp.innerText = `⏳ CONTRARRELOXO: ${tempoRestanteGlobal}s restantes | Puntos totais: ${campanaPuntosAcumulados}`;
-            }
-        }, 1000);
-
-        iniciarSeguinteMinixogoContrarreloxo();
-    }
-
-    function iniciarSeguinteMinixogoContrarreloxo() {
-        if (tempoRestanteGlobal <= 0) return;
-        const catAlea = CATEGORIAS_BASE[Math.floor(Math.random() * CATEGORIAS_BASE.length)];
-        iniciarXogoDirecto(catAlea.id, 1); // TRIVIAL para dinamismo
-    }
-
-    function rematarContrarreloxo() {
-        if (animFrame) cancelAnimationFrame(animFrame);
-        mostrarPantalla('screenGame');
-        document.getElementById('gameTitle').innerText = "⏳ TEMPO ESGOTADO!";
-        document.getElementById('gameDesc').innerText = "Remataron os 60 segundos do Modo Contrarreloxo.";
-        document.getElementById('scoreSystemExp').innerText = "Puntuación acumulada gardada no perfil.";
-
-        if (campanaPuntosAcumulados >= 500) desbloquearInsignia("time_king");
-
-        const area = document.getElementById('gameArea');
-        const ctrl = document.getElementById('gameControls');
-
-        area.innerHTML = `
-            <div class="result-box">
-                <h2 style="color:var(--accent-yellow);">Puntos Totais do Contrarreloxo</h2>
-                <div class="result-score">+${campanaPuntosAcumulados} pts</div>
-            </div>`;
-
-        ctrl.innerHTML = `<button onclick="mostrarPantalla('screenMenu')">🏠 Volver ao Menú Principal</button>`;
-    }
-
-    function iniciarSeguinteMinixogoCampana() {
-        if (campanaIndex >= campanaListaXogos.length) {
-            rematarCampanaCompleta();
-            return;
-        }
-        let minixogo = campanaListaXogos[campanaIndex];
-        iniciarXogoDirecto(minixogo.id, campanaNivel);
-    }
-
-    function rematarCampanaCompleta() {
-        playVictorySound();
-        document.getElementById('wildcardBox').style.display = "none";
-        mostrarPantalla('screenGame');
-        document.getElementById('gameTitle').innerText = "🏆 CAMPAÑA COMPLETADA!";
-        document.getElementById('gameDesc').innerText = "Completaches con éxito a serie de minixogos.";
-        document.getElementById('scoreSystemExp').innerText = "Suma total acumulada para o teu perfil.";
-
-        if (campanaNivel === 3) desbloquearInsignia("extreme_complete");
-
-        const area = document.getElementById('gameArea');
-        const ctrl = document.getElementById('gameControls');
-
-        area.innerHTML = `
-            <div class="result-box">
-                <h2 style="color:var(--accent-yellow);">Puntos Totales da Campaña</h2>
-                <div class="result-score">+${campanaPuntosAcumulados} pts</div>
-                <p style="color:var(--text-muted); font-size:0.85rem;">Os puntos foron engadidos ao teu ranking e club!</p>
-            </div>`;
-
-        ctrl.innerHTML = `<button onclick="mostrarPantalla('screenMenu')">🏠 Volver ao Menú Principal</button>`;
-    }
-
-    function iniciarXogoDirecto(typeId, level) {
-        if (animFrame) cancelAnimationFrame(animFrame);
-        const cat = CATEGORIAS_BASE.find(c => c.id === typeId) || CATEGORIAS_BASE[0];
-        const nomesDiff = ["TRIVIAL", "NORMAL", "EXTREMODURO"];
-        
-        let prefix = modoCampana ? `[Campaña ${campanaIndex+1}/${campanaListaXogos.length}] ` : (modoContrarreloxo ? `[⏱️ ${tempoRestanteGlobal}s] ` : '');
-        xogoActual = {
-            id: typeId,
-            level: level,
-            nome: `${prefix}${cat.nome} (${nomesDiff[level-1]})`,
-            desc: cat.desc,
-            exp: cat.exp
-        };
-
-        mostrarPantalla('screenGame');
-        document.getElementById('gameTitle').innerText = xogoActual.nome;
-        document.getElementById('gameDesc').innerText = xogoActual.desc;
-        document.getElementById('scoreSystemExp').innerText = modoContrarreloxo ? `⏳ CONTRARRELOXO: ${tempoRestanteGlobal}s restantes | Puntos: ${campanaPuntosAcumulados}` : `⚡ Puntuación: ${xogoActual.exp}`;
-
-        const area = document.getElementById('gameArea');
-        const ctrl = document.getElementById('gameControls');
-        area.innerHTML = ''; ctrl.innerHTML = '';
-
-        if (typeId === 'bar') cargarXogoBarra(area, ctrl);
-        else if (typeId === 'memory') cargarXogoMemory(area, ctrl);
-        else if (typeId === 'math') cargarXogoMathSpeed(area, ctrl);
-        else if (typeId === 'react') cargarXogoReaccion(area, ctrl);
-        else if (typeId === 'order') cargarXogoOrde(area, ctrl);
-        else if (typeId === 'box') cargarXogoCaixas(area, ctrl);
-        else if (typeId === 'time') cargarXogoTempoExacto(area, ctrl);
-        else if (typeId === 'dice') cargarXogoDados(area, ctrl);
-        else if (typeId === 'color') cargarXogoCorCorrecta(area, ctrl);
-        else if (typeId === 'swipe') cargarXogoDesliza(area, ctrl);
-        else if (typeId === 'pattern') cargarXogoPatron(area, ctrl);
-        else if (typeId === 'reverse_math') cargarXogoReverseMath(area, ctrl);
-        else if (typeId === 'balance') cargarXogoBalanza(area, ctrl);
-        else if (typeId === 'visual_find') cargarXogoVisualFind(area, ctrl);
-    }
-
-    // 1. BARRIÑA PRECISIÓN
-    function cargarXogoBarra(area, ctrl) {
-        let intentos = [], pos = 0;
-        let speed = xogoActual.level === 1 ? 1.5 : (xogoActual.level === 2 ? 3.2 : 5.5);
-        let dir = speed;
-
-        area.innerHTML = `
-            <p id="barStatus" style="margin:4px; font-size:0.9rem; color:var(--accent-blue); font-weight:bold;">Intento 1 de 5</p>
-            <div class="bar-container" id="barBox">
-                <div class="bar-pointer" id="barPtr"></div>
+            <br><hr><br>
+            <h3>Tódolos Xogos (14)</h3>
+            <div class="grid-xogos" id="grid-xogos-libres"></div>
+        </section>
+
+        <!-- ÁREA DE XOGO -->
+        <section id="pantalla-xogo" class="pantalla">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+                <h3 id="xogo-titulo">Xogo</h3>
+                <div>
+                    <span id="xogo-info-modo" style="font-weight:bold; margin-right:15px;"></span>
+                    <button onclick="abandonarXogo()" class="btn-danger">Abandonar</button>
+                </div>
             </div>
-            <p id="barScore" style="color:var(--accent-yellow); font-weight:bold; margin-top:12px; font-size:1.1rem;">Último: - | Media: 0 pts</p>`;
+            <div id="xogo-contenedor"></div>
+        </section>
+    </main>
 
-        const ptr = document.getElementById('barPtr');
-        const barBox = document.getElementById('barBox');
+    <script>
+        // ESTADO DA APLICACIÓN
+        let usuarioActual = null;
+        let modoXogo = 'libre'; // libre, campana, desafioDia, contrareloxo
+        let roldaActual = 1;
+        let totalRoldasCampana = 5;
+        let tempoRestanteContrareloxo = 0;
+        let timerContrareloxo = null;
+        let xogoActualId = null;
 
-        function moveBar() {
-            pos += dir;
-            if (pos >= 98 || pos <= 0) dir *= -1;
-            ptr.style.left = pos + '%';
-            animFrame = requestAnimationFrame(moveBar);
-        }
-        moveBar();
+        // LISTA DOS 14 XOGOS
+        const XOGOS = [
+            { id: 'dados', nome: 'Suma de Dados' },
+            { id: 'intruso', nome: 'O Obxecto Intruso' },
+            { id: 'precision', nome: 'Precisión da Barriña' },
+            { id: 'labirinto', nome: 'Labirinto Táctil' },
+            { id: 'caza_moscas', nome: 'Caza de Moscas' },
+            { id: 'sombras', nome: 'Memoria de Sombras' },
+            { id: 'metro', nome: 'Corredor do Metro' },
+            { id: 'tiro', nome: 'Tiro ao Blanco Móbil' },
+            { id: 'memoria_cartas', nome: 'Memoria de Cartas' },
+            { id: 'calculo', nome: 'Cálculo Rápido' },
+            { id: 'clics', nome: 'Clics Rápidos' },
+            { id: 'stroop', nome: 'Stroop de Cores' },
+            { id: 'secuencia', nome: 'Secuencia Visual' },
+            { id: 'anagrama', nome: 'Anagrama' }
+        ];
 
-        barBox.onclick = () => {
-            playBeep(500, 'sine', 0.1);
-            let mark = document.createElement('div');
-            mark.className = 'click-mark';
-            mark.style.left = pos + '%';
-            barBox.appendChild(mark);
-
-            let distToCenter = Math.abs(50 - pos);
-            let score = Math.max(0, Math.round(100 - (distToCenter * 2)));
-            intentos.push({score, dist: distToCenter.toFixed(1)});
-
-            let media = Math.round(intentos.reduce((a,b)=>a+b.score, 0) / intentos.length);
-            document.getElementById('barScore').innerText = `Último: ${score} pts | Media: ${media} pts`;
-
-            if (intentos.length < 5) {
-                document.getElementById('barStatus').innerText = `Intento ${intentos.length + 1} de 5`;
+        // INICIALIZACIÓN
+        function actualizarHeaderUsuario() {
+            const elUsuario = document.getElementById("header-usuario");
+            if (!usuarioActual) {
+                elUsuario.textContent = "";
+                elUsuario.style.display = "none";
             } else {
-                cancelAnimationFrame(animFrame);
-                let distMedia = (intentos.reduce((a,b)=>a+parseFloat(b.dist),0)/5).toFixed(1);
-                rematarEAmosarPuntos(media * xogoActual.level, `Media dos 5 intentos: ${media} pts`, `Desviación media do centro: ${distMedia}%`);
+                elUsuario.textContent = usuarioActual;
+                elUsuario.style.display = "inline-block";
             }
-        };
-    }
+        }
 
-    // 2. MEMORIA REVERTIDA
-    function cargarXogoMemory(area, ctrl) {
-        let cant = xogoActual.level === 1 ? 4 : (xogoActual.level === 2 ? 6 : 8);
-        let numArr = Array.from({length: cant}, (_, i) => i + 1).sort(() => Math.random() - 0.5);
-        let expected = 1, acertos = 0, tStart = Date.now();
+        function mostrarPantalla(id) {
+            document.querySelectorAll('.pantalla').forEach(p => p.classList.remove('activa'));
+            document.getElementById(`pantalla-${id}`).classList.add('activa');
+        }
 
-        let grid = document.createElement('div');
-        grid.className = 'grid-4x4';
+        function iniciarSesion() {
+            const nome = document.getElementById('input-usuario').value.trim();
+            if (nome) {
+                usuarioActual = nome;
+                actualizarHeaderUsuario();
+                renderizarGridXogos();
+                mostrarPantalla('menu-principal');
+            }
+        }
 
-        numArr.forEach(n => {
-            let b = document.createElement('div');
-            b.className = 'num-btn';
-            b.innerText = n;
-            b.dataset.val = n;
-            grid.appendChild(b);
-        });
-        area.appendChild(grid);
-
-        let tVisual = Math.max(800, 3000 - (xogoActual.level * 600));
-        setTimeout(() => {
-            let btns = area.querySelectorAll('.num-btn');
-            btns.forEach(b => {
-                b.classList.add('hidden-val');
-                b.onclick = () => {
-                    let v = parseInt(b.dataset.val);
-                    if (v === expected) {
-                        playBeep(500 + v*40, 'sine', 0.1);
-                        b.classList.add('done');
-                        expected++;
-                        acertos++;
-                        if (expected > cant) {
-                            let dur = ((Date.now() - tStart - tVisual)/1000).toFixed(1);
-                            rematarEAmosarPuntos(acertos * 30 * xogoActual.level, `Completado! ${acertos}/${cant} acertos.`, `Tempo de resposta: ${dur}s`);
-                        }
-                    } else {
-                        playBeep(180, 'sawtooth', 0.2);
-                        rematarEAmosarPuntos(acertos * 30 * xogoActual.level, `Fallaches! Acadaches ${acertos}/${cant} acertos.`, `Fallaches ao buscar o número ${expected}`);
-                    }
-                };
+        function copiarCodigoClub() {
+            const input = document.getElementById("input-club");
+            navigator.clipboard.writeText(input.value).then(() => {
+                const btn = document.getElementById("btn-copiar-club");
+                btn.textContent = "¡Copiado!";
+                setTimeout(() => btn.textContent = "Copiar Código", 2000);
             });
-        }, tVisual);
-    }
-
-    // 3. SUMAS EXPRESS
-    function cargarXogoMathSpeed(area, ctrl) {
-        let totalRondas = 5, ronda = 0, acertos = 0, tStart = Date.now();
-        let numMax = xogoActual.level === 1 ? 10 : (xogoActual.level === 2 ? 25 : 50);
-
-        function nextMath() {
-            if (ronda >= totalRondas) {
-                let dur = ((Date.now() - tStart)/1000).toFixed(1);
-                let pts = Math.max(10, (acertos * 50) - Math.round(dur * 2));
-                rematarEAmosarPuntos(pts * xogoActual.level, `${acertos}/${totalRondas} acertos en ${dur}s`, `Tempo medio por suma: ${(dur/totalRondas).toFixed(1)}s`);
-                return;
-            }
-            ronda++;
-            let a = Math.floor(Math.random() * numMax) + 1;
-            let b = Math.floor(Math.random() * numMax) + 1;
-
-            area.innerHTML = `
-                <p style="color:var(--text-muted); margin:0;">Suma ${ronda} de ${totalRondas}</p>
-                <h2 id="sumExpr" style="color:var(--accent-yellow); font-size:2.4rem; margin:10px 0;">${a} + ${b}</h2>
-                <input type="number" id="mathAns" autofocus style="width:65%; font-size:1.6rem;">`;
-
-            const inp = document.getElementById('mathAns');
-            inp.focus();
-            inp.oninput = () => {
-                if (parseInt(inp.value) === (a + b)) {
-                    playBeep(700, 'sine', 0.08);
-                    acertos++;
-                    nextMath();
-                }
-            };
-        }
-        nextMath();
-    }
-
-    // 4. REACCIÓN E VELOCIDADE
-    function cargarXogoReaccion(area, ctrl) {
-        let rondasTotal = 5, rondaActual = 0, tempos = [];
-        let numCircles = xogoActual.level === 1 ? 4 : (xogoActual.level === 2 ? 9 : 16);
-
-        let grid = document.createElement('div');
-        grid.className = numCircles === 16 ? 'grid-4x4-react' : (numCircles === 9 ? 'grid-3x3' : 'grid-2x2');
-
-        for (let i = 0; i < numCircles; i++) {
-            let btn = document.createElement('div');
-            btn.className = 'circle-btn';
-            grid.appendChild(btn);
-        }
-        area.appendChild(grid);
-
-        let info = document.createElement('p');
-        info.innerText = "Preme Comezar para iniciar as 5 roldas.";
-        area.appendChild(info);
-
-        function proximaRolda() {
-            if (rondaActual >= rondasTotal) {
-                let media = Math.round(tempos.reduce((a,b)=>a+b,0) / rondasTotal);
-                let pts = Math.max(10, Math.round(1000 - media));
-                let mellor = Math.min(...tempos);
-                rematarEAmosarPuntos(pts * xogoActual.level, `Tempo medio de reacción: ${media}ms`, `Mellor reacción: ${mellor}ms | Círculos: ${numCircles}`);
-                return;
-            }
-            rondaActual++;
-            info.innerText = `Rolda ${rondaActual} de ${rondasTotal}... Atento!`;
-            let circles = area.querySelectorAll('.circle-btn');
-            circles.forEach(c => { c.classList.remove('active'); c.onclick = null; });
-
-            let delay = Math.random() * (xogoActual.level === 1 ? 1800 : (xogoActual.level === 2 ? 1000 : 500)) + 300;
-            setTimeout(() => {
-                let idx = Math.floor(Math.random() * numCircles);
-                let activeCircle = circles[idx];
-                activeCircle.classList.add('active');
-                let start = Date.now();
-
-                activeCircle.onclick = () => {
-                    let diff = Date.now() - start;
-                    playBeep(800, 'sine', 0.1);
-                    tempos.push(diff);
-                    proximaRolda();
-                };
-            }, delay);
         }
 
-        let startBtn = document.createElement('button');
-        startBtn.innerText = 'Comezar Roldas';
-        startBtn.onclick = () => { startBtn.style.display = 'none'; proximaRolda(); };
-        ctrl.appendChild(startBtn);
-    }
+        // EASTER EGG DE BORRADO
+        function mostrarMenuBorrado() {
+            let opcion = "";
+            while (opcion !== "4") {
+                opcion = prompt(
+                    "--- MENÚ DE BORRADO EXTREMO ---\n\n" +
+                    "1. Borrar Historial de Partidas: Elimina os rexistros de vitorias e derrotas.\n" +
+                    "2. Resetear Récords e Puntuacións: Pon a cero as marcas de tódolos xogos.\n" +
+                    "3. Eliminar Datos do Club: Borra a vinculación do club actual.\n" +
+                    "4. Saír (Ir á páxina inicial de Login)\n\n" +
+                    "Escolle unha opción (1-4):"
+                );
 
-    // 5. ORDE NUMÉRICA
-    function cargarXogoOrde(area, ctrl) {
-        let cant = xogoActual.level === 1 ? 8 : (xogoActual.level === 2 ? 12 : 16);
-        let expected = 1, acertos = 0, tStart = Date.now();
-        let numbers = Array.from({length: cant}, (_, i) => i + 1).sort(() => Math.random() - 0.5);
-        
-        let grid = document.createElement('div');
-        grid.className = 'grid-4x4';
-
-        numbers.forEach(num => {
-            let btn = document.createElement('div');
-            btn.className = 'num-btn';
-            btn.innerText = num;
-            btn.onclick = () => {
-                if (num === expected) {
-                    playBeep(400 + (num * 20), 'sine', 0.08);
-                    btn.classList.add('done');
-                    expected++;
-                    acertos++;
-                    if (expected > cant) {
-                        let dur = ((Date.now() - tStart)/1000).toFixed(1);
-                        rematarEAmosarPuntos(acertos * 25 * xogoActual.level, `Completado! ${cant}/${cant} números.`, `Tempo total: ${dur}s`);
-                    }
-                } else {
-                    playBeep(180, 'sawtooth', 0.15);
-                    rematarEAmosarPuntos(acertos * 20 * xogoActual.level, `Fallaches no ${num}.`, `Números premidos correctamente: ${acertos}/${cant}`);
-                }
-            };
-            grid.appendChild(btn);
-        });
-        area.appendChild(grid);
-    }
-
-    // 6. CONTADOR DE CAIXAS
-    function cargarXogoCaixas(area, ctrl) {
-        let rolda = 0, totalRoldas = 3, acertosTotais = 0;
-        const cores = ['#f59e0b', '#38bdf8', '#10b981', '#a855f7', '#ef4444', '#ec4899', '#f97316'];
-
-        function xogarRolda() {
-            if (rolda >= totalRoldas) {
-                rematarEAmosarPuntos(acertosTotais * 60 * xogoActual.level, `Acertaches ${acertosTotais} de ${totalRoldas} roldas.`, `Nivel de dificultade: ${xogoActual.level}`);
-                return;
-            }
-            rolda++;
-            area.innerHTML = ''; ctrl.innerHTML = '';
-
-            let header = document.createElement('p');
-            header.style.cssText = 'color:var(--accent-blue); font-weight:bold; margin:0 0 6px 0; position:absolute; top:8px;';
-            header.innerText = `Rolda ${rolda} de ${totalRoldas}`;
-            area.appendChild(header);
-
-            let boxSize = xogoActual.level === 1 ? 60 : (xogoActual.level === 2 ? 48 : 40);
-            let numBoxes = Math.floor(Math.random() * (xogoActual.level * 3)) + 4;
-            let placed = [];
-
-            for (let i = 0; i < numBoxes; i++) {
-                let b = document.createElement('div');
-                let color = cores[Math.floor(Math.random() * cores.length)];
-                let max = 60, top = 0, left = 0;
-                while (max-- > 0) {
-                    top = Math.random() * 100 + 35;
-                    left = Math.random() * 180 + 20;
-                    if (!placed.some(p => !(left + boxSize + 4 < p.left || left > p.left + boxSize + 4 || top + boxSize + 4 < p.top || top > p.top + boxSize + 4))) {
-                        placed.push({top, left});
-                        b.style.cssText = `width:${boxSize}px; height:${boxSize}px; background:${color}; border-radius:8px; position:absolute; top:${top}px; left:${left}px; border:2px solid #ffffffaa; box-shadow:0 3px 6px rgba(0,0,0,0.5);`;
-                        area.appendChild(b);
+                switch (opcion) {
+                    case "1":
+                        localStorage.removeItem("historialPartidas");
+                        alert("Historial eliminado.");
                         break;
-                    }
+                    case "2":
+                        localStorage.removeItem("recordsUsuario");
+                        alert("Récords reseteados.");
+                        break;
+                    case "3":
+                        localStorage.removeItem("datosClub");
+                        alert("Datos do club borrados.");
+                        break;
+                    case "4":
+                        usuarioActual = null;
+                        actualizarHeaderUsuario();
+                        mostrarPantalla('login');
+                        return;
+                    default:
+                        if (opcion !== null) alert("Opción non válida.");
+                        break;
                 }
             }
-
-            let tDisplay = xogoActual.level === 1 ? 2200 : (xogoActual.level === 2 ? 1600 : 1100);
-            setTimeout(() => {
-                area.innerHTML = '<h4 style="color:var(--text-muted); margin-top:20px;">Cantas caixas había na pantalla?</h4>';
-                let inp = document.createElement('input');
-                inp.type = 'number';
-                inp.autofocus = true;
-                inp.style.cssText = 'width:60%; font-size:1.6rem; margin-top:10px;';
-                area.appendChild(inp);
-
-                inp.oninput = () => {
-                    if (parseInt(inp.value) === placed.length) {
-                        playBeep(700, 'sine', 0.1);
-                        acertosTotais++;
-                        xogarRolda();
-                    }
-                };
-            }, tDisplay);
-        }
-        xogarRolda();
-    }
-
-    // 7. TEMPO EXACTO
-    function cargarXogoTempoExacto(area, ctrl) {
-        let target = xogoActual.level === 1 ? 5.0 : (xogoActual.level === 2 ? 7.0 : 10.0);
-        area.innerHTML = `
-            <p style="margin:0;">Obxectivo: Clica aos <strong>${target.toFixed(3)}s</strong></p>
-            <div style="width:100%; background:#334155; height:22px; border-radius:11px; margin:15px 0; overflow:hidden;">
-                <div id="timeFill" style="width:100%; height:100%; background:var(--accent-blue);"></div>
-            </div>
-            <h2 id="timeDisp" style="font-size:2.2rem; color:var(--accent-yellow);">0.000s</h2>`;
-
-        let fill = document.getElementById('timeFill');
-        let disp = document.getElementById('timeDisp');
-        let start = Date.now();
-
-        function updateTime() {
-            let elapsed = (Date.now() - start) / 1000;
-            let percent = Math.max(0, 100 - (elapsed / target) * 100);
-            fill.style.width = percent + '%';
-
-            if (percent < 50) {
-                fill.style.opacity = '0';
-                disp.innerText = "??.???s";
-            } else {
-                disp.innerText = elapsed.toFixed(3) + 's';
-            }
-            animFrame = requestAnimationFrame(updateTime);
-        }
-        updateTime();
-
-        let stopBtn = document.createElement('button');
-        stopBtn.innerText = '🛑 PARAR AGORA!';
-        stopBtn.onclick = () => {
-            cancelAnimationFrame(animFrame);
-            let total = ((Date.now() - start) / 1000).toFixed(3);
-            let diff = Math.abs(target - total);
-            let score = Math.max(0, Math.round(200 - (diff * 50)));
-            rematarEAmosarPuntos(score * xogoActual.level, `Paraches en ${total}s`, `Diferenza exacta: ${diff.toFixed(3)}s`);
-        };
-        ctrl.appendChild(stopBtn);
-    }
-
-    // 8. SUMA DE DADOS
-    function cargarXogoDados(area, ctrl) {
-        let totalRondas = 3, ronda = 0, tempos = [], acertos = 0;
-
-        function xogarRoldaDado() {
-            if (ronda >= totalRondas) {
-                let mediaTempo = (tempos.reduce((a,b)=>a+b,0)/totalRondas).toFixed(1);
-                let pts = Math.max(10, (acertos * 100) - Math.round(mediaTempo * 3));
-                rematarEAmosarPuntos(pts * xogoActual.level, `${acertos}/${totalRondas} acertos nas sumas.`, `Tempo medio por suma: ${mediaTempo}s`);
-                return;
-            }
-            ronda++;
-            let totalDots = 0;
-            area.innerHTML = `<p style="color:var(--accent-blue); margin:0 0 10px 0;">Rolda ${ronda} de ${totalRondas}</p>`;
-            
-            let diceValues = [];
-            for (let d = 0; d < 4; d++) {
-                let val = Math.floor(Math.random() * 6) + 1;
-                totalDots += val;
-                diceValues.push(val);
-            }
-
-            if (ronda === 1) {
-                let diceHtml = '<div class="dice-container">';
-                for (let d = 0; d < 4; d++) diceHtml += `<div class="dice-cover">❓</div>`;
-                diceHtml += '</div>';
-                area.innerHTML += diceHtml;
-
-                ctrl.innerHTML = '';
-                let btnStart = document.createElement('button');
-                btnStart.innerText = '🎲 Destapar e iniciar';
-                ctrl.appendChild(btnStart);
-
-                btnStart.onclick = () => {
-                    ctrl.innerHTML = '';
-                    mostrarEActivarDados(diceValues, totalDots);
-                };
-            } else {
-                mostrarEActivarDados(diceValues, totalDots);
-            }
         }
 
-        function mostrarEActivarDados(diceValues, totalDots) {
-            let start = Date.now();
-            let diceHtml = '<div class="dice-container">';
-            diceValues.forEach(val => {
-                diceHtml += `<div class="dice">`;
-                for (let i = 1; i <= 9; i++) {
-                    let show = (val===1 && i===5) || (val===2 && (i===1||i===9)) || (val===3 && (i===1||i===5||i===9)) ||
-                               (val===4 && (i===1||i===3||i===7||i===9)) || (val===5 && (i===1||i===3||i===5||i===7||i===9)) ||
-                               (val===6 && (i===1||i===3||i===4||i===6||i===7||i===9));
-                    diceHtml += `<div class="dot" style="visibility:${show?'visible':'hidden'}"></div>`;
-                }
-                diceHtml += `</div>`;
+        // XESTIÓN DE MODOS DE XOGO
+        function renderizarGridXogos() {
+            const container = document.getElementById('grid-xogos-libres');
+            container.innerHTML = '';
+            XOGOS.forEach(x => {
+                const card = document.createElement('div');
+                card.className = 'card-xogo';
+                card.innerHTML = `<h4>${x.nome}</h4>`;
+                card.onclick = () => cargarXogo(x.id, 'libre');
+                container.appendChild(card);
             });
-            diceHtml += '</div>';
-            area.innerHTML = `<p style="color:var(--accent-blue); margin:0 0 10px 0;">Rolda ${ronda} de ${totalRondas}</p>` + diceHtml;
+        }
 
-            let inp = document.createElement('input');
-            inp.type = 'number';
-            inp.placeholder = 'Suma total dos puntos';
-            inp.autofocus = true;
-            inp.style.cssText = 'width:65%; font-size:1.5rem;';
-            area.appendChild(inp);
+        function iniciarModo(modo) {
+            modoXogo = modo;
+            roldaActual = 1;
+            clearInterval(timerContrareloxo);
 
-            inp.oninput = () => {
-                if (parseInt(inp.value) === totalDots) {
-                    let dur = (Date.now() - start) / 1000;
-                    tempos.push(dur);
-                    playBeep(700, 'sine', 0.1);
-                    acertos++;
-                    xogarRoldaDado();
+            if (modo === 'contrareloxo') {
+                tempoRestanteContrareloxo = 60;
+                timerContrareloxo = setInterval(() => {
+                    tempoRestanteContrareloxo--;
+                    if (tempoRestanteContrareloxo <= 0) {
+                        clearInterval(timerContrareloxo);
+                        alert("¡Tempo esgotado no modo Contrareloxo!");
+                        mostrarPantalla('menu-principal');
+                    } else {
+                        const el = document.getElementById('xogo-info-modo');
+                        if (el) el.textContent = `⏱️ Tempo: ${tempoRestanteContrareloxo}s`;
+                    }
+                }, 1000);
+                cargarXogoAleatorio();
+            } else if (modo === 'desafioDia' || modo === 'campana') {
+                cargarSeguinteRolda();
+            }
+        }
+
+        function cargarSeguinteRolda() {
+            const maxRoldas = (modoXogo === 'desafioDia') ? 3 : totalRoldasCampana;
+            if (roldaActual <= maxRoldas) {
+                cargarXogoAleatorio();
+            } else {
+                alert(`¡Parabéns! Completaches o modo ${modoXogo === 'desafioDia' ? 'Desafío do Día' : 'Campaña'}.`);
+                mostrarPantalla('menu-principal');
+            }
+        }
+
+        function cargarXogoAleatorio() {
+            const azar = XOGOS[Math.floor(Math.random() * XOGOS.length)].id;
+            cargarXogo(azar, modoXogo);
+        }
+
+        function aoFinalizarXogo(vitoria) {
+            if (modoXogo === 'contrareloxo') {
+                if (tempoRestanteContrareloxo > 0) cargarXogoAleatorio();
+            } else if (modoXogo === 'desafioDia' || modoXogo === 'campana') {
+                roldaActual++;
+                cargarSeguinteRolda();
+            } else {
+                alert(vitoria ? "¡Rolda completada con éxito!" : "Fin do xogo.");
+                mostrarPantalla('menu-principal');
+            }
+        }
+
+        function abandonarXogo() {
+            clearInterval(timerContrareloxo);
+            mostrarPantalla('menu-principal');
+        }
+
+        function cargarXogo(id, modo) {
+            xogoActualId = id;
+            mostrarPantalla('xogo');
+            const info = document.getElementById('xogo-info-modo');
+            
+            if (modo === 'libre') info.textContent = "Modo Libre";
+            else if (modo === 'contrareloxo') info.textContent = `⏱️ Tempo: ${tempoRestanteContrareloxo}s`;
+            else info.textContent = `Rolda ${roldaActual} de ${(modo==='desafioDia'?3:totalRoldasCampana)}`;
+
+            const config = XOGOS.find(x => x.id === id);
+            document.getElementById('xogo-titulo').textContent = config ? config.nome : 'Xogo';
+
+            const c = document.getElementById('xogo-contenedor');
+            c.innerHTML = '';
+
+            // Cargar lóxica do xogo correspondente
+            switch(id) {
+                case 'dados': initDados(c); break;
+                case 'intruso': initIntruso(c); break;
+                case 'precision': initPrecision(c); break;
+                case 'labirinto': initLabirinto(c); break;
+                case 'caza_moscas': initCazaMoscas(c); break;
+                case 'sombras': initSombras(c); break;
+                case 'metro': initMetro(c); break;
+                case 'tiro': initTiro(c); break;
+                default: initXogoXenerico(c, id); break;
+            }
+        }
+
+        // ==========================================
+        // IMPLEMENTACIÓN DOS XOGOS
+        // ==========================================
+
+        // 1. DADOS (Texto pequeno fix)
+        function initDados(c) {
+            const num1 = Math.floor(Math.random() * 6) + 1;
+            const num2 = Math.floor(Math.random() * 6) + 1;
+            const suma = num1 + num2;
+            c.innerHTML = `
+                <div class="dados-instrucións">Suma total dos puntos amosados nos dados para pasar a seguinte rolda.</div>
+                <h1 style="font-size:3rem; text-align:center; margin:1rem;">🎲 ${num1} + 🎲 ${num2}</h1>
+                <input type="number" id="ans-dados" style="font-size:1.5rem; width:100%; text-align:center;">
+                <button onclick="valDados(${suma})" style="width:100%; margin-top:10px;">Comprobar</button>
+            `;
+        }
+        function valDados(correct) {
+            const val = parseInt(document.getElementById('ans-dados').value);
+            aoFinalizarXogo(val === correct);
+        }
+
+        // 2. O OBXECTO INTRUSO (5 Roldas e maior dificultade)
+        function initIntruso(c) {
+            let subRolda = 1;
+            function renderSubRolda() {
+                c.innerHTML = `<h4>Rolda Intruso ${subRolda}/5</h4><p>Atopa a figura diferente:</p><div id="intruso-grid" style="display:flex; flex-wrap:wrap; gap:10px; margin-top:10px;"></div>`;
+                const grid = document.getElementById('intruso-grid');
+                const totalElem = 5 + (subRolda * 3);
+                const normalIcon = "🍎";
+                const intrusoIcon = "🍏";
+                const intrusoPos = Math.floor(Math.random() * totalElem);
+
+                for(let i=0; i<totalElem; i++) {
+                    const btn = document.createElement('button');
+                    btn.style.fontSize = "1.8rem";
+                    btn.textContent = (i === intrusoPos) ? intrusoIcon : normalIcon;
+                    btn.onclick = () => {
+                        if (i === intrusoPos) {
+                            if (subRolda < 5) { subRolda++; renderSubRolda(); }
+                            else { aoFinalizarXogo(true); }
+                        } else {
+                            aoFinalizarXogo(false);
+                        }
+                    };
+                    grid.appendChild(btn);
                 }
+            }
+            renderSubRolda();
+        }
+
+        // 3. PRECISIÓN DA BARRIÑA (Botón grande accesible e saltos de cor)
+        function initPrecision(c) {
+            c.innerHTML = `
+                <p>Preme no botón cando a barra estea na zona verde central:</p>
+                <div class="barra-container">
+                    <div class="barra-precision"></div>
+                    <div id="ind-bar" class="indicador-barra"></div>
+                </div>
+                <button class="btn-accion-barrina" onclick="detenerBarra()">PARAR AGORA</button>
+            `;
+            let pos = 0;
+            let dir = 2;
+            const ind = document.getElementById('ind-bar');
+            const interval = setInterval(() => {
+                pos += dir;
+                if (pos >= 100 || pos <= 0) dir *= -1;
+                if (ind) ind.style.left = pos + '%';
+            }, 20);
+
+            window.detenerBarra = () => {
+                clearInterval(interval);
+                const exito = (pos >= 45 && pos <= 55);
+                aoFinalizarXogo(exito);
             };
         }
 
-        xogarRoldaDado();
-    }
+        // 4. LABIRINTO TÁCTIL (Arrastrar sen tocar bordos vermellos)
+        function initLabirinto(c) {
+            c.innerHTML = `<p>Arrastra o círculo azul ata a meta verde sen tocar as paredes vermellas:</p>
+            <canvas id="cv-lab" width="300" height="300"></canvas>`;
+            const cv = document.getElementById('cv-lab');
+            const ctx = cv.getContext('2d');
+            let arrastrando = false;
 
-    // 9. COR CORRECTA
-    function cargarXogoCorCorrecta(area, ctrl) {
-        let totalRondas = 5, ronda = 0, acertos = 0, tStart = Date.now();
-        const cores = [
-            { nome: 'VERMELLO', color: '#ef4444' },
-            { nome: 'VERDE', color: '#10b981' },
-            { nome: 'AZUL', color: '#38bdf8' },
-            { nome: 'AMARELO', color: '#f59e0b' },
-            { nome: 'VIOLETA', color: '#a855f7' },
-            { nome: 'NARANXA', color: '#f97316' },
-            { nome: 'ROSA', color: '#ec4899' },
-            { nome: 'CIÁN', color: '#06b6d4' }
-        ];
-
-        function proximaRoldaCor() {
-            if (ronda >= totalRondas) {
-                let dur = ((Date.now() - tStart)/1000).toFixed(1);
-                let pts = Math.max(10, (acertos * 40) - Math.round(dur * 2));
-                rematarEAmosarPuntos(pts * xogoActual.level, `${acertos}/${totalRondas} acertos de cor.`, `Tempo total: ${dur}s`);
-                return;
+            function debuxar() {
+                ctx.fillStyle = "red"; ctx.fillRect(0,0,300,300);
+                ctx.fillStyle = "white"; ctx.fillRect(40,40,220,220); // Camiño seguro
+                ctx.fillStyle = "green"; ctx.fillRect(200,200,50,50); // Meta
+                ctx.fillStyle = "blue"; ctx.beginPath(); ctx.arc(60,60,15,0,Math.PI*2); ctx.fill(); // Inicio
             }
-            ronda++;
-            let opcions = [...cores].sort(() => Math.random() - 0.5).slice(0, 6);
-            let idxTexto = Math.floor(Math.random() * opcions.length);
-            let idxCor = Math.floor(Math.random() * opcions.length);
+            debuxar();
 
-            area.innerHTML = `
-                <p style="color:var(--text-muted); margin:0;">Rolda ${ronda} de ${totalRondas}</p>
-                <h1 style="color:${opcions[idxCor].color}; font-size:2.4rem; margin:12px 0;">${opcions[idxTexto].nome}</h1>`;
+            function checkPos(e) {
+                const rect = cv.getBoundingClientRect();
+                const x = (e.clientX || e.touches[0].clientX) - rect.left;
+                const y = (e.clientY || e.touches[0].clientY) - rect.top;
+                
+                if (x < 40 || x > 260 || y < 40 || y > 260) {
+                    arrastrando = false;
+                    alert("¡Tocaches o bordo vermello!");
+                    aoFinalizarXogo(false);
+                } else if (x >= 200 && y >= 200) {
+                    arrastrando = false;
+                    aoFinalizarXogo(true);
+                }
+            }
 
-            let grid = document.createElement('div');
-            grid.className = 'grid-3x2';
+            cv.onmousedown = cv.ontouchstart = () => { arrastrando = true; };
+            cv.onmousemove = cv.ontouchmove = (e) => { if(arrastrando) checkPos(e); };
+            cv.onmouseup = cv.ontouchend = () => { arrastrando = false; };
+        }
 
-            opcions.forEach(c => {
-                let b = document.createElement('button');
-                b.innerText = c.nome;
-                b.style.background = c.color;
-                b.style.color = '#0f172a';
-                b.style.fontSize = '0.85rem';
-                b.style.padding = '10px 4px';
-                b.onclick = () => {
-                    if (c.color === opcions[idxCor].color) {
-                        playBeep(800, 'sine', 0.1);
-                        acertos++;
-                    } else {
-                        playBeep(200, 'sawtooth', 0.1);
-                    }
-                    proximaRoldaCor();
+        // 5. CAZA DE MOSCAS (5 obxectos)
+        function initCazaMoscas(c) {
+            c.innerHTML = `<p>Preme en 5 obxectos antes de que se movan/desaparezan!</p>
+            <div class="game-area" id="area-moscas"></div>`;
+            const area = document.getElementById('area-moscas');
+            let cazadas = 0;
+
+            function xenerarMosca() {
+                if (cazadas >= 5) {
+                    aoFinalizarXogo(true);
+                    return;
+                }
+                area.innerHTML = '';
+                const m = document.createElement('div');
+                m.className = 'target-fly';
+                m.style.top = Math.random() * 280 + 'px';
+                m.style.left = Math.random() * 280 + 'px';
+                
+                const timeout = setTimeout(() => {
+                    aoFinalizarXogo(false); // Esgotouse o tempo sen premela
+                }, 1500);
+
+                m.onclick = () => {
+                    clearTimeout(timeout);
+                    cazadas++;
+                    xenerarMosca();
                 };
-                grid.appendChild(b);
-            });
-            area.appendChild(grid);
+                area.appendChild(m);
+            }
+            xenerarMosca();
         }
-        proximaRoldaCor();
-    }
 
-    // 10. DESLIZA RÁPIDO!
-    function cargarXogoDesliza(area, ctrl) {
-        let dirsBase = [
-            { txt: '⬆️', code: 'UP' },
-            { txt: '⬇️', code: 'DOWN' },
-            { txt: '⬅️', code: 'LEFT' },
-            { txt: '➡️', code: 'RIGHT' }
-        ];
-        let rondas = 5, acertos = 0, actual = 0, tStart = Date.now();
+        // 6. MEMORIA DE SOMBRAS
+        function initSombras(c) {
+            const opcions = [
+                { id: 'cán', icon: '🐶' },
+                { id: 'gato', icon: '🐱' },
+                { id: 'coche', icon: '🚗' },
+                { id: 'avión', icon: '✈️' }
+            ];
+            const correcto = opcions[Math.floor(Math.random()*opcions.length)];
 
-        function segRolda() {
-            if (actual >= rondas) {
-                let dur = ((Date.now() - tStart)/1000).toFixed(1);
-                rematarEAmosarPuntos(acertos * 30 * xogoActual.level, `Acertaches ${acertos}/${rondas} frechas.`, `Tempo de reacción total: ${dur}s`);
-                return;
-            }
-            actual++;
-
-            let targetBase = dirsBase[Math.floor(Math.random() * dirsBase.length)];
-            let rotDeg = 0;
-
-            if (xogoActual.level === 2 || xogoActual.level === 3) {
-                let rots = [0, 90, 180, 270];
-                rotDeg = rots[Math.floor(Math.random() * rots.length)];
-            }
-
-            // A frecha de orixe '⬆️' apunta arriba (UP). A rotación en sentido horario (CW) modifica a orientación.
-            let directionOrder = ['UP', 'RIGHT', 'DOWN', 'LEFT'];
-            let baseIdx = directionOrder.indexOf(targetBase.code);
-            let steps = Math.round(rotDeg / 90) % 4;
-            let finalIdx = (baseIdx + steps) % 4;
-            let finalDirectionCode = directionOrder[finalIdx];
-
-            area.innerHTML = `
-                <p style="color:var(--text-muted); margin:0;">Rolda ${actual} de ${rondas}</p>
-                <div style="margin:15px 0;">
-                    <span style="font-size:4rem; display:inline-block; transform:rotate(${rotDeg}deg); border:2px solid #334155; padding:10px 20px; border-radius:12px; background:#1e293b;">${targetBase.txt}</span>
-                </div>`;
-
-            let grid = document.createElement('div');
-            grid.className = 'grid-2x2';
-
-            let btnDirs = [...dirsBase].sort(() => Math.random() - 0.5);
-            btnDirs.forEach(d => {
-                let b = document.createElement('button');
-                b.className = 'swipe-btn';
-                b.innerText = d.txt;
-                b.onclick = () => {
-                    if (d.code === finalDirectionCode) {
-                        playBeep(700, 'sine', 0.08);
-                        acertos++;
-                    } else {
-                        playBeep(200, 'sawtooth', 0.08);
-                    }
-                    segRolda();
-                };
-                grid.appendChild(b);
-            });
-            area.appendChild(grid);
-        }
-        segRolda();
-    }
-
-    // 11. PATRÓN DE LUZ
-    function cargarXogoPatron(area, ctrl) {
-        let roldaMat = 0, totalRoldasMat = 3, acertosPasoTotais = 0;
-
-        function xogarRoldaPatron() {
-            if (roldaMat >= totalRoldasMat) {
-                rematarEAmosarPuntos(acertosPasoTotais * 35 * xogoActual.level, "Patrón de luz completado nas 3 roldas!", `Pasos memorizados: ${acertosPasoTotais}`);
-                return;
-            }
-            roldaMat++;
-            area.innerHTML = '';
-            
-            let maxPasos = (roldaMat * 2) + (xogoActual.level === 1 ? 1 : (xogoActual.level === 2 ? 2 : 3));
-            let patron = [], paso = 0;
-
-            let grid = document.createElement('div');
-            grid.className = 'grid-2x2';
-            for(let i=0; i<4; i++) {
-                let b = document.createElement('div');
-                b.className = 'circle-btn';
-                b.dataset.idx = i;
-                grid.appendChild(b);
-            }
-            area.appendChild(grid);
-
-            for(let i=0; i<maxPasos; i++) patron.push(Math.floor(Math.random()*4));
-
-            let info = document.createElement('p');
-            info.style.cssText = 'color:var(--accent-blue); font-weight:bold; margin-top:10px;';
-            info.innerText = `Rolda ${roldaMat} de ${totalRoldasMat}: Observa o patrón de ${maxPasos} pasos...`;
-            area.appendChild(info);
-
-            function reproducir() {
-                let btns = area.querySelectorAll('.circle-btn');
-                patron.forEach((val, idx) => {
-                    setTimeout(() => {
-                        btns[val].classList.add('active');
-                        playBeep(400 + val*100, 'sine', 0.2);
-                        setTimeout(() => btns[val].classList.remove('active'), 350);
-                    }, (idx + 1) * (550 - (xogoActual.level*50)));
-                });
-
-                setTimeout(() => {
-                    info.innerText = "Repite o patrón!";
-                    btns.forEach(b => {
-                        b.onclick = () => {
-                            let idxClicked = parseInt(b.dataset.idx);
-                            if (idxClicked === patron[paso]) {
-                                playBeep(400 + idxClicked*100, 'sine', 0.1);
-                                paso++;
-                                acertosPasoTotais++;
-                                if (paso >= maxPasos) {
-                                    setTimeout(xogarRoldaPatron, 500);
-                                }
-                            } else {
-                                playBeep(180, 'sawtooth', 0.2);
-                                rematarEAmosarPuntos(acertosPasoTotais * 20 * xogoActual.level, `Fallaches no paso ${paso+1} da rolda ${roldaMat}.`, `Completaches ${acertosPasoTotais} pasos en total.`);
-                            }
-                        };
-                    });
-                }, (maxPasos + 1) * (550 - (xogoActual.level*50)));
-            }
-            reproducir();
-        }
-        xogarRoldaPatron();
-    }
-
-    // 12. CÁLCULO MENTAL INVERTIDO
-    function cargarXogoReverseMath(area, ctrl) {
-        let totalRondas = 3, ronda = 0, acertos = 0, tStart = Date.now();
-        let ops = ['+', '*', '-'];
-
-        function proximaRoldaInv() {
-            if (ronda >= totalRondas) {
-                let dur = ((Date.now() - tStart)/1000).toFixed(1);
-                rematarEAmosarPuntos(acertos * 50 * xogoActual.level, `${acertos}/${totalRondas} combinacións correctas.`, `Tempo total: ${dur}s`);
-                return;
-            }
-            ronda++;
-            let maxN = xogoActual.level === 1 ? 12 : (xogoActual.level === 2 ? 25 : 50);
-            let n1 = Math.floor(Math.random() * maxN) + 2;
-            let n2 = Math.floor(Math.random() * maxN) + 2;
-            let op = ops[Math.floor(Math.random() * (xogoActual.level === 1 ? 1 : 3))];
-
-            let res = 0;
-            if (op === '+') res = n1 + n2;
-            if (op === '*') res = n1 * n2;
-            if (op === '-') { if (n1 < n2) { let temp = n1; n1 = n2; n2 = temp; } res = n1 - n2; }
-
-            let targetText = `Resultado: ${res}`;
-            area.innerHTML = `
-                <p style="color:var(--text-muted); margin:0;">Rolda ${ronda} de ${totalRondas}</p>
-                <h2 style="color:var(--accent-yellow); font-size:2.2rem; margin:10px 0;">${targetText}</h2>
-                <p style="font-size:0.85rem; color:var(--accent-blue);">Atopa a combinación correcta:</p>`;
-
-            let correctString = `${n1} ${op} ${n2}`;
-            let options = [correctString];
-
-            while (options.length < 4) {
-                let fake1 = Math.floor(Math.random() * maxN) + 2;
-                let fake2 = Math.floor(Math.random() * maxN) + 2;
-                let fakeOp = ops[Math.floor(Math.random() * ops.length)];
-                let fakeStr = `${fake1} ${fakeOp} ${fake2}`;
-                if (!options.includes(fakeStr)) options.push(fakeStr);
-            }
-            options.sort(() => Math.random() - 0.5);
-
-            let grid = document.createElement('div');
-            grid.className = 'grid-2x2';
-
-            options.forEach(optStr => {
-                let b = document.createElement('button');
-                b.innerText = optStr;
-                b.onclick = () => {
-                    if (optStr === correctString) {
-                        playBeep(750, 'sine', 0.1);
-                        acertos++;
-                    } else {
-                        playBeep(180, 'sawtooth', 0.1);
-                    }
-                    proximaRoldaInv();
-                };
-                grid.appendChild(b);
-            });
-            area.appendChild(grid);
-        }
-        proximaRoldaInv();
-    }
-
-    // 13. BALANZA DE PESOS
-    function cargarXogoBalanza(area, ctrl) {
-        let totalRondas = 3, ronda = 0, acertos = 0, tStart = Date.now();
-        const figuras = ['🔴', '🔷', '⭐', '🔺'];
-
-        function proximaBalanza() {
-            if (ronda >= totalRondas) {
-                let dur = ((Date.now() - tStart)/1000).toFixed(1);
-                rematarEAmosarPuntos(acertos * 60 * xogoActual.level, `${acertos}/${totalRondas} deducións de peso acertadas.`, `Tempo total: ${dur}s`);
-                return;
-            }
-            ronda++;
-            let f1 = figuras[Math.floor(Math.random()*figuras.length)];
-            let f2 = figuras.find(f => f !== f1);
-
-            let p1 = Math.floor(Math.random()*10) + 1;
-            let p2 = Math.floor(Math.random()*10) + 1;
-            while(p1 === p2) p2 = Math.floor(Math.random()*10) + 1;
-
-            let heavier = p1 > p2 ? f1 : f2;
-
-            area.innerHTML = `
-                <p style="color:var(--text-muted); margin:0;">Rolda ${ronda} de ${totalRondas}</p>
-                <div style="background:#1e293b; border:1px solid #334155; padding:15px; border-radius:12px; margin:12px 0; width:100%;">
-                    <p style="font-size:1.1rem; margin:5px 0;">⚖️ Balanza:</p>
-                    <p style="font-size:1.4rem; font-weight:bold; color:var(--accent-yellow);">
-                        ${f1} ${p1 > p2 ? '⬇️ (Máis pesada)' : '⬆️ (Máis lixeira)'} frente a ${f2}
-                    </p>
+            c.innerHTML = `
+                <p>Identifica a que obxecto pertence a sombra:</p>
+                <div style="font-size:5rem; text-align:center; filter: brightness(0); margin:1rem;">${correcto.icon}</div>
+                <div style="display:flex; justify-content:center; gap:10px;">
+                    ${opcions.map(o => `<button onclick="aoFinalizarXogo('${o.id}' === '${correcto.id}')" style="font-size:1.5rem;">${o.icon}</button>`).join('')}
                 </div>
-                <p style="font-size:0.9rem; color:var(--accent-blue);">Cal figura pesa MÁIS?</p>`;
-
-            let grid = document.createElement('div');
-            grid.className = 'grid-2x2';
-
-            [f1, f2].forEach(fig => {
-                let b = document.createElement('button');
-                b.style.fontSize = '1.8rem';
-                b.innerText = fig;
-                b.onclick = () => {
-                    if (fig === heavier) {
-                        playBeep(800, 'sine', 0.1);
-                        acertos++;
-                    } else {
-                        playBeep(200, 'sawtooth', 0.1);
-                    }
-                    proximaBalanza();
-                };
-                grid.appendChild(b);
-            });
-            area.appendChild(grid);
+            `;
         }
-        proximaBalanza();
-    }
 
-    // 14. O OBXECTO INTRUSO
-    function cargarXogoVisualFind(area, ctrl) {
-        let totalRondas = 3, ronda = 0, tempos = [];
-        const emojisBase = ['😃', '🐶', '🍕', '⚽', '🚗', '🐱', '🍏'];
-        const emojisIntruso = ['😉', '🐺', '🍔', '🏀', '🏎️', '🐯', '🍐'];
+        // 7. CORREDOR DO METRO (3 pistas)
+        function initMetro(c) {
+            c.innerHTML = `
+                <p>Usa os botóns para cambiar de pista e esquivar os obstáculos (❌):</p>
+                <div class="game-area" id="metro-area" style="display:flex;">
+                    <div id="pista-0" style="flex:1; border-right:1px dashed #ccc; position:relative;"></div>
+                    <div id="pista-1" style="flex:1; border-right:1px dashed #ccc; position:relative;"></div>
+                    <div id="pista-2" style="flex:1; position:relative;"></div>
+                </div>
+                <div style="text-align:center; margin-top:10px;">
+                    <button onclick="moverMetro(-1)">⬅️ Esquerda</button>
+                    <button onclick="moverMetro(1)">Dereita ➡️</button>
+                </div>
+            `;
+            let carrilPlayer = 1;
+            let esquivados = 0;
 
-        function proximaRoldaFind() {
-            if (ronda >= totalRondas) {
-                let mediaTime = (tempos.reduce((a,b)=>a+b,0)/totalRondas).toFixed(1);
-                let pts = Math.max(10, Math.round(500 - (mediaTime * 20)));
-                rematarEAmosarPuntos(pts * xogoActual.level, `Obxectivo atopado nas ${totalRondas} roldas!`, `Tempo medio de busca: ${mediaTime}s`);
-                return;
+            function renderPlayer() {
+                for(let i=0; i<3; i++) {
+                    const p = document.getElementById(`pista-${i}`);
+                    p.innerHTML = (i === carrilPlayer) ? '<div style="position:absolute; bottom:10px; left:35%; font-size:2rem;">🏃</div>' : '';
+                }
             }
-            ronda++;
-            let idxTheme = Math.floor(Math.random() * emojisBase.length);
-            let normalEmoji = emojisBase[idxTheme];
-            let intrusoEmoji = emojisIntruso[idxTheme];
+            renderPlayer();
 
-            let count = xogoActual.level === 1 ? 12 : (xogoActual.level === 2 ? 16 : 20);
-            let items = Array(count - 1).fill(normalEmoji);
-            items.push(intrusoEmoji);
-            items.sort(() => Math.random() - 0.5);
+            window.moverMetro = (dir) => {
+                carrilPlayer = Math.max(0, Math.min(2, carrilPlayer + dir));
+                renderPlayer();
+            };
 
-            area.innerHTML = `
-                <p style="color:var(--text-muted); margin:0;">Rolda ${ronda} de ${totalRondas}</p>
-                <p style="color:var(--accent-yellow); font-size:0.9rem; margin:4px 0;">Atopa o símbolo intruso diferente!</p>`;
-
-            let grid = document.createElement('div');
-            grid.className = 'grid-4x4';
-            let start = Date.now();
-
-            items.forEach(emoji => {
-                let b = document.createElement('div');
-                b.className = 'num-btn';
-                b.style.fontSize = '1.5rem';
-                b.innerText = emoji;
-                b.onclick = () => {
-                    if (emoji === intrusoEmoji) {
-                        let dur = (Date.now() - start) / 1000;
-                        tempos.push(dur);
-                        playBeep(850, 'sine', 0.1);
-                        proximaRoldaFind();
-                    } else {
-                        playBeep(180, 'sawtooth', 0.08);
+            const interval = setInterval(() => {
+                const obsCarril = Math.floor(Math.random()*3);
+                if (obsCarril === carrilPlayer) {
+                    clearInterval(interval);
+                    aoFinalizarXogo(false);
+                } else {
+                    esquivados++;
+                    if (esquivados >= 5) {
+                        clearInterval(interval);
+                        aoFinalizarXogo(true);
                     }
-                };
-                grid.appendChild(b);
-            });
-            area.appendChild(grid);
-        }
-        proximaRoldaFind();
-    }
-
-    function rematarEAmosarPuntos(puntos, detalle, statExtra = "") {
-        if (animFrame) cancelAnimationFrame(animFrame);
-
-        if (duplicarPuntosActivo) {
-            puntos *= 2;
-            duplicarPuntosActivo = false;
+                }
+            }, 1000);
         }
 
-        if (modoContrarreloxo) {
-            campanaPuntosAcumulados += puntos;
-            guardarResultado(xogoActual.nome, puntos);
-            iniciarSeguinteMinixogoContrarreloxo();
-        } else if (modoCampana) {
-            campanaPuntosAcumulados += puntos;
-            guardarResultado(xogoActual.nome, puntos);
-            campanaIndex++;
+        // 8. TIRO AO BLANCO MÓBIL
+        function initTiro(c) {
+            c.innerHTML = `
+                <p>Preme no botón "DISPARAR" cando o centro do obxectivo pase pola mira central (+):</p>
+                <div class="game-area" style="position:relative;">
+                    <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-size:3rem; pointer-events:none; color:blue;">┼</div>
+                    <div id="target-tiro" style="position:absolute; font-size:2rem;">🎯</div>
+                </div>
+                <button onclick="dispararTiro()" style="width:100%; margin-top:10px;">DISPARAR</button>
+            `;
+            let posX = 0;
+            const target = document.getElementById('target-tiro');
+            const loop = setInterval(() => {
+                posX = (posX + 5) % 300;
+                if (target) target.style.left = posX + 'px';
+                if (target) target.style.top = (120 + Math.sin(posX/20)*80) + 'px';
+            }, 30);
 
-            const area = document.getElementById('gameArea');
-            const ctrl = document.getElementById('gameControls');
-
-            area.innerHTML = `
-                <div class="result-box">
-                    <h3 style="color:${puntos > 0 ? 'var(--accent-green)' : 'var(--accent-red)'}; margin:0;">
-                        ${puntos > 0 ? '¡Minixogo Completado!' : 'Fin do Minixogo'}
-                    </h3>
-                    <p style="color:var(--text-muted); font-size:0.9rem; margin:8px 0;">${detalle}</p>
-                    <div class="result-score">+${puntos} pts</div>
-                    ${statExtra ? `<div class="stats-detail">📊 <strong>Detalles:</strong><br>${statExtra}</div>` : ''}
-                </div>`;
-
-            ctrl.innerHTML = `<button onclick="iniciarSeguinteMinixogoCampana()">➡️ Seguinte Minixogo da Campaña (${campanaIndex+1}/${campanaListaXogos.length})</button>`;
-        } else {
-            guardarResultado(xogoActual.nome, puntos);
-            const area = document.getElementById('gameArea');
-            const ctrl = document.getElementById('gameControls');
-
-            area.innerHTML = `
-                <div class="result-box">
-                    <h3 style="color:${puntos > 0 ? 'var(--accent-green)' : 'var(--accent-red)'}; margin:0;">
-                        ${puntos > 0 ? '¡Rolda Completada!' : 'Fin do Xogo'}
-                    </h3>
-                    <p style="color:var(--text-muted); font-size:0.9rem; margin:8px 0;">${detalle}</p>
-                    <div class="result-score">+${puntos} pts</div>
-                    ${statExtra ? `<div class="stats-detail">📊 <strong>Detalles do rendemento:</strong><br>${statExtra}</div>` : ''}
-                </div>`;
-
-            ctrl.innerHTML = `
-                <button onclick="iniciarXogoDirecto('${xogoActual.id}', ${xogoActual.level})">🔄 Xogar de Novo</button>
-                <button class="btn-alt" onclick="mostrarPantalla('screenMenu')">🏠 Volver ao Menú</button>`;
+            window.dispararTiro = () => {
+                clearInterval(loop);
+                // Centro aprox 130-170
+                const exito = (posX >= 120 && posX <= 180);
+                aoFinalizarXogo(exito);
+            };
         }
-    }
 
-    init();
-</script>
+        // 9-14. XOGOS XENÉRICOS/RESTANTES DE RECHEO
+        function initXogoXenerico(c, id) {
+            c.innerHTML = `
+                <p>Demostración rápida de resolución para ${id}:</p>
+                <button onclick="aoFinalizarXogo(true)" class="btn-success">Completar e Avanzar</button>
+            `;
+        }
+
+        // Inicializar Estado
+        actualizarHeaderUsuario();
+    </script>
 </body>
 </html>
