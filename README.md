@@ -1,2 +1,0 @@
-# minixogos-portela
-Minixogos Portela
