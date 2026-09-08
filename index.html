@@ -103,6 +103,8 @@
         button.btn-random { background: var(--accent-purple); color: white; font-size: 1rem; padding: 12px; }
         button.btn-profile { background: var(--accent-yellow); color: #0f172a; }
         button.btn-club { background: var(--accent-green); color: #0f172a; }
+        button.btn-timeattack { background: #e11d48; color: white; font-size: 1rem; padding: 12px; }
+        button.btn-challenge { background: #0284c7; color: white; font-size: 1rem; padding: 12px; }
 
         .campaign-bar {
             display: grid;
@@ -463,6 +465,60 @@
             text-align: left;
         }
 
+        /* COMODÍNS DE CAMPAÑA */
+        .wildcard-box {
+            display: flex;
+            gap: 6px;
+            width: 100%;
+            margin-bottom: 8px;
+        }
+
+        .btn-wildcard {
+            font-size: 0.75rem;
+            padding: 6px;
+            margin: 0;
+            border-radius: 6px;
+            background: #3b82f6;
+            color: white;
+        }
+
+        .btn-wildcard:disabled {
+            background: #334155;
+            color: #64748b;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        /* BADGES / INSIGNIAS */
+        .badges-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .badge-card {
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 8px;
+            font-size: 0.75rem;
+            text-align: center;
+            opacity: 0.4;
+        }
+
+        .badge-card.unlocked {
+            border-color: var(--accent-yellow);
+            opacity: 1;
+            box-shadow: 0 0 8px rgba(245, 158, 11, 0.2);
+        }
+
+        .badge-icon {
+            font-size: 1.4rem;
+            display: block;
+            margin-bottom: 2px;
+        }
+
         footer { text-align: center; margin-top: 6px; margin-bottom: 12px; }
         .app-revision { font-size: 0.75rem; color: var(--text-muted); opacity: 0.4; letter-spacing: 0.5px; }
     </style>
@@ -488,6 +544,8 @@
     <!-- MENÚ PRINCIPAL -->
     <div id="screenMenu" class="screen card">
         <button class="btn-random" onclick="jugarAleatorio()">🎲 Xogo Aleatorio</button>
+        <button class="btn-timeattack" onclick="iniciarContrarreloxo()">⏳ Modo Contrarreloxo Global (60s)</button>
+        <button class="btn-challenge" onclick="iniciarDesafioDia()">⚔️ Desafío do Día</button>
 
         <div style="margin-top: 6px;">
             <label style="font-size:0.8rem; color:var(--text-muted);"> Modo Campaña (Varios xogos seguidos):</label>
@@ -557,12 +615,17 @@
         <h2>Perfil de Xogador</h2>
         <p id="profileTotalScore" style="font-size: 1.3rem; font-weight: bold; color: var(--accent-yellow); margin: 5px 0;"></p>
         
+        <div class="ranking-box" style="text-align:left; margin-bottom: 12px;">
+            <h3 style="color:var(--accent-yellow); text-align:center;">🏅 Insignias e Logros</h3>
+            <div id="userBadgesList" class="badges-grid"></div>
+        </div>
+
         <div class="ranking-box" style="text-align:left;">
-            <h3 style="color:var(--accent-yellow); text-align:center;">🏅 As miñas Mellores Marcas</h3>
+            <h3 style="color:var(--accent-yellow); text-align:center;">📊 As miñas Mellores Marcas</h3>
             <div id="userRecordsList" style="max-height:180px; overflow-y:auto; margin-top:8px;">Aínda non tes rexistros.</div>
         </div>
 
-        <button onclick="mostrarPantalla('screenMenu')">Volver ao Menú</button>
+        <button onclick="mostrarPantalla('screenMenu')" style="margin-top:12px;">Volver ao Menú</button>
     </div>
 
     <!-- PANTALLA ADMIN SECRET -->
@@ -587,6 +650,13 @@
     <!-- PANTALLA DE XOGO -->
     <div id="screenGame" class="screen card">
         <button class="top-abandon-btn" onclick="abandonarPartida()">🏠 Menú (Abandonar)</button>
+        
+        <!-- COMODÍNS DE CAMPAÑA -->
+        <div id="wildcardBox" class="wildcard-box" style="display:none;">
+            <button id="btnSkip" class="btn-wildcard" onclick="usarComodin('skip')">⏭️ Saltarse Xogo (1 uso)</button>
+            <button id="btnDouble" class="btn-wildcard" onclick="usarComodin('double')">✨ Puntos x2 (1 uso)</button>
+        </div>
+
         <h3 id="gameTitle" style="margin: 0; color: var(--accent-blue);">Cargando...</h3>
         <p id="gameDesc" style="font-size: 0.85rem; color: var(--text-muted); margin: 4px 0;"></p>
         <div id="scoreSystemExp" class="score-explanation"></div>
@@ -596,7 +666,7 @@
     </div>
 
     <footer>
-        <span class="app-revision">~#v0.7</span>
+        <span class="app-revision">~#v0.8</span>
     </footer>
 </div>
 
@@ -631,6 +701,34 @@
         } catch(e){}
     }
 
+    // EFECTOS DE SONO ELABORADOS
+    function playVictorySound() {
+        try {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+            notes.forEach((freq, idx) => {
+                setTimeout(() => playBeep(freq, 'triangle', 0.25), idx * 120);
+            });
+        } catch(e){}
+    }
+
+    function playRecordSound() {
+        try {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const notes = [440, 554.37, 659.25, 880]; // A4, C#5, E5, A5
+            notes.forEach((freq, idx) => {
+                setTimeout(() => playBeep(freq, 'sine', 0.18), idx * 90);
+            });
+        } catch(e){}
+    }
+
+    const INSIGNIAS = [
+        { id: "dado_master", nome: "Mestre dos Dados", desc: "Supera os 200 pts en Suma de Dados", icon: "🎲" },
+        { id: "fastest", nome: "O máis Veloz", desc: "Supera os 800 pts en Reacción", icon: "⚡" },
+        { id: "extreme_complete", nome: "Campaña Extreme", desc: "Completa unha Campaña EXTREME", icon: "🔥" },
+        { id: "time_king", nome: "Rei do Reloxo", desc: "Supera os 500 pts no Contrarreloxo", icon: "⏳" }
+    ];
+
     const CATEGORIAS_BASE = [
         { id: "bar", nome: "🎯 Precision da Barriña", desc: "Para o punto no centro exacto.", exp: "Puntuación = 100 - (distancia ao centro * 2). Media de 5 intentos." },
         { id: "memory", nome: "🧠 Memoria Revertida", desc: "Memoriza os números antes de ocultarse.", exp: "Puntuación = +30 pts por número correcto premido na orde exacta." },
@@ -649,7 +747,7 @@
     ];
 
     let currentUser = "";
-    let userProfile = { jugador: "", puntosTotales: 0, pin: "", fechaReg: "", ultAct: "", juegos: {} };
+    let userProfile = { jugador: "", puntosTotales: 0, pin: "", fechaReg: "", ultAct: "", juegos: {}, badges: {} };
     let currentTabRanking = null;
     let rawJugadoresRanking = [];
     let rawClubesDB = {};
@@ -661,6 +759,16 @@
     let campanaIndex = 0;
     let campanaPuntosAcumulados = 0;
     let campanaNivel = 1;
+
+    // COMODÍNS
+    let comodinSaltarUsado = false;
+    let comodinDuplicarUsado = false;
+    let duplicarPuntosActivo = false;
+
+    // CONTRARRELOXO
+    let modoContrarreloxo = false;
+    let tempoRestanteGlobal = 60;
+    let timerGlobalInterval = null;
 
     function init() {
         renderizarCategorias(CATEGORIAS_BASE);
@@ -803,7 +911,7 @@
                     if (val.pin === pin) iniciarSesionExitoso(name, val);
                     else errDiv.style.display = "block";
                 } else {
-                    let newUser = { jugador: name, pin: pin, fechaReg: dataData, ultAct: dataHoxe, puntosTotales: 0, juegos: {} };
+                    let newUser = { jugador: name, pin: pin, fechaReg: dataData, ultAct: dataHoxe, puntosTotales: 0, juegos: {}, badges: {} };
                     userRef.set(newUser);
                     iniciarSesionExitoso(name, newUser);
                 }
@@ -818,7 +926,7 @@
             if (dbLocal[name].pin === pin) iniciarSesionExitoso(name, dbLocal[name]);
             else errDiv.style.display = "block";
         } else {
-            const newUser = { jugador: name, pin: pin, fechaReg: dataData, ultAct: dataHoxe, puntosTotales: 0, juegos: {} };
+            const newUser = { jugador: name, pin: pin, fechaReg: dataData, ultAct: dataHoxe, puntosTotales: 0, juegos: {}, badges: {} };
             dbLocal[name] = newUser;
             localStorage.setItem('portela_users_db', JSON.stringify(dbLocal));
             iniciarSesionExitoso(name, newUser);
@@ -827,8 +935,9 @@
 
     function iniciarSesionExitoso(name, profileData) {
         currentUser = name;
-        userProfile = profileData || { jugador: name, puntosTotales: 0, juegos: {} };
+        userProfile = profileData || { jugador: name, puntosTotales: 0, juegos: {}, badges: {} };
         if (!userProfile.jugador) userProfile.jugador = name;
+        if (!userProfile.badges) userProfile.badges = {};
         localStorage.setItem('portela_user', name);
         actualizarHeader();
         mostrarPantalla('screenMenu');
@@ -843,6 +952,7 @@
                     userProfile = snapshot.val();
                     if (!userProfile.jugador) userProfile.jugador = currentUser;
                     if (!userProfile.juegos) userProfile.juegos = {};
+                    if (!userProfile.badges) userProfile.badges = {};
                 }
             });
         } else {
@@ -850,6 +960,7 @@
             if (dbLocal[currentUser]) {
                 userProfile = dbLocal[currentUser];
                 if (!userProfile.jugador) userProfile.jugador = currentUser;
+                if (!userProfile.badges) userProfile.badges = {};
             }
         }
     }
@@ -874,6 +985,22 @@
     function abrirPerfil() {
         mostrarPantalla('screenProfile');
         document.getElementById('profileTotalScore').innerText = `Puntuación Total: ${userProfile.puntosTotales || 0} pts`;
+        
+        // INSIGNIAS
+        let badgesHtml = "";
+        const myBadges = userProfile.badges || {};
+        INSIGNIAS.forEach(b => {
+            let unlocked = !!myBadges[b.id];
+            badgesHtml += `
+                <div class="badge-card ${unlocked ? 'unlocked' : ''}">
+                    <span class="badge-icon">${b.icon}</span>
+                    <strong>${b.nome}</strong><br>
+                    <span style="color:var(--text-muted); font-size:0.68rem;">${b.desc}</span>
+                </div>`;
+        });
+        document.getElementById('userBadgesList').innerHTML = badgesHtml;
+
+        // MARCAS
         let html = "";
         const juegosMap = userProfile.juegos || {};
         const keys = Object.keys(juegosMap);
@@ -885,6 +1012,20 @@
             });
         }
         document.getElementById('userRecordsList').innerHTML = html;
+    }
+
+    function desbloquearInsignia(id) {
+        if (!userProfile.badges) userProfile.badges = {};
+        if (!userProfile.badges[id]) {
+            userProfile.badges[id] = true;
+            if (db && currentUser) db.ref(`ranking/${currentUser}/badges/${id}`).set(true);
+            const dbLocal = JSON.parse(localStorage.getItem('portela_users_db') || '{}');
+            if (dbLocal[currentUser]) {
+                if (!dbLocal[currentUser].badges) dbLocal[currentUser].badges = {};
+                dbLocal[currentUser].badges[id] = true;
+                localStorage.setItem('portela_users_db', JSON.stringify(dbLocal));
+            }
+        }
     }
 
     function toggleRankingCollapse() {
@@ -1183,6 +1324,14 @@
         const recordAnterior = userProfile.juegos[nombreXogo] || 0;
         const novoRecord = Math.max(recordAnterior, puntos);
 
+        if (puntos > recordAnterior) {
+            playRecordSound();
+        }
+
+        // COMPROBAR INSIGNIAS
+        if (nombreXogo.includes("Suma de Dados") && puntos >= 200) desbloquearInsignia("dado_master");
+        if (nombreXogo.includes("Reacción") && puntos >= 800) desbloquearInsignia("fastest");
+
         userProfile.puntosTotales = novoTotal;
         userProfile.ultAct = hoxe;
         userProfile.juegos[nombreXogo] = novoRecord;
@@ -1207,25 +1356,134 @@
 
     function abandonarPartida() {
         if (animFrame) cancelAnimationFrame(animFrame);
+        if (timerGlobalInterval) clearInterval(timerGlobalInterval);
         modoCampana = false;
+        modoContrarreloxo = false;
+        document.getElementById('wildcardBox').style.display = "none";
         mostrarPantalla('screenMenu');
     }
 
     function jugarAleatorio() {
         modoCampana = false;
+        modoContrarreloxo = false;
         const catAlea = CATEGORIAS_BASE[Math.floor(Math.random() * CATEGORIAS_BASE.length)];
         const diffAlea = Math.floor(Math.random() * 3) + 1;
         iniciarXogoDirecto(catAlea.id, diffAlea);
     }
 
+    // 1. COMODÍNS DE CAMPAÑA
     function iniciarCampana(nivel) {
         modoCampana = true;
+        modoContrarreloxo = false;
         campanaNivel = nivel;
         campanaPuntosAcumulados = 0;
-        // Seleccionamos 5 minixogos aleatorios para a campaña
         campanaListaXogos = [...CATEGORIAS_BASE].sort(() => Math.random() - 0.5).slice(0, 5);
         campanaIndex = 0;
+
+        comodinSaltarUsado = false;
+        comodinDuplicarUsado = false;
+        duplicarPuntosActivo = false;
+
+        document.getElementById('wildcardBox').style.display = "flex";
+        actualizarBotonsComodins();
+
         iniciarSeguinteMinixogoCampana();
+    }
+
+    function actualizarBotonsComodins() {
+        const btnSkip = document.getElementById('btnSkip');
+        const btnDouble = document.getElementById('btnDouble');
+        btnSkip.disabled = comodinSaltarUsado;
+        btnDouble.disabled = comodinDuplicarUsado;
+    }
+
+    function usarComodin(tipo) {
+        if (tipo === 'skip' && !comodinSaltarUsado) {
+            comodinSaltarUsado = true;
+            actualizarBotonsComodins();
+            campanaIndex++;
+            iniciarSeguinteMinixogoCampana();
+        } else if (tipo === 'double' && !comodinDuplicarUsado) {
+            comodinDuplicarUsado = true;
+            duplicarPuntosActivo = true;
+            actualizarBotonsComodins();
+            alert("✨ Duplicador de puntos activado para este minixogo!");
+        }
+    }
+
+    // 2. DESAFÍOS DIRECTOS ENTRE AMIGOS DO CLUB
+    function iniciarDesafioDia() {
+        modoCampana = true;
+        modoContrarreloxo = false;
+        campanaNivel = 2; // NORMAL
+        campanaPuntosAcumulados = 0;
+
+        // Xeramos a mesma secuencia fixa de 3 minixogos baseada no día actual
+        const dataHoxe = new Date().toISOString().split('T')[0];
+        let seed = 0;
+        for (let i = 0; i < dataHoxe.length; i++) seed += dataHoxe.charCodeAt(i);
+
+        let listCopia = [...CATEGORIAS_BASE];
+        campanaListaXogos = [];
+        for (let i = 0; i < 3; i++) {
+            let idx = (seed + i * 7) % listCopia.length;
+            campanaListaXogos.push(listCopia.splice(idx, 1)[0]);
+        }
+
+        campanaIndex = 0;
+        document.getElementById('wildcardBox').style.display = "none";
+        iniciarSeguinteMinixogoCampana();
+    }
+
+    // 3. MODO CONTRARRELOXO GLOBAL
+    function iniciarContrarreloxo() {
+        modoContrarreloxo = true;
+        modoCampana = false;
+        tempoRestanteGlobal = 60;
+        campanaPuntosAcumulados = 0;
+
+        document.getElementById('wildcardBox').style.display = "none";
+
+        if (timerGlobalInterval) clearInterval(timerGlobalInterval);
+        timerGlobalInterval = setInterval(() => {
+            tempoRestanteGlobal--;
+            if (tempoRestanteGlobal <= 0) {
+                clearInterval(timerGlobalInterval);
+                rematarContrarreloxo();
+            } else {
+                let elExp = document.getElementById('scoreSystemExp');
+                if (elExp) elExp.innerText = `⏳ CONTRARRELOXO: ${tempoRestanteGlobal}s restantes | Puntos totais: ${campanaPuntosAcumulados}`;
+            }
+        }, 1000);
+
+        iniciarSeguinteMinixogoContrarreloxo();
+    }
+
+    function iniciarSeguinteMinixogoContrarreloxo() {
+        if (tempoRestanteGlobal <= 0) return;
+        const catAlea = CATEGORIAS_BASE[Math.floor(Math.random() * CATEGORIAS_BASE.length)];
+        iniciarXogoDirecto(catAlea.id, 1); // TRIVIAL para dinamismo
+    }
+
+    function rematarContrarreloxo() {
+        if (animFrame) cancelAnimationFrame(animFrame);
+        mostrarPantalla('screenGame');
+        document.getElementById('gameTitle').innerText = "⏳ TEMPO ESGOTADO!";
+        document.getElementById('gameDesc').innerText = "Remataron os 60 segundos do Modo Contrarreloxo.";
+        document.getElementById('scoreSystemExp').innerText = "Puntuación acumulada gardada no perfil.";
+
+        if (campanaPuntosAcumulados >= 500) desbloquearInsignia("time_king");
+
+        const area = document.getElementById('gameArea');
+        const ctrl = document.getElementById('gameControls');
+
+        area.innerHTML = `
+            <div class="result-box">
+                <h2 style="color:var(--accent-yellow);">Puntos Totais do Contrarreloxo</h2>
+                <div class="result-score">+${campanaPuntosAcumulados} pts</div>
+            </div>`;
+
+        ctrl.innerHTML = `<button onclick="mostrarPantalla('screenMenu')">🏠 Volver ao Menú Principal</button>`;
     }
 
     function iniciarSeguinteMinixogoCampana() {
@@ -1238,10 +1496,14 @@
     }
 
     function rematarCampanaCompleta() {
+        playVictorySound();
+        document.getElementById('wildcardBox').style.display = "none";
         mostrarPantalla('screenGame');
         document.getElementById('gameTitle').innerText = "🏆 CAMPAÑA COMPLETADA!";
-        document.getElementById('gameDesc').innerText = "Completaches con éxito a serie de 5 minixogos.";
+        document.getElementById('gameDesc').innerText = "Completaches con éxito a serie de minixogos.";
         document.getElementById('scoreSystemExp').innerText = "Suma total acumulada para o teu perfil.";
+
+        if (campanaNivel === 3) desbloquearInsignia("extreme_complete");
 
         const area = document.getElementById('gameArea');
         const ctrl = document.getElementById('gameControls');
@@ -1261,7 +1523,7 @@
         const cat = CATEGORIAS_BASE.find(c => c.id === typeId) || CATEGORIAS_BASE[0];
         const nomesDiff = ["TRIVIAL", "NORMAL", "EXTREMODURO"];
         
-        let prefix = modoCampana ? `[Campaña ${campanaIndex+1}/5] ` : '';
+        let prefix = modoCampana ? `[Campaña ${campanaIndex+1}/${campanaListaXogos.length}] ` : (modoContrarreloxo ? `[⏱️ ${tempoRestanteGlobal}s] ` : '');
         xogoActual = {
             id: typeId,
             level: level,
@@ -1273,7 +1535,7 @@
         mostrarPantalla('screenGame');
         document.getElementById('gameTitle').innerText = xogoActual.nome;
         document.getElementById('gameDesc').innerText = xogoActual.desc;
-        document.getElementById('scoreSystemExp').innerText = `⚡ Puntuación: ${xogoActual.exp}`;
+        document.getElementById('scoreSystemExp').innerText = modoContrarreloxo ? `⏳ CONTRARRELOXO: ${tempoRestanteGlobal}s restantes | Puntos: ${campanaPuntosAcumulados}` : `⚡ Puntuación: ${xogoActual.exp}`;
 
         const area = document.getElementById('gameArea');
         const ctrl = document.getElementById('gameControls');
@@ -1507,7 +1769,7 @@
         area.appendChild(grid);
     }
 
-    // 6. CONTADOR DE CAIXAS (+40% MÁIS GRANDES E AVANZO AUTOMÁTICO)
+    // 6. CONTADOR DE CAIXAS
     function cargarXogoCaixas(area, ctrl) {
         let rolda = 0, totalRoldas = 3, acertosTotais = 0;
         const cores = ['#f59e0b', '#38bdf8', '#10b981', '#a855f7', '#ef4444', '#ec4899', '#f97316'];
@@ -1525,7 +1787,6 @@
             header.innerText = `Rolda ${rolda} de ${totalRoldas}`;
             area.appendChild(header);
 
-            // Caixas 40% máis grandes (aumentado de 42/34/28 a 60/48/40)
             let boxSize = xogoActual.level === 1 ? 60 : (xogoActual.level === 2 ? 48 : 40);
             let numBoxes = Math.floor(Math.random() * (xogoActual.level * 3)) + 4;
             let placed = [];
@@ -1608,7 +1869,7 @@
         ctrl.appendChild(stopBtn);
     }
 
-    // 8. SUMA DE DADOS (AVANZA AUTOMATICAMENTE AO RESPONDER CORRECTO)
+    // 8. SUMA DE DADOS
     function cargarXogoDados(area, ctrl) {
         let totalRondas = 3, ronda = 0, tempos = [], acertos = 0;
 
@@ -1687,7 +1948,7 @@
         xogarRoldaDado();
     }
 
-    // 9. COR CORRECTA (6 OPCIÓNS E CIÁN CORRIXIDO)
+    // 9. COR CORRECTA
     function cargarXogoCorCorrecta(area, ctrl) {
         let totalRondas = 5, ronda = 0, acertos = 0, tStart = Date.now();
         const cores = [
@@ -1709,7 +1970,6 @@
                 return;
             }
             ronda++;
-            // 6 seleccións en lugar de 4
             let opcions = [...cores].sort(() => Math.random() - 0.5).slice(0, 6);
             let idxTexto = Math.floor(Math.random() * opcions.length);
             let idxCor = Math.floor(Math.random() * opcions.length);
@@ -1744,7 +2004,7 @@
         proximaRoldaCor();
     }
 
-    // 10. DESLIZA RÁPIDO! (LÓXICA DE ROTACIÓN CADRADA CON OPCIÓNS)
+    // 10. DESLIZA RÁPIDO!
     function cargarXogoDesliza(area, ctrl) {
         let dirsBase = [
             { txt: '⬆️', code: 'UP' },
@@ -1773,7 +2033,6 @@
                 rotDeg = rots[Math.floor(Math.random() * rots.length)];
             }
 
-            // Calculamos cara a onde apunta REALMENTE a frecha tras a rotación
             let directionOrder = ['UP', 'RIGHT', 'DOWN', 'LEFT'];
             let baseIdx = directionOrder.indexOf(targetBase.code);
             let steps = (rotDeg / 90) % 4;
@@ -1993,7 +2252,7 @@
         proximaBalanza();
     }
 
-    // 14. O OBXECTO INTRUSO (TIRO AO BLANCO VISUAL)
+    // 14. O OBXECTO INTRUSO
     function cargarXogoVisualFind(area, ctrl) {
         let totalRondas = 3, ronda = 0, tempos = [];
         const emojisBase = ['😃', '🐶', '🍕', '⚽', '🚗', '🐱', '🍏'];
@@ -2049,7 +2308,16 @@
     function rematarEAmosarPuntos(puntos, detalle, statExtra = "") {
         if (animFrame) cancelAnimationFrame(animFrame);
 
-        if (modoCampana) {
+        if (duplicarPuntosActivo) {
+            puntos *= 2;
+            duplicarPuntosActivo = false;
+        }
+
+        if (modoContrarreloxo) {
+            campanaPuntosAcumulados += puntos;
+            guardarResultado(xogoActual.nome, puntos);
+            iniciarSeguinteMinixogoContrarreloxo();
+        } else if (modoCampana) {
             campanaPuntosAcumulados += puntos;
             guardarResultado(xogoActual.nome, puntos);
             campanaIndex++;
@@ -2067,7 +2335,7 @@
                     ${statExtra ? `<div class="stats-detail">📊 <strong>Detalles:</strong><br>${statExtra}</div>` : ''}
                 </div>`;
 
-            ctrl.innerHTML = `<button onclick="iniciarSeguinteMinixogoCampana()">➡️ Seguinte Minixogo da Campaña (${campanaIndex+1}/5)</button>`;
+            ctrl.innerHTML = `<button onclick="iniciarSeguinteMinixogoCampana()">➡️ Seguinte Minixogo da Campaña (${campanaIndex+1}/${campanaListaXogos.length})</button>`;
         } else {
             guardarResultado(xogoActual.nome, puntos);
             const area = document.getElementById('gameArea');
