@@ -666,7 +666,7 @@
     </div>
 
     <footer>
-        <span class="app-revision">~#v0.8</span>
+        <span class="app-revision">~#v0.9</span>
     </footer>
 </div>
 
@@ -2025,17 +2025,15 @@
             let targetBase = dirsBase[Math.floor(Math.random() * dirsBase.length)];
             let rotDeg = 0;
 
-            if (xogoActual.level === 2) {
-                let rots = [0, 90, 180, 270];
-                rotDeg = rots[Math.floor(Math.random() * rots.length)];
-            } else if (xogoActual.level === 3) {
+            if (xogoActual.level === 2 || xogoActual.level === 3) {
                 let rots = [0, 90, 180, 270];
                 rotDeg = rots[Math.floor(Math.random() * rots.length)];
             }
 
+            // A frecha de orixe '⬆️' apunta arriba (UP). A rotación en sentido horario (CW) modifica a orientación.
             let directionOrder = ['UP', 'RIGHT', 'DOWN', 'LEFT'];
             let baseIdx = directionOrder.indexOf(targetBase.code);
-            let steps = (rotDeg / 90) % 4;
+            let steps = Math.round(rotDeg / 90) % 4;
             let finalIdx = (baseIdx + steps) % 4;
             let finalDirectionCode = directionOrder[finalIdx];
 
