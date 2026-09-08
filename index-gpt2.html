@@ -1,0 +1,3234 @@
+<!DOCTYPE html>
+<html lang="gl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Minixogos Portela</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --card-bg: #1e293b;
+            --accent-yellow: #f59e0b;
+            --accent-blue: #38bdf8;
+            --accent-green: #10b981;
+            --accent-red: #ef4444;
+            --accent-purple: #a855f7;
+            --text-light: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
+
+        body {
+            margin: 0;
+            padding: 12px;
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 480px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        header {
+            text-align: center;
+            background: var(--card-bg);
+            padding: 14px;
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+            border: 1px solid #334155;
+        }
+
+        h1 {
+            margin: 0 0 4px 0;
+            font-size: 1.6rem;
+            color: var(--accent-yellow);
+            letter-spacing: 1px;
+            cursor: pointer;
+        }
+
+        .user-info {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 500;
+            display: none;
+        }
+
+        .card {
+            background: var(--card-bg);
+            padding: 18px;
+            border-radius: 16px;
+            text-align: center;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.3);
+            border: 1px solid #334155;
+        }
+
+        .screen { display: none; }
+        .screen.active { display: block; }
+
+        button {
+            background: var(--accent-blue);
+            color: #0f172a;
+            border: none;
+            padding: 12px 16px;
+            font-size: 0.95rem;
+            font-weight: bold;
+            border-radius: 10px;
+            width: 100%;
+            cursor: pointer;
+            margin-top: 8px;
+            transition: transform 0.1s, opacity 0.1s;
+        }
+
+        button:active { transform: scale(0.98); opacity: 0.9; }
+        button.btn-alt { background: #334155; color: var(--text-light); }
+        button.btn-danger { background: #991b1b; color: white; }
+        button.btn-random { background: var(--accent-purple); color: white; font-size: 1rem; padding: 12px; }
+        button.btn-profile { background: var(--accent-yellow); color: #0f172a; }
+        button.btn-club { background: var(--accent-green); color: #0f172a; }
+        button.btn-timeattack { background: #e11d48; color: white; font-size: 1rem; padding: 12px; }
+        button.btn-challenge { background: #0284c7; color: white; font-size: 1rem; padding: 12px; }
+
+        .campaign-bar {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+            margin-top: 8px;
+        }
+
+        .btn-camp {
+            font-size: 0.75rem;
+            padding: 10px 4px;
+            margin: 0;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #334155;
+            background: #0f172a;
+            color: white;
+            font-size: 1rem;
+            box-sizing: border-box;
+            text-align: center;
+            margin-bottom: 8px;
+        }
+
+        .search-input {
+            text-align: left;
+            padding: 10px 14px;
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+        }
+
+        /* ACCORDION MENU MELLORADO */
+        .accordion-header {
+            background: #0f172a;
+            border: 1px solid #334155;
+            padding: 12px;
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: bold;
+            color: var(--accent-blue);
+            margin-top: 10px;
+        }
+
+        .accordion-content {
+            display: none;
+            margin-top: 8px;
+        }
+        .accordion-content.open { display: block; }
+
+        .category-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+            gap: 10px;
+            max-height: min(62vh, 620px);
+            overflow-y: auto;
+            padding: 2px 4px 8px 2px;
+            scroll-behavior: smooth;
+        }
+
+        .category-item {
+            background: linear-gradient(145deg, #162238, #0f172a);
+            border: 1px solid #334155;
+            border-radius: 14px;
+            padding: 11px;
+            text-align: left;
+            min-height: 92px;
+        }
+
+        .category-title {
+            font-size: 0.95rem;
+            font-weight: bold;
+            color: var(--accent-blue);
+            margin-bottom: 8px;
+        }
+
+        .difficulty-legend {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 0 0 9px;
+            padding: 7px 9px;
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 9px;
+            font-size: 0.72rem;
+            color: var(--text-muted);
+        }
+        .difficulty-legend span { display:inline-flex; align-items:center; gap:4px; }
+        .difficulty-dot { width:10px; height:10px; border-radius:50%; display:inline-block; }
+        .difficulty-dot.trivial { background:#059669; }
+        .difficulty-dot.normal { background:#d97706; }
+        .difficulty-dot.extremoduro { background:#dc2626; }
+
+        .diff-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 7px;
+        }
+
+        .btn-diff {
+            width: 100%;
+            height: 30px;
+            min-width: 0;
+            padding: 0;
+            margin: 0;
+            border-radius: 7px;
+            border: 1px solid rgba(255,255,255,.16);
+            box-shadow: inset 0 -2px 0 rgba(0,0,0,.18);
+            font-size: 0;
+        }
+        .btn-diff.btn-trivial { background: #059669; }
+        .btn-diff.btn-normal { background: #d97706; }
+        .btn-diff.btn-extremoduro { background: #dc2626; }
+        .btn-trivial { background:#059669; color:white; }
+        .btn-normal { background:#d97706; color:white; }
+        .btn-extremoduro { background:#dc2626; color:white; }
+        .btn-diff:hover { filter: brightness(1.12); }
+        .btn-diff:focus-visible { outline: 2px solid white; outline-offset: 2px; }
+
+        .board {
+            width: 100%;
+            min-height: 260px;
+            background: #0f172a;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+            margin: 12px 0;
+            padding: 15px;
+            border: 1px solid #1e293b;
+        }
+
+        .score-explanation {
+            background: #0f172a;
+            border: 1px dashed var(--accent-blue);
+            border-radius: 8px;
+            padding: 8px;
+            font-size: 0.8rem;
+            color: var(--accent-blue);
+            margin-top: 6px;
+            text-align: center;
+        }
+
+        /* BARRIÑA PRECISIÓN */
+        .bar-container {
+            width: 100%;
+            height: 38px;
+            background: linear-gradient(90deg, 
+                #ef4444 0%, #ef4444 25%, 
+                #f59e0b 25%, #f59e0b 40%, 
+                #10b981 40%, #10b981 60%, 
+                #f59e0b 60%, #f59e0b 75%, 
+                #ef4444 75%, #ef4444 100%);
+            border-radius: 19px;
+            position: relative;
+            cursor: pointer;
+            overflow: hidden;
+            border: 3px solid #334155;
+        }
+
+        .bar-pointer {
+            width: 6px;
+            height: 100%;
+            background: #ffffff;
+            position: absolute;
+            top: 0;
+            left: 0%;
+            box-shadow: 0 0 10px #ffffff;
+        }
+
+        .click-mark {
+            position: absolute;
+            top: 0;
+            width: 4px;
+            height: 100%;
+            background: #000;
+            opacity: 0.8;
+        }
+
+        /* DADOS */
+        .dice-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .dice {
+            width: 65px;
+            height: 65px;
+            background: white;
+            border-radius: 12px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            padding: 6px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+        }
+
+        .dice-cover {
+            width: 65px;
+            height: 65px;
+            background: #334155;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            color: var(--accent-yellow);
+            border: 2px dashed var(--accent-yellow);
+        }
+
+        .dot {
+            background: black;
+            border-radius: 50%;
+            width: 9px;
+            height: 9px;
+            align-self: center;
+            justify-self: center;
+            visibility: hidden;
+        }
+
+        /* GRIDS DE BOTÓNS */
+        .grid-2x2 {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            width: 100%;
+        }
+
+        .grid-3x2 {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            width: 100%;
+        }
+
+        .swipe-btn {
+            font-size: 2rem;
+            padding: 14px;
+            border-radius: 12px;
+            background: #334155;
+            color: white;
+            border: 2px solid #475569;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .grid-3x3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            width: 85%;
+        }
+
+        .grid-4x4-react {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            width: 95%;
+        }
+
+        .circle-btn {
+            aspect-ratio: 1;
+            background: #334155;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: inset 0 -4px 0 rgba(0,0,0,0.4);
+        }
+
+        /* VERDE BRILANTE PARA REACCIÓN */
+        .circle-btn.active {
+            background: #22c55e !important;
+            box-shadow: 0 0 22px #22c55e !important;
+        }
+
+        .grid-4x4 {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            width: 100%;
+        }
+
+        .num-btn {
+            background: var(--accent-blue);
+            color: #0f172a;
+            font-size: 1.1rem;
+            font-weight: bold;
+            height: 48px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        .num-btn.hidden-val { background: #334155; color: transparent; }
+        .num-btn.done { visibility: hidden; }
+
+        .ranking-box {
+            background: #0f172a;
+            border-radius: 12px;
+            padding: 12px;
+            margin-top: 12px;
+            text-align: left;
+            border: 1px solid #334155;
+        }
+
+        .ranking-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .ranking-header h3 {
+            margin: 0;
+            font-size: 0.95rem;
+            color: var(--accent-yellow);
+        }
+
+        .ranking-tabs {
+            display: flex;
+            gap: 4px;
+            margin-top: 10px;
+            margin-bottom: 8px;
+        }
+
+        .ranking-tab {
+            flex: 1;
+            font-size: 0.72rem;
+            padding: 6px 2px;
+            margin: 0;
+            background: #1e293b;
+            color: var(--text-muted);
+            border: 1px solid #334155;
+        }
+
+        .ranking-tab.active {
+            background: var(--accent-yellow);
+            color: #0f172a;
+            font-weight: bold;
+        }
+
+        .ranking-content {
+            display: none;
+            max-height: 220px;
+            overflow-y: auto;
+            margin-top: 6px;
+        }
+
+        .ranking-content.open {
+            display: block;
+        }
+
+        .ranking-item, .record-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 0;
+            border-bottom: 1px solid #1e293b;
+            font-size: 0.85rem;
+        }
+
+        .user-date {
+            font-size: 0.7rem;
+            color: #64748b;
+            margin-left: 6px;
+        }
+
+        .result-box { text-align: center; width: 100%; }
+        .result-score { font-size: 2.2rem; font-weight: bold; color: var(--accent-yellow); margin: 10px 0; }
+        .err-msg { color: var(--accent-red); font-size: 0.85rem; margin-top: 5px; display: none; }
+
+        .top-abandon-btn {
+            background: #475569;
+            color: #f8fafc;
+            font-size: 0.8rem;
+            padding: 6px 10px;
+            margin: 0 0 10px 0;
+            width: auto;
+            align-self: flex-start;
+        }
+
+        .club-card {
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 10px;
+            padding: 10px;
+            margin-bottom: 8px;
+            text-align: left;
+        }
+
+        .wildcard-box {
+            display: flex;
+            gap: 6px;
+            width: 100%;
+            margin-bottom: 8px;
+        }
+
+        .btn-wildcard {
+            font-size: 0.75rem;
+            padding: 6px;
+            margin: 0;
+            border-radius: 6px;
+            background: #3b82f6;
+            color: white;
+        }
+
+        .btn-wildcard:disabled {
+            background: #334155;
+            color: #64748b;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .badges-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .badge-card {
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 8px;
+            font-size: 0.75rem;
+            text-align: center;
+            opacity: 0.4;
+        }
+
+        .badge-card.unlocked {
+            border-color: var(--accent-yellow);
+            opacity: 1;
+            box-shadow: 0 0 8px rgba(245, 158, 11, 0.2);
+        }
+
+        .badge-icon {
+            font-size: 1.4rem;
+            display: block;
+            margin-bottom: 2px;
+        }
+
+        .admin-info-box {
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 8px;
+            margin-bottom: 10px;
+            font-size: 0.8rem;
+            text-align: left;
+            color: var(--text-muted);
+        }
+
+        .daily-card {
+            background: linear-gradient(135deg, #1e293b, #0f172a);
+            border: 2px solid var(--accent-yellow);
+            border-radius: 12px;
+            padding: 12px;
+            margin: 10px 0;
+            text-align: left;
+        }
+
+        .target-square {
+            width: min(100%, 430px);
+            aspect-ratio: 1 / 1;
+            background: radial-gradient(circle at center, #162238 0%, #0b1220 72%);
+            border: 2px solid #38bdf8;
+            box-shadow: 0 0 18px rgba(56,189,248,.35), inset 0 0 28px rgba(56,189,248,.08);
+            border-radius: 14px;
+            position: relative;
+            overflow: hidden;
+            touch-action: none;
+        }
+        .target-ring { position:absolute; border-radius:50%; left:50%; top:50%; transform:translate(-50%,-50%); display:flex; align-items:center; justify-content:center; }
+        .target-crosshair { position:absolute; width:clamp(24px,7vw,32px); height:clamp(24px,7vw,32px); border:2px solid #38bdf8; border-radius:50%; box-shadow:0 0 12px #38bdf8; pointer-events:none; transform:translate(-50%,-50%); }
+        .target-crosshair:before,.target-crosshair:after { content:""; position:absolute; background:#38bdf8; opacity:.9; }
+        .target-crosshair:before { width:2px; height:150%; left:50%; top:-25%; }
+        .target-crosshair:after { height:2px; width:150%; left:-25%; top:50%; }
+        .target-mark { position:absolute; width:9px; height:9px; border-radius:50%; border:1px solid white; background:#f59e0b; box-shadow:0 0 7px #f59e0b; transform:translate(-50%,-50%); pointer-events:none; }
+        .metro-track { width:100%; max-width:430px; aspect-ratio:1/1; background:linear-gradient(180deg,#080d18,#101b2d); border:2px solid #38bdf8; box-shadow:0 0 20px rgba(56,189,248,.4), inset 0 0 30px rgba(168,85,247,.08); border-radius:16px; position:relative; overflow:hidden; touch-action:manipulation; }
+        .metro-lane-tap { position:absolute; top:0; bottom:0; width:33.333%; cursor:pointer; }
+        .metro-lane-tap[data-lane="0"] { left:0; } .metro-lane-tap[data-lane="1"] { left:33.333%; } .metro-lane-tap[data-lane="2"] { left:66.666%; }
+        .metro-lane-line { position:absolute; top:0; bottom:0; width:1px; background:rgba(56,189,248,.28); box-shadow:0 0 7px rgba(56,189,248,.3); }
+        .metro-player { position:absolute; bottom:7%; font-size:clamp(1.8rem,7vw,2.5rem); transform:translateX(-50%); transition:left .18s cubic-bezier(.22,.61,.36,1); z-index:4; filter:drop-shadow(0 0 7px #38bdf8); pointer-events:none; }
+        .maze-canvas { width:min(100%,430px); height:auto; aspect-ratio:1.36/1; touch-action:none; display:block; }
+        footer { text-align: center; margin-top: 6px; margin-bottom: 12px; }
+        .app-revision { font-size: 0.75rem; color: var(--text-muted); opacity: 0.4; letter-spacing: 0.5px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1 id="appTitle" onclick="clickSecretTitle()">MINIXOGOS PORTELA</h1>
+        <div class="user-info" id="userInfo"></div>
+    </header>
+
+    <!-- ACCESO -->
+    <div id="screenLogin" class="screen card active">
+        <h2>Acceso de Xogador</h2>
+        <p style="font-size: 0.85rem; color: var(--text-muted);">Escribe o teu Nome e un PIN de 6 díxitos para gardar os teus puntos.</p>
+        <input type="text" id="usernameInput" placeholder="O teu Nome / Apodo" maxlength="15">
+        <input type="password" id="pinInput" placeholder="PIN Secreto (6 números)" maxlength="6">
+        <div id="loginError" class="err-msg">PIN incorrecto para este usuario.</div>
+        <button onclick="autenticarUsuario()">Entrar a Xogar</button>
+    </div>
+
+    <!-- MENÚ PRINCIPAL -->
+    <div id="screenMenu" class="screen card">
+        <button class="btn-random" onclick="jugarAleatorio()">🎲 Xogo Aleatorio</button>
+        <button class="btn-timeattack" onclick="iniciarContrarreloxo()">⏳ Modo Contrarreloxo Global (60s)</button>
+        <button class="btn-challenge" onclick="iniciarDesafioDia()">⚔️ Desafío do Día</button>
+
+        <!-- TARXETÓN SUXERENCIA DO DÍA -->
+        <div id="dailySuggestionCard" class="daily-card">
+            <div style="font-size:0.75rem; color:var(--accent-yellow); font-weight:bold; text-transform:uppercase;">🌟 Suxerencia do Día</div>
+            <div id="dailyGameTitle" style="font-size:1.1rem; font-weight:bold; color:var(--text-light); margin:4px 0;">...</div>
+            <div id="dailyGameDesc" style="font-size:0.8rem; color:var(--text-muted); margin-bottom:8px;">...</div>
+            <button onclick="xogarSuxerenciaDia()" style="padding:8px; font-size:0.85rem; margin:0; background:var(--accent-yellow); color:#0f172a;">Xogar Agora</button>
+        </div>
+
+        <div style="margin-top: 6px;">
+            <label style="font-size:0.8rem; color:var(--text-muted);"> Modo Campaña (Varios xogos seguidos):</label>
+            <div class="campaign-bar">
+                <button class="btn-camp btn-trivial" onclick="iniciarCampana(1)">⚔️ Campaña TRIVIAL</button>
+                <button class="btn-camp btn-normal" onclick="iniciarCampana(2)">⚔️ Campaña NORMAL</button>
+                <button class="btn-camp btn-extremoduro" onclick="iniciarCampana(3)">⚔️ Campaña EXTREME</button>
+            </div>
+        </div>
+
+        <button class="btn-club" onclick="abrirXestionClubs()" style="margin-top:10px;">👥 Os meus Clubes de Amigos</button>
+        <button class="btn-profile" onclick="abrirPerfil()">📊 O meu Perfil e Récords</button>
+        
+        <!-- ACCORDION DE MINIXOGOS INDIVIDUAIS -->
+        <div class="accordion-header" onclick="toggleAccordion()">
+            <span>🎮 Todos os Minixogos Individuais</span>
+            <span id="accordionArrow">▶</span>
+        </div>
+        <div class="accordion-content" id="accordionContent">
+            <input type="text" id="searchCat" class="search-input" placeholder="🔍 Buscar minixogo..." oninput="filtrarCategorias()">
+            <div class="difficulty-legend" aria-label="Lenda de dificultades">
+                <span><i class="difficulty-dot trivial"></i> Trivial</span>
+                <span><i class="difficulty-dot normal"></i> Normal</span>
+                <span><i class="difficulty-dot extremoduro"></i> Extremoduro</span>
+            </div>
+            <div class="category-grid" id="categoryGrid"></div>
+        </div>
+
+        <div class="ranking-box">
+            <div class="ranking-header" onclick="toggleRankingCollapse()">
+                <h3>🏆 Clasificacións</h3>
+                <span id="rankingArrow" style="color:var(--text-muted); font-size:0.8rem;">▶ Preme para abrir</span>
+            </div>
+            
+            <div id="rankingContainer" class="ranking-content">
+                <div class="ranking-tabs">
+                    <button class="ranking-tab" id="tabTotal" onclick="cambiarTabRanking('total')">Total</button>
+                    <button class="ranking-tab" id="tabDia" onclick="cambiarTabRanking('dia')">Do Día</button>
+                    <button class="ranking-tab" id="tabXogo" onclick="cambiarTabRanking('xogo')">Por Xogo</button>
+                    <button class="ranking-tab" id="tabClub" onclick="cambiarTabRanking('club')">Clubes</button>
+                </div>
+                <div id="clubSelectorBox" style="display:none; margin-bottom:6px;">
+                    <select id="rankingClubSelect" onchange="renderizarRankingSegunTab()"></select>
+                </div>
+                <div id="rankingList">Selecciona unha pestana para amosar a listaxe...</div>
+            </div>
+        </div>
+
+        <button class="btn-alt" onclick="cerrarSesion()" style="margin-top: 12px;">Cerrar Sesión</button>
+    </div>
+
+    <!-- PANTALLA CLUBES DE AMIGOS -->
+    <div id="screenClubs" class="screen card">
+        <h2>👥 Clubes de Amigos</h2>
+        <p style="font-size: 0.85rem; color: var(--text-muted);">Crea un grupo ou únete cun código compartido.</p>
+        
+        <div style="background:#0f172a; padding:10px; border-radius:10px; margin-bottom:10px;">
+            <h4 style="margin:0 0 6px 0; color:var(--accent-yellow);">➕ Crear Novo Club</h4>
+            <input type="text" id="newClubNameInput" placeholder="Nome do Club (Opcional)">
+            <button onclick="crearNovoClub()" style="margin-top:0;">Crear Club</button>
+        </div>
+
+        <div style="background:#0f172a; padding:10px; border-radius:10px; margin-bottom:12px;">
+            <h4 style="margin:0 0 6px 0; color:var(--accent-blue);">🔑 Unirse a un Club</h4>
+            <input type="text" id="joinClubCodeInput" placeholder="Código do Club (6 caracteres)">
+            <button onclick="unirseAClub()" style="margin-top:0;">Unirse</button>
+        </div>
+
+        <h3 style="color:var(--accent-yellow); text-align:left; font-size:1rem; margin-bottom:6px;">Os meus Clubes:</h3>
+        <div id="myClubsList" style="max-height:200px; overflow-y:auto;">Cargando...</div>
+
+        <button class="btn-alt" onclick="mostrarPantalla('screenMenu')" style="margin-top:12px;">Volver ao Menú</button>
+    </div>
+
+    <!-- PERFIL -->
+    <div id="screenProfile" class="screen card">
+        <h2>Perfil de Xogador</h2>
+        <p id="profileTotalScore" style="font-size: 1.3rem; font-weight: bold; color: var(--accent-yellow); margin: 5px 0;"></p>
+        
+        <div class="ranking-box" style="text-align:left; margin-bottom: 12px;">
+            <h3 style="color:var(--accent-yellow); text-align:center;">🏅 Insignias e Logros</h3>
+            <div id="userBadgesList" class="badges-grid"></div>
+        </div>
+
+        <div class="ranking-box" style="text-align:left;">
+            <h3 style="color:var(--accent-yellow); text-align:center;">📊 As miñas Mellores Marcas</h3>
+            <div id="userRecordsList" style="max-height:180px; overflow-y:auto; margin-top:8px;">Aínda non tes rexistros.</div>
+        </div>
+
+        <button onclick="mostrarPantalla('screenMenu')" style="margin-top:12px;">Volver ao Menú</button>
+    </div>
+
+    <!-- PANTALLA ADMIN SECRET -->
+    <div id="screenAdmin" class="screen card">
+        <h2 style="color:var(--accent-red);">⚙️ Panel de Administración</h2>
+        <p style="font-size:0.85rem; color:var(--text-muted);">Opcións de xestión e limpeza de clasificacións.</p>
+        
+        <div class="admin-info-box">
+            🔥 <strong>Borrar Tódolos Rankings:</strong> Elimina por completo os puntos e rexistros de tódolos usuarios rexistrados.<br><br>
+            📅 <strong>Borrar Rankings do Día:</strong> Reinicia a última data de actividade para limpar as táboas diarias.<br><br>
+            🎮 <strong>Borrar Rankings por Xogo:</strong> Limpa as mellores puntuacións individuais gardadas en cada minixogo.<br><br>
+            👥 <strong>Borrar Tódolos Clubes:</strong> Elimina tódolos grupos de amigos creados na plataforma.<br><br>
+            ❌ <strong>Borrar Xogador Concreto:</strong> Elimina a conta e os datos do usuario seleccionado.
+        </div>
+
+        <button class="btn-danger" onclick="adminBorrarTodo()">🔥 Borrar Tódolos Rankings</button>
+        <button class="btn-danger" onclick="adminBorrarDia()">📅 Borrar Rankings do Día</button>
+        <button class="btn-danger" onclick="adminBorrarXogo()">🎮 Borrar Rankings por Xogo</button>
+        <button class="btn-danger" onclick="adminBorrarTodosClubs()">👥 Borrar Tódolos Clubes</button>
+        
+        <div style="margin-top:10px; text-align:left;">
+            <label style="font-size:0.8rem; color:var(--accent-yellow);">Borrar xogador en concreto:</label>
+            <select id="adminUserSelect"></select>
+            <button class="btn-danger" onclick="adminBorrarXogadorConcreto()" style="margin-top:4px;">❌ Borrar este Xogador e os seus Clubes</button>
+        </div>
+
+        <button class="btn-alt" onclick="sairPanelAdmin()" style="margin-top:15px;">Saír do Panel (Ir ao Login)</button>
+    </div>
+
+    <!-- PANTALLA DE XOGO -->
+    <div id="screenGame" class="screen card">
+        <button class="top-abandon-btn" onclick="abandonarPartida()">🏠 Menú (Abandonar)</button>
+        
+        <!-- COMODÍNS DE CAMPAÑA -->
+        <div id="wildcardBox" class="wildcard-box" style="display:none;">
+            <button id="btnSkip" class="btn-wildcard" onclick="usarComodin('skip')">⏭️ Saltarse Xogo (1 uso)</button>
+            <button id="btnDouble" class="btn-wildcard" onclick="usarComodin('double')">✨ Puntos x2 (1 uso)</button>
+        </div>
+
+        <h3 id="gameTitle" style="margin: 0; color: var(--accent-blue);">Cargando...</h3>
+        <p id="gameDesc" style="font-size: 0.85rem; color: var(--text-muted); margin: 4px 0;"></p>
+        <div id="scoreSystemExp" class="score-explanation"></div>
+
+        <div class="board" id="gameArea"></div>
+        <div id="gameControls"></div>
+    </div>
+
+    <footer>
+        <span class="app-revision">~#v2.0-2026</span>
+    </footer>
+</div>
+
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyDY68e8tDZkcvrLiu2xoaVCDJIY_g1KP0w",
+        authDomain: "minixogos-portela.firebaseapp.com",
+        databaseURL: "https://minixogos-portela-default-rtdb.europe-west1.firebasedatabase.app/",
+        projectId: "minixogos-portela",
+        storageBucket: "minixogos-portela.firebasestorage.app",
+        messagingSenderId: "610062616692",
+        appId: "1:610062616692:web:1004d65064538a61dc2921"
+    };
+
+    let db = null;
+    try {
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        db = firebase.database();
+    } catch(e){}
+
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playBeep(freq = 440, type = 'sine', duration = 0.1) {
+        try {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type; osc.frequency.value = freq;
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start();
+            gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + duration);
+            osc.stop(audioCtx.currentTime + duration);
+        } catch(e){}
+    }
+
+    function playVictorySound() {
+        try {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const notes = [523.25, 659.25, 783.99, 1046.50];
+            notes.forEach((freq, idx) => {
+                gameSetTimeout(() => playBeep(freq, 'triangle', 0.25), idx * 120);
+            });
+        } catch(e){}
+    }
+
+    function playRecordSound() {
+        try {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const notes = [440, 554.37, 659.25, 880];
+            notes.forEach((freq, idx) => {
+                gameSetTimeout(() => playBeep(freq, 'sine', 0.18), idx * 90);
+            });
+        } catch(e){}
+    }
+
+    // NOVAS INSIGNIAS E LOGROS
+    const INSIGNIAS = [
+        { id: "first_win", nome: "Primeira Vitoria", desc: "Completa o teu primeiro minixogo", icon: "🥇" },
+        { id: "camp_vet", nome: "Veterano da Campaña", desc: "Completa 5 campañas completas", icon: "🎖️" },
+        { id: "sniper", nome: "Francotirador", desc: "100% de precisión en Tiro ao Blanco", icon: "🎯" },
+        { id: "time_master", nome: "Mestre do Tempo", desc: "Diferenza menor a 0.05s en Tempo Exacto", icon: "⏱️" },
+        { id: "collector", nome: "Coleccionista", desc: "Únete ou crea un Club", icon: "👥" },
+        { id: "king_persistence", nome: "Rei da Persistencia", desc: "Xoga 7 días seguidos", icon: "🔥" },
+        { id: "fast_wind", nome: "Rápido coma o Vento", desc: "Orde Numérica en menos de 10s", icon: "⚡" },
+        { id: "dado_master", nome: "Mestre dos Dados", desc: "Supera os 800 pts en Suma de Dados", icon: "🎲" },
+        { id: "time_king", nome: "Rei do Reloxo", desc: "Supera os 500 pts no Contrarreloxo", icon: "⏳" }
+    ];
+
+    const CATEGORIAS_BASE = [
+        { id: "bar", nome: "🎯 Precision da Barriña", desc: "Para o punto no centro exacto.", exp: "Puntuación = Normalizada a max 1000 pts por precisión." },
+        { id: "memory", nome: "🧠 Memoria Revertida", desc: "Memoriza os números antes de ocultarse (5 roldas).", exp: "5 roldas progresivas. Puntuación máx 1000 pts." },
+        { id: "math", nome: "📐 Sumas Enlazadas Express", desc: "Resolve as sumas o máis rápido posíbel.", exp: "Puntuación = Proporcional ao tempo e acertos (Max 1000 pts)." },
+        { id: "react", nome: "⚡ Reacción e Velocidade", desc: "Toca o botón verde activo no menor tempo.", exp: "Puntuación = 1000 - Tempo de reacción medio." },
+        { id: "order", nome: "🔢 Orde Numérica", desc: "Toca os números en orde crecente (5 roldas).", exp: "5 roldas consecutivas. Puntuación máx 1000 pts." },
+        { id: "box", nome: "📦 Contador de Caixas", desc: "Contas cantas caixas aleatorias aparecen.", exp: "Puntuación = +200 pts por rolda acertada." },
+        { id: "time", nome: "⏱️ Tempo Exacto!", desc: "Para o reloxo a cegas preto do obxectivo.", exp: "Puntuación max 1000 pts segundo marxe de erro." },
+        { id: "dice", nome: "🎲 Suma de Dados", desc: "Elixe a opción correcta da suma dos dados.", exp: "Puntuación = 3 opcións por rolda (Max 1000 pts)." },
+        { id: "color", nome: "🎨 Cor Correcta", desc: "Selecciona a cor real do texto entre 6 opcións.", exp: "Puntuación = Max 1000 pts en 5 roldas." },
+        { id: "swipe", nome: "👆 Desliza Rápido!", desc: "Preme a frecha na dirección amosada.", exp: "Puntuación = Max 1000 pts segundo axilidade." },
+        { id: "pattern", nome: "💡 Patrón de Luz", desc: "Memoriza e repite a secuencia.", exp: "Puntuación = Max 1000 pts en 3 roldas." },
+        { id: "reverse_math", nome: "🧠 Cálculo Mental Invertido", desc: "Atopa os dous números que orixinan o resultado.", exp: "Puntuación = Max 1000 pts." },
+        { id: "visual_find", nome: "👁️ O Obxecto Intruso", desc: "Atopa o emoji/símbolo diferente entre a multitude.", exp: "Puntuación = Max 1000 pts en 5 roldas." },
+        { id: "maze", nome: "🌀 Labirinto Táctil", desc: "Arrastra sen soltar o dedo ata a meta.", exp: "Liña trazada en vivo. Max 1000 pts." },
+        { id: "flies", nome: "🪰 Caza de Moscas", desc: "Pulsa os obxectos con formas aleatorias antes de que fuxan.", exp: "Puntuación = Max 1000 pts." },
+        { id: "shadows", nome: "👤 Memoria de Sombras", desc: "Identifica o obxecto ao que pertence a sombra (6 opcións).", exp: "Grella de 6 opcións. Max 1000 pts." },
+        { id: "runner", nome: "🏃 Corredor do Metro", desc: "Esquiva obxectos malos e colle potenciadores en 3 carrís.", exp: "Titorial previo e luces neon. Max 1000 pts." },
+        { id: "target", nome: "🎯 Tiro ao Blanco Móbil", desc: "Mira con movemento estocástico e gardado de muescas.", exp: "5 disparos con rexistro visual de impacto. Max 1000 pts." }
+    ];
+
+    let currentUser = "";
+    let userProfile = { jugador: "", puntosTotales: 0, pin: "", fechaReg: "", ultAct: "", juegos: {}, badges: {}, campanasCompletadas: 0, rachaDias: 1 };
+    let currentTabRanking = null;
+    let rawJugadoresRanking = [];
+    let rawClubesDB = {};
+    let titleClickCount = 0;
+    let titleClickTimer = null;
+
+    let modoCampana = false;
+    let campanaListaXogos = [];
+    let campanaIndex = 0;
+    let campanaPuntosAcumulados = 0;
+    let campanaNivel = 1;
+
+    let comodinSaltarUsado = false;
+    let comodinDuplicarUsado = false;
+    let duplicarPuntosActivo = false;
+
+    let modoContrarreloxo = false;
+    let tempoRestanteGlobal = 60;
+    let timerGlobalInterval = null;
+
+    let suxerenciaDiaXogo = null;
+
+    // XESTIÓN CENTRALIZADA DE TIMERS/ANIMACIÓNS DOS XOGOS
+    const gameTimeouts = new Set();
+    const gameIntervals = new Set();
+    const nativeSetTimeout = window.setTimeout.bind(window);
+    const nativeSetInterval = window.setInterval.bind(window);
+    function gameSetTimeout(fn, delay, ...args) {
+        let id = null;
+        id = nativeSetTimeout(() => {
+            gameTimeouts.delete(id);
+            fn(...args);
+        }, delay);
+        gameTimeouts.add(id);
+        return id;
+    }
+    function gameSetInterval(fn, delay, ...args) {
+        const id = nativeSetInterval(fn, delay, ...args);
+        gameIntervals.add(id);
+        return id;
+    }
+    function limparRecursosXogo(preservarContrarreloxo = false) {
+        if (animFrame) { cancelAnimationFrame(animFrame); animFrame = null; }
+        gameTimeouts.forEach(id => clearTimeout(id));
+        gameTimeouts.clear();
+        gameIntervals.forEach(id => {
+            if (!(preservarContrarreloxo && id === timerGlobalInterval)) clearInterval(id);
+        });
+        if (preservarContrarreloxo && timerGlobalInterval) gameIntervals.delete(timerGlobalInterval);
+        else gameIntervals.clear();
+        if (!preservarContrarreloxo && timerGlobalInterval) {
+            clearInterval(timerGlobalInterval);
+            timerGlobalInterval = null;
+        }
+        try { audioCtx.suspend(); } catch(e) {}
+    }
+
+
+    function init() {
+        renderizarCategorias(CATEGORIAS_BASE);
+        escollerSuxerenciaDia();
+        const savedUser = localStorage.getItem('portela_user');
+        if (savedUser) {
+            currentUser = savedUser;
+            cargarDatosUsuario();
+            actualizarHeader();
+            mostrarPantalla('screenMenu');
+            escucharRanking();
+            escucharClubes();
+        } else {
+            actualizarHeader();
+        }
+    }
+
+    function toggleAccordion() {
+        const content = document.getElementById('accordionContent');
+        const arrow = document.getElementById('accordionArrow');
+        if (content.classList.contains('open')) {
+            content.classList.remove('open');
+            arrow.innerText = '▶';
+        } else {
+            content.classList.add('open');
+            arrow.innerText = '▼';
+        }
+    }
+
+    function escollerSuxerenciaDia() {
+        const hoxe = new Date().toISOString().split('T')[0];
+        let seed = 0;
+        for (let i = 0; i < hoxe.length; i++) seed += hoxe.charCodeAt(i);
+        let idx = seed % CATEGORIAS_BASE.length;
+        suxerenciaDiaXogo = CATEGORIAS_BASE[idx];
+
+        document.getElementById('dailyGameTitle').innerText = suxerenciaDiaXogo.nome;
+        document.getElementById('dailyGameDesc').innerText = suxerenciaDiaXogo.desc;
+    }
+
+    function xogarSuxerenciaDia() {
+        iniciarXogoDirecto(suxerenciaDiaXogo.id, 2);
+    }
+
+    function clickSecretTitle() {
+        titleClickCount++;
+        clearTimeout(titleClickTimer);
+        titleClickTimer = gameSetTimeout(() => { titleClickCount = 0; }, 4000);
+
+        if (titleClickCount >= 10) {
+            titleClickCount = 0;
+            let code = prompt("Introduce o Código Secreto de Administrador:");
+            if (code === "74857485") {
+                cargarSelectUsuariosAdmin();
+                mostrarPantalla('screenAdmin');
+            } else if (code !== null) {
+                alert("Código Incorrecto.");
+            }
+        }
+    }
+
+    function cargarSelectUsuariosAdmin() {
+        let sel = document.getElementById('adminUserSelect');
+        sel.innerHTML = "";
+        rawJugadoresRanking.forEach(j => {
+            if (j.jugador) {
+                let opt = document.createElement('option');
+                opt.value = j.jugador;
+                opt.innerText = j.jugador;
+                sel.appendChild(opt);
+            }
+        });
+    }
+
+    function adminBorrarTodo() {
+        if (confirm("⚠️ Borrarás TODOS os rankings, puntuacións e contas. Desexas continuar?")) {
+            if (db) db.ref('ranking').remove();
+            localStorage.setItem('portela_users_db', JSON.stringify({}));
+            alert("Rankings borrados por completo.");
+            cargarSelectUsuariosAdmin();
+            mostrarPantalla('screenAdmin');
+        }
+    }
+
+    function adminBorrarDia() {
+        if (confirm("⚠️ Reiniciarase a data de actividade dos usuarios para limpar o día. Continuar?")) {
+            const hoxe = new Date().toISOString().split('T')[0];
+            rawJugadoresRanking.forEach(j => {
+                if (j.jugador && j.ultAct === hoxe) {
+                    if (db) db.ref(`ranking/${j.jugador}/ultAct`).set("2000-01-01");
+                }
+            });
+            alert("Rankings do día reiniciados.");
+            mostrarPantalla('screenAdmin');
+        }
+    }
+
+    function adminBorrarXogo() {
+        if (confirm("⚠️ Eliminarás as marcas individuais de cada minixogo. Continuar?")) {
+            rawJugadoresRanking.forEach(j => {
+                if (j.jugador && db) db.ref(`ranking/${j.jugador}/juegos`).remove();
+            });
+            alert("Marcas eliminadas.");
+            mostrarPantalla('screenAdmin');
+        }
+    }
+
+    function adminBorrarTodosClubs() {
+        if (confirm("⚠️ Borrarás tódolos clubes creados. Continuar?")) {
+            if (db) db.ref('clubes').remove();
+            localStorage.setItem('portela_clubs_db', JSON.stringify({}));
+            alert("Clubes borrados.");
+            mostrarPantalla('screenAdmin');
+        }
+    }
+
+    function adminBorrarXogadorConcreto() {
+        let u = document.getElementById('adminUserSelect').value;
+        if (!u) return;
+        if (confirm(`⚠️ Borrarás permanentemente ao xogador "${u}". Continuar?`)) {
+            if (db) db.ref(`ranking/${u}`).remove();
+            let dbLocal = JSON.parse(localStorage.getItem('portela_users_db') || '{}');
+            delete dbLocal[u];
+            localStorage.setItem('portela_users_db', JSON.stringify(dbLocal));
+            alert(`Xogador ${u} eliminado.`);
+            cargarSelectUsuariosAdmin();
+            mostrarPantalla('screenAdmin');
+        }
+    }
+
+    function sairPanelAdmin() {
+        cerrarSesion();
+    }
+
+    function renderizarCategorias(lista) {
+        const grid = document.getElementById('categoryGrid');
+        grid.innerHTML = "";
+        lista.forEach(cat => {
+            grid.innerHTML += `
+                <div class="category-item">
+                    <div class="category-title">${cat.nome}</div>
+                    <div class="diff-grid">
+                        <button class="btn-diff btn-trivial" onclick="iniciarXogoDirecto('${cat.id}', 1)">TRIVIAL</button>
+                        <button class="btn-diff btn-normal" onclick="iniciarXogoDirecto('${cat.id}', 2)">NORMAL</button>
+                        <button class="btn-diff btn-extremoduro" onclick="iniciarXogoDirecto('${cat.id}', 3)">EXTREMODURO</button>
+                    </div>
+                </div>`;
+        });
+    }
+
+    function filtrarCategorias() {
+        const query = document.getElementById('searchCat').value.toLowerCase();
+        const filtradas = CATEGORIAS_BASE.filter(c => c.nome.toLowerCase().includes(query));
+        renderizarCategorias(filtradas);
+    }
+
+    function autenticarUsuario() {
+        const name = document.getElementById('usernameInput').value.trim().toLowerCase();
+        const pin = document.getElementById('pinInput').value.trim();
+        const errDiv = document.getElementById('loginError');
+        errDiv.style.display = "none";
+
+        if (!name || pin.length !== 6) {
+            alert("Introduce un nome e un PIN de 6 díxitos.");
+            return;
+        }
+
+        const dataHoxe = new Date().toISOString().split('T')[0];
+        const dataData = new Date().toLocaleDateString('gl-ES', { day:'2-digit', month:'2-digit', year:'2-digit' });
+        const dbLocal = JSON.parse(localStorage.getItem('portela_users_db') || '{}');
+
+        if (db) {
+            let userRef = db.ref('ranking/' + name);
+            userRef.once('value').then(snapshot => {
+                if (snapshot.exists()) {
+                    let val = snapshot.val();
+                    if (!val.jugador) val.jugador = name;
+                    if (val.pin === pin) iniciarSesionExitoso(name, val);
+                    else errDiv.style.display = "block";
+                } else {
+                    let newUser = { jugador: name, pin: pin, fechaReg: dataData, ultAct: dataHoxe, puntosTotales: 0, juegos: {}, badges: {}, campanasCompletadas: 0, rachaDias: 1 };
+                    userRef.set(newUser);
+                    iniciarSesionExitoso(name, newUser);
+                }
+            }).catch(() => autenticarLocal(name, pin, dbLocal, errDiv, dataData, dataHoxe));
+        } else {
+            autenticarLocal(name, pin, dbLocal, errDiv, dataData, dataHoxe);
+        }
+    }
+
+    function autenticarLocal(name, pin, dbLocal, errDiv, dataData, dataHoxe) {
+        if (dbLocal[name]) {
+            if (dbLocal[name].pin === pin) iniciarSesionExitoso(name, dbLocal[name]);
+            else errDiv.style.display = "block";
+        } else {
+            const newUser = { jugador: name, pin: pin, fechaReg: dataData, ultAct: dataHoxe, puntosTotales: 0, juegos: {}, badges: {}, campanasCompletadas: 0, rachaDias: 1 };
+            dbLocal[name] = newUser;
+            localStorage.setItem('portela_users_db', JSON.stringify(dbLocal));
+            iniciarSesionExitoso(name, newUser);
+        }
+    }
+
+    function iniciarSesionExitoso(name, profileData) {
+        currentUser = name;
+        userProfile = profileData || { jugador: name, puntosTotales: 0, juegos: {}, badges: {}, campanasCompletadas: 0, rachaDias: 1 };
+        if (!userProfile.jugador) userProfile.jugador = name;
+        if (!userProfile.badges) userProfile.badges = {};
+        
+        // COMPROBAR RACHA DE DÍAS (REI DA PERSISTENCIA)
+        const hoxe = new Date().toISOString().split('T')[0];
+        if (userProfile.ultAct && userProfile.ultAct !== hoxe) {
+            let ult = new Date(userProfile.ultAct);
+            let hoxeD = new Date(hoxe);
+            let diffDays = Math.round((hoxeD - ult) / (1000 * 60 * 60 * 24));
+            if (diffDays === 1) {
+                userProfile.rachaDias = (userProfile.rachaDias || 1) + 1;
+                if (userProfile.rachaDias >= 7) desbloquearInsignia("king_persistence");
+            } else if (diffDays > 1) {
+                userProfile.rachaDias = 1;
+            }
+        }
+
+        localStorage.setItem('portela_user', name);
+        actualizarHeader();
+        mostrarPantalla('screenMenu');
+        escucharRanking();
+        escucharClubes();
+    }
+
+    function cargarDatosUsuario() {
+        if (db && currentUser) {
+            db.ref('ranking/' + currentUser).on('value', snapshot => {
+                if (snapshot.exists()) {
+                    userProfile = snapshot.val();
+                    if (!userProfile.jugador) userProfile.jugador = currentUser;
+                    if (!userProfile.juegos) userProfile.juegos = {};
+                    if (!userProfile.badges) userProfile.badges = {};
+                }
+            });
+        } else {
+            const dbLocal = JSON.parse(localStorage.getItem('portela_users_db') || '{}');
+            if (dbLocal[currentUser]) {
+                userProfile = dbLocal[currentUser];
+                if (!userProfile.jugador) userProfile.jugador = currentUser;
+                if (!userProfile.badges) userProfile.badges = {};
+            }
+        }
+    }
+
+    function cerrarSesion() {
+        localStorage.removeItem('portela_user');
+        currentUser = "";
+        document.getElementById('usernameInput').value = "";
+        document.getElementById('pinInput').value = "";
+        actualizarHeader();
+        mostrarPantalla('screenLogin');
+    }
+
+    function actualizarHeader() {
+        const info = document.getElementById('userInfo');
+        if (currentUser) {
+            info.innerText = `Xogador: ${currentUser.toUpperCase()}`;
+            info.style.display = "block";
+        } else {
+            info.innerText = "";
+            info.style.display = "none";
+        }
+    }
+
+    function mostrarPantalla(id) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+    }
+
+    function abrirPerfil() {
+        mostrarPantalla('screenProfile');
+        document.getElementById('profileTotalScore').innerText = `Puntuación Total: ${userProfile.puntosTotales || 0} pts`;
+        
+        let badgesHtml = "";
+        const myBadges = userProfile.badges || {};
+        INSIGNIAS.forEach(b => {
+            let unlocked = !!myBadges[b.id];
+            badgesHtml += `
+                <div class="badge-card ${unlocked ? 'unlocked' : ''}">
+                    <span class="badge-icon">${b.icon}</span>
+                    <strong>${b.nome}</strong><br>
+                    <span style="color:var(--text-muted); font-size:0.68rem;">${b.desc}</span>
+                </div>`;
+        });
+        document.getElementById('userBadgesList').innerHTML = badgesHtml;
+
+        let html = "";
+        const juegosMap = userProfile.juegos || {};
+        const keys = Object.keys(juegosMap);
+        if (keys.length === 0) {
+            html = "<p style='text-align:center;'>Aínda non completaches ningún minixogo.</p>";
+        } else {
+            // CORRECCIÓN DO ERRO [object Object] pts
+            keys.forEach(catKey => {
+                let marca = juegosMap[catKey];
+                let ptsValor = (typeof marca === 'object' && marca !== null) ? (marca.puntuacion || marca.pts || 0) : marca;
+                html += `<div class="record-item"><span>${catKey}</span><span><strong>${ptsValor} pts</strong></span></div>`;
+            });
+        }
+        document.getElementById('userRecordsList').innerHTML = html;
+    }
+
+    function desbloquearInsignia(id) {
+        if (!userProfile.badges) userProfile.badges = {};
+        if (!userProfile.badges[id]) {
+            userProfile.badges[id] = true;
+            if (db && currentUser) db.ref(`ranking/${currentUser}/badges/${id}`).set(true);
+            const dbLocal = JSON.parse(localStorage.getItem('portela_users_db') || '{}');
+            if (dbLocal[currentUser]) {
+                if (!dbLocal[currentUser].badges) dbLocal[currentUser].badges = {};
+                dbLocal[currentUser].badges[id] = true;
+                localStorage.setItem('portela_users_db', JSON.stringify(dbLocal));
+            }
+        }
+    }
+
+    function toggleRankingCollapse() {
+        const container = document.getElementById('rankingContainer');
+        const arrow = document.getElementById('rankingArrow');
+        if (container.classList.contains('open')) {
+            container.classList.remove('open');
+            arrow.innerText = "▶ Preme para abrir";
+        } else {
+            container.classList.add('open');
+            arrow.innerText = "▼ Pechar";
+            if (!currentTabRanking) cambiarTabRanking('total');
+        }
+    }
+
+    function escucharRanking() {
+        if (db) {
+            db.ref('ranking').on('value', snapshot => {
+                let jugadores = [];
+                snapshot.forEach(child => {
+                    let jData = child.val();
+                    if (!jData.jugador) jData.jugador = child.key;
+                    jugadores.push(jData);
+                });
+                rawJugadoresRanking = jugadores;
+                if (currentTabRanking) renderizarRankingSegunTab();
+            }, () => renderizarRankingLocal());
+        } else renderizarRankingLocal();
+    }
+
+    function escucharClubes() {
+        if (db) {
+            db.ref('clubes').on('value', snapshot => {
+                rawClubesDB = snapshot.val() || {};
+                actualizarListaClubesUI();
+                if (currentTabRanking === 'club') renderizarRankingSegunTab();
+            });
+        } else {
+            rawClubesDB = JSON.parse(localStorage.getItem('portela_clubs_db') || '{}');
+            actualizarListaClubesUI();
+            if (currentTabRanking === 'club') renderizarRankingSegunTab();
+        }
+    }
+
+    function renderizarRankingLocal() {
+        const dbLocal = JSON.parse(localStorage.getItem('portela_users_db') || '{}');
+        rawJugadoresRanking = Object.values(dbLocal).map(j => {
+            if (!j.jugador && typeof j === 'object') j.jugador = "xogador";
+            return j;
+        });
+        if (currentTabRanking) renderizarRankingSegunTab();
+    }
+
+    function cambiarTabRanking(tab) {
+        if (currentTabRanking === tab) {
+            currentTabRanking = null;
+            document.querySelectorAll('.ranking-tab').forEach(t => t.classList.remove('active'));
+            document.getElementById('rankingList').innerHTML = "Selecciona unha pestana para amosar a listaxe...";
+            document.getElementById('clubSelectorBox').style.display = "none";
+            return;
+        }
+
+        currentTabRanking = tab;
+        document.querySelectorAll('.ranking-tab').forEach(t => t.classList.remove('active'));
+        if (tab==='total') document.getElementById('tabTotal').classList.add('active');
+        if (tab==='dia') document.getElementById('tabDia').classList.add('active');
+        if (tab==='xogo') document.getElementById('tabXogo').classList.add('active');
+        if (tab==='club') document.getElementById('tabClub').classList.add('active');
+        
+        document.getElementById('rankingContainer').classList.add('open');
+        document.getElementById('rankingArrow').innerText = "▼ Pechar";
+
+        if (tab === 'club') {
+            document.getElementById('clubSelectorBox').style.display = "block";
+            poblarSelectClubesRanking();
+        } else {
+            document.getElementById('clubSelectorBox').style.display = "none";
+        }
+
+        renderizarRankingSegunTab();
+    }
+
+    function poblarSelectClubesRanking() {
+        let sel = document.getElementById('rankingClubSelect');
+        sel.innerHTML = "";
+        let meusClubes = Object.values(rawClubesDB).filter(c => c.membros && c.membros[currentUser]);
+        if (meusClubes.length === 0) {
+            let opt = document.createElement('option');
+            opt.value = "";
+            opt.innerText = "Non pertences a ningún club";
+            sel.appendChild(opt);
+        } else {
+            meusClubes.forEach(c => {
+                let opt = document.createElement('option');
+                opt.value = c.id;
+                opt.innerText = `Club: ${c.nome} (${c.codigo})`;
+                sel.appendChild(opt);
+            });
+        }
+    }
+
+    function renderizarRankingSegunTab() {
+        let list = [...rawJugadoresRanking];
+        let html = "";
+
+        if (currentTabRanking === 'total') {
+            list.sort((a, b) => (b.puntosTotales || 0) - (a.puntosTotales || 0));
+            list.forEach((j, index) => {
+                let nome = j.jugador || "Anónimo";
+                let f = j.fechaReg ? `<span class="user-date">(${j.fechaReg})</span>` : '';
+                html += `<div class="ranking-item"><span>${index + 1}. <strong>${nome}</strong>${f}</span><span>${j.puntosTotales || 0} pts</span></div>`;
+            });
+        } else if (currentTabRanking === 'dia') {
+            const hoxe = new Date().toISOString().split('T')[0];
+            let listDia = list.filter(j => j.ultAct === hoxe);
+            listDia.sort((a, b) => (b.puntosTotales || 0) - (a.puntosTotales || 0));
+            if (listDia.length === 0) html = "<p style='text-align:center; font-size:0.8rem; color:var(--text-muted);'>Sen partidas rexistradas hoxe.</p>";
+            else {
+                listDia.forEach((j, index) => {
+                    let nome = j.jugador || "Anónimo";
+                    html += `<div class="ranking-item"><span>${index + 1}. <strong>${nome}</strong></span><span>${j.puntosTotales || 0} pts</span></div>`;
+                });
+            }
+        } else if (currentTabRanking === 'xogo') {
+            let maxMap = [];
+            list.forEach(j => {
+                const jgs = j.juegos || {};
+                let nome = j.jugador || "Anónimo";
+                Object.keys(jgs).forEach(xogoKey => {
+                    let val = jgs[xogoKey];
+                    let ptsVal = (typeof val === 'object' && val !== null) ? (val.puntuacion || val.pts || 0) : val;
+                    maxMap.push({ xogo: xogoKey, xogador: nome, pts: ptsVal });
+                });
+            });
+            maxMap.sort((a, b) => b.pts - a.pts);
+            if (maxMap.length === 0) html = "<p style='text-align:center; font-size:0.8rem; color:var(--text-muted);'>Sen marcas por xogo.</p>";
+            else {
+                maxMap.slice(0, 10).forEach((item) => {
+                    html += `<div class="ranking-item"><span><strong>${item.xogo}</strong> (${item.xogador})</span><span>${item.pts} pts</span></div>`;
+                });
+            }
+        } else if (currentTabRanking === 'club') {
+            let clubId = document.getElementById('rankingClubSelect').value;
+            if (!clubId || !rawClubesDB[clubId]) {
+                html = "<p style='text-align:center; font-size:0.8rem; color:var(--text-muted);'>Selecciona un club válido para ver a clasificación.</p>";
+            } else {
+                let club = rawClubesDB[clubId];
+                let membros = Object.keys(club.membros || {});
+                let listMembros = list.filter(j => membros.includes(j.jugador));
+                listMembros.sort((a, b) => (b.puntosTotales || 0) - (a.puntosTotales || 0));
+
+                listMembros.forEach((j, index) => {
+                    let nome = j.jugador || "Anónimo";
+                    let isCreator = (nome === club.creador) ? " 👑" : "";
+                    html += `<div class="ranking-item"><span>${index + 1}. <strong>${nome}</strong>${isCreator}</span><span>${j.puntosTotales || 0} pts</span></div>`;
+                });
+            }
+        }
+
+        document.getElementById('rankingList').innerHTML = html || "<p style='text-align:center;'>Sen datos aínda</p>";
+    }
+
+    // XESTIÓN DE CLUBES DE AMIGOS
+    function abrirXestionClubs() {
+        mostrarPantalla('screenClubs');
+        actualizarListaClubesUI();
+    }
+
+    function crearNovoClub() {
+        let nome = document.getElementById('newClubNameInput').value.trim();
+        // NOME ALEATORIO SE QUEDA BALAÍO
+        if (!nome) {
+            nome = "Club_Exátono_" + Math.floor(Math.random() * 900 + 100);
+        }
+
+        let codigo = "Q0HFRI";
+        if (Object.values(rawClubesDB).some(c => c.codigo === codigo)) {
+            codigo = Math.random().toString(36).substring(2, 8).toUpperCase();
+        }
+        let clubId = 'club_' + Date.now();
+
+        let novoClub = {
+            id: clubId,
+            nome: nome,
+            codigo: codigo,
+            creador: currentUser,
+            membros: { [currentUser]: true }
+        };
+
+        if (db) {
+            db.ref('clubes/' + clubId).set(novoClub);
+        } else {
+            rawClubesDB[clubId] = novoClub;
+            localStorage.setItem('portela_clubs_db', JSON.stringify(rawClubesDB));
+        }
+
+        desbloquearInsignia("collector");
+        document.getElementById('newClubNameInput').value = "";
+        actualizarListaClubesUI();
+    }
+
+    function unirseAClub() {
+        let code = document.getElementById('joinClubCodeInput').value.trim().toUpperCase();
+        if (!code) { alert("Introduce un código de club."); return; }
+
+        let atopa = Object.values(rawClubesDB).find(c => c.codigo === code);
+        if (!atopa) { alert("Non se atopou ningún club con ese código."); return; }
+
+        if (db) {
+            db.ref(`clubes/${atopa.id}/membros/${currentUser}`).set(true);
+        } else {
+            if (!rawClubesDB[atopa.id].membros) rawClubesDB[atopa.id].membros = {};
+            rawClubesDB[atopa.id].membros[currentUser] = true;
+            localStorage.setItem('portela_clubs_db', JSON.stringify(rawClubesDB));
+        }
+
+        desbloquearInsignia("collector");
+        document.getElementById('joinClubCodeInput').value = "";
+        actualizarListaClubesUI();
+    }
+
+    function copiarCodigoClub(codigo, btnEl) {
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(codigo).then(() => {
+                btnEl.innerText = "✓ Copiado!";
+                gameSetTimeout(() => { btnEl.innerText = "📋 Copiar"; }, 2000);
+            });
+        }
+    }
+
+    function actualizarListaClubesUI() {
+        let box = document.getElementById('myClubsList');
+        if (!box) return;
+
+        let meusClubes = Object.values(rawClubesDB).filter(c => c.membros && c.membros[currentUser]);
+        if (meusClubes.length === 0) {
+            box.innerHTML = "<p style='text-align:center; font-size:0.85rem; color:var(--text-muted);'>Aínda non estás en ningún club.</p>";
+            return;
+        }
+
+        let html = "";
+        meusClubes.forEach(c => {
+            let isCreador = c.creador === currentUser;
+            html += `
+                <div class="club-card">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <strong style="color:var(--accent-yellow);">${c.nome}</strong>
+                        <div style="display:flex; align-items:center; gap:4px; background:#334155; padding:2px 6px; border-radius:6px;">
+                            <span style="font-size:0.75rem; color:var(--accent-blue);">Cod: ${c.codigo}</span>
+                            <button onclick="copiarCodigoClub('${c.codigo}', this)" style="padding:2px 6px; font-size:0.65rem; background:var(--accent-blue); color:#0f172a; margin:0; width:auto;">📋 Copiar</button>
+                        </div>
+                    </div>
+                    <p style="font-size:0.75rem; color:var(--text-muted); margin:4px 0;">Creador: ${c.creador} ${isCreador ? '(Ti)' : ''}</p>
+                    <div style="font-size:0.8rem; margin:6px 0;">Membros:</div>
+                    <div style="max-height:80px; overflow-y:auto; padding-left:5px;">`;
+
+            Object.keys(c.membros || {}).forEach(m => {
+                let canKick = isCreador && m !== currentUser;
+                html += `
+                    <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.75rem; padding:2px 0;">
+                        <span>• ${m} ${m === c.creador ? '👑' : ''}</span>
+                        ${canKick ? `<button onclick="expulsarMembroClub('${c.id}', '${m}')" style="width:auto; padding:2px 6px; font-size:0.65rem; background:#991b1b; margin:0;">Expulsar</button>` : ''}
+                    </div>`;
+            });
+
+            html += `</div><div style="margin-top:8px;">`;
+            if (isCreador) {
+                html += `<button class="btn-danger" onclick="disolverClub('${c.id}')" style="padding:6px; font-size:0.75rem;">💥 Disolver Club</button>`;
+            } else {
+                html += `<button class="btn-alt" onclick="abandonarClub('${c.id}')" style="padding:6px; font-size:0.75rem;">🚪 Abandonar Club</button>`;
+            }
+            html += `</div></div>`;
+        });
+
+        box.innerHTML = html;
+    }
+
+    function expulsarMembroClub(clubId, membro) {
+        if (confirm(`Expulsar a ${membro} do club?`)) {
+            if (db) db.ref(`clubes/${clubId}/membros/${membro}`).remove();
+            else {
+                delete rawClubesDB[clubId].membros[membro];
+                localStorage.setItem('portela_clubs_db', JSON.stringify(rawClubesDB));
+                actualizarListaClubesUI();
+            }
+        }
+    }
+
+    function disolverClub(clubId) {
+        if (confirm("Estás seguro de disolver este club por completo?")) {
+            if (db) db.ref(`clubes/${clubId}`).remove();
+            else {
+                delete rawClubesDB[clubId];
+                localStorage.setItem('portela_clubs_db', JSON.stringify(rawClubesDB));
+                actualizarListaClubesUI();
+            }
+        }
+    }
+
+    function abandonarClub(clubId) {
+        if (confirm("Desexas abandonar este club?")) {
+            if (db) db.ref(`clubes/${clubId}/membros/${currentUser}`).remove();
+            else {
+                delete rawClubesDB[clubId].membros[currentUser];
+                localStorage.setItem('portela_clubs_db', JSON.stringify(rawClubesDB));
+                actualizarListaClubesUI();
+            }
+        }
+    }
+
+    // NORMALIZACIÓN DE PUNTUACIÓNS (FACTOR 100 / MAX 1000 PTS POR XOGO PERFECTO)
+    function guardarResultado(nombreXogo, puntos) {
+        if (!currentUser) return;
+        
+        let puntosNormalizados = Math.min(1000, Math.max(0, Math.round(puntos)));
+        const hoxe = new Date().toISOString().split('T')[0];
+        const novoTotal = (userProfile.puntosTotales || 0) + puntosNormalizados;
+        
+        if (!userProfile.juegos) userProfile.juegos = {};
+        const recordAnteriorRaw = userProfile.juegos[nombreXogo] || 0;
+        const recordAnterior = (typeof recordAnteriorRaw === 'object' && recordAnteriorRaw !== null) ? (recordAnteriorRaw.puntuacion || recordAnteriorRaw.pts || 0) : recordAnteriorRaw;
+        const novoRecord = Math.max(recordAnterior, puntosNormalizados);
+
+        if (puntosNormalizados > recordAnterior) {
+            playRecordSound();
+        }
+
+        desbloquearInsignia("first_win");
+
+        userProfile.puntosTotales = novoTotal;
+        userProfile.ultAct = hoxe;
+        userProfile.juegos[nombreXogo] = novoRecord;
+
+        if (db) {
+            db.ref('ranking/' + currentUser).update({
+                jugador: currentUser,
+                puntosTotales: novoTotal,
+                ultAct: hoxe,
+                [`juegos/${nombreXogo}`]: novoRecord
+            }).catch(() => {});
+        }
+
+        const dbLocal = JSON.parse(localStorage.getItem('portela_users_db') || '{}');
+        dbLocal[currentUser] = userProfile;
+        localStorage.setItem('portela_users_db', JSON.stringify(dbLocal));
+        escucharRanking();
+    }
+
+    let xogoActual = null;
+    let animFrame = null;
+
+    function abandonarPartida() {
+        if (animFrame) cancelAnimationFrame(animFrame);
+        if (timerGlobalInterval) clearInterval(timerGlobalInterval);
+        modoCampana = false;
+        modoContrarreloxo = false;
+        document.getElementById('wildcardBox').style.display = "none";
+        mostrarPantalla('screenMenu');
+    }
+
+    function jugarAleatorio() {
+        modoCampana = false;
+        modoContrarreloxo = false;
+        const catAlea = CATEGORIAS_BASE[Math.floor(Math.random() * CATEGORIAS_BASE.length)];
+        const diffAlea = Math.floor(Math.random() * 3) + 1;
+        iniciarXogoDirecto(catAlea.id, diffAlea);
+    }
+
+    function iniciarCampana(nivel) {
+        modoCampana = true;
+        modoContrarreloxo = false;
+        campanaNivel = nivel;
+        campanaPuntosAcumulados = 0;
+        campanaListaXogos = [...CATEGORIAS_BASE].sort(() => Math.random() - 0.5).slice(0, 5);
+        campanaIndex = 0;
+
+        comodinSaltarUsado = false;
+        comodinDuplicarUsado = false;
+        duplicarPuntosActivo = false;
+
+        document.getElementById('wildcardBox').style.display = "flex";
+        actualizarBotonsComodins();
+
+        iniciarSeguinteMinixogoCampana();
+    }
+
+    function actualizarBotonsComodins() {
+        const btnSkip = document.getElementById('btnSkip');
+        const btnDouble = document.getElementById('btnDouble');
+        btnSkip.disabled = comodinSaltarUsado;
+        btnDouble.disabled = comodinDuplicarUsado;
+    }
+
+    function usarComodin(tipo) {
+        if (tipo === 'skip' && !comodinSaltarUsado) {
+            comodinSaltarUsado = true;
+            actualizarBotonsComodins();
+            campanaIndex++;
+            iniciarSeguinteMinixogoCampana();
+        } else if (tipo === 'double' && !comodinDuplicarUsado) {
+            comodinDuplicarUsado = true;
+            duplicarPuntosActivo = true;
+            actualizarBotonsComodins();
+            alert("✨ Duplicador de puntos activado para este minixogo!");
+        }
+    }
+
+    function iniciarDesafioDia() {
+        modoCampana = true;
+        modoContrarreloxo = false;
+        campanaNivel = 2;
+        campanaPuntosAcumulados = 0;
+
+        const dataHoxe = new Date().toISOString().split('T')[0];
+        let seed = 0;
+        for (let i = 0; i < dataHoxe.length; i++) seed += dataHoxe.charCodeAt(i);
+
+        let listCopia = [...CATEGORIAS_BASE];
+        campanaListaXogos = [];
+        for (let i = 0; i < 3; i++) {
+            let idx = (seed + i * 7) % listCopia.length;
+            campanaListaXogos.push(listCopia.splice(idx, 1)[0]);
+        }
+
+        campanaIndex = 0;
+        document.getElementById('wildcardBox').style.display = "none";
+        iniciarSeguinteMinixogoCampana();
+    }
+
+    function iniciarContrarreloxo() {
+        modoContrarreloxo = true;
+        modoCampana = false;
+        tempoRestanteGlobal = 60;
+        campanaPuntosAcumulados = 0;
+
+        document.getElementById('wildcardBox').style.display = "none";
+
+        if (timerGlobalInterval) clearInterval(timerGlobalInterval);
+        timerGlobalInterval = gameSetInterval(() => {
+            tempoRestanteGlobal--;
+            if (tempoRestanteGlobal <= 0) {
+                clearInterval(timerGlobalInterval);
+                rematarContrarreloxo();
+            } else {
+                let elExp = document.getElementById('scoreSystemExp');
+                if (elExp) elExp.innerText = `⏳ CONTRARRELOXO: ${tempoRestanteGlobal}s restantes | Puntos totais: ${campanaPuntosAcumulados}`;
+            }
+        }, 1000);
+
+        iniciarSeguinteMinixogoContrarreloxo();
+    }
+
+    function iniciarSeguinteMinixogoContrarreloxo() {
+        if (tempoRestanteGlobal <= 0) return;
+        const catAlea = CATEGORIAS_BASE[Math.floor(Math.random() * CATEGORIAS_BASE.length)];
+        iniciarXogoDirecto(catAlea.id, 1);
+    }
+
+    function rematarContrarreloxo() {
+        if (animFrame) cancelAnimationFrame(animFrame);
+        mostrarPantalla('screenGame');
+        document.getElementById('gameTitle').innerText = "⏳ TEMPO ESGOTADO!";
+        document.getElementById('gameDesc').innerText = "Remataron os 60 segundos do Modo Contrarreloxo.";
+        document.getElementById('scoreSystemExp').innerText = "Puntuación acumulada gardada no perfil.";
+
+        if (campanaPuntosAcumulados >= 500) desbloquearInsignia("time_king");
+
+        const area = document.getElementById('gameArea');
+        const ctrl = document.getElementById('gameControls');
+
+        area.innerHTML = `
+            <div class="result-box">
+                <h2 style="color:var(--accent-yellow);">Puntos Totais do Contrarreloxo</h2>
+                <div class="result-score">+${campanaPuntosAcumulados} pts</div>
+            </div>`;
+
+        ctrl.innerHTML = `<button onclick="mostrarPantalla('screenMenu')">🏠 Volver ao Menú Principal</button>`;
+    }
+
+    function iniciarSeguinteMinixogoCampana() {
+        if (campanaIndex >= campanaListaXogos.length) {
+            rematarCampanaCompleta();
+            return;
+        }
+        let minixogo = campanaListaXogos[campanaIndex];
+        iniciarXogoDirecto(minixogo.id, campanaNivel);
+    }
+
+    function rematarCampanaCompleta() {
+        playVictorySound();
+        document.getElementById('wildcardBox').style.display = "none";
+        mostrarPantalla('screenGame');
+        document.getElementById('gameTitle').innerText = "🏆 CAMPAÑA COMPLETADA!";
+        document.getElementById('gameDesc').innerText = "Completaches con éxito a serie de minixogos.";
+        document.getElementById('scoreSystemExp').innerText = "Suma total acumulada para o teu perfil.";
+
+        userProfile.campanasCompletadas = (userProfile.campanasCompletadas || 0) + 1;
+        if (userProfile.campanasCompletadas >= 5) desbloquearInsignia("camp_vet");
+
+        const area = document.getElementById('gameArea');
+        const ctrl = document.getElementById('gameControls');
+
+        area.innerHTML = `
+            <div class="result-box">
+                <h2 style="color:var(--accent-yellow);">Puntos Totales da Campaña</h2>
+                <div class="result-score">+${campanaPuntosAcumulados} pts</div>
+                <p style="color:var(--text-muted); font-size:0.85rem;">Os puntos foron engadidos ao teu ranking e club!</p>
+            </div>`;
+
+        ctrl.innerHTML = `<button onclick="mostrarPantalla('screenMenu')">🏠 Volver ao Menú Principal</button>`;
+    }
+
+    function rematarEAmosarPuntos(puntosBase, msgResumen, msgDetalle = "") {
+        if (animFrame) cancelAnimationFrame(animFrame);
+
+        let puntosFinals = Math.min(1000, Math.max(10, Math.round(puntosBase)));
+        if (duplicarPuntosActivo) {
+            puntosFinals = Math.min(1000, puntosFinals * 2);
+            duplicarPuntosActivo = false;
+        }
+
+        if (modoContrarreloxo) {
+            campanaPuntosAcumulados += puntosFinals;
+            guardarResultado(xogoActual.nome.replace(/\[.*?\]\s*/g, ''), puntosFinals);
+            if (tempoRestanteGlobal > 0) {
+                iniciarSeguinteMinixogoContrarreloxo();
+            } else {
+                rematarContrarreloxo();
+            }
+            return;
+        }
+
+        if (modoCampana) {
+            campanaPuntosAcumulados += puntosFinals;
+            campanaIndex++;
+            if (campanaIndex < campanaListaXogos.length) {
+                iniciarSeguinteMinixogoCampana();
+            } else {
+                guardarResultado("Modo Campaña / Desafío", campanaPuntosAcumulados);
+                rematarCampanaCompleta();
+            }
+            return;
+        }
+
+        guardarResultado(xogoActual.nome, puntosFinals);
+        playVictorySound();
+
+        mostrarPantalla('screenGame');
+        document.getElementById('gameTitle').innerText = "🎉 Xogo Rematado!";
+        document.getElementById('gameDesc').innerText = msgResumen;
+        document.getElementById('scoreSystemExp').innerText = msgDetalle;
+
+        const area = document.getElementById('gameArea');
+        const ctrl = document.getElementById('gameControls');
+
+        area.innerHTML = `
+            <div class="result-box">
+                <h2 style="color:var(--accent-yellow);">Puntuación do Xogo</h2>
+                <div class="result-score">+${puntosFinals} pts</div>
+                <p style="color:var(--text-muted); font-size:0.85rem;">Puntos gardados na túa conta!</p>
+            </div>`;
+
+        ctrl.innerHTML = `<button onclick="mostrarPantalla('screenMenu')">🏠 Volver ao Menú Principal</button>`;
+    }
+
+    function iniciarXogoDirecto(typeId, level) {
+        if (animFrame) cancelAnimationFrame(animFrame);
+        const cat = CATEGORIAS_BASE.find(c => c.id === typeId) || CATEGORIAS_BASE[0];
+        const nomesDiff = ["TRIVIAL", "NORMAL", "EXTREMODURO"];
+        
+        let prefix = modoCampana ? `[Campaña ${campanaIndex+1}/${campanaListaXogos.length}] ` : (modoContrarreloxo ? `[⏱️ ${tempoRestanteGlobal}s] ` : '');
+        xogoActual = {
+            id: typeId,
+            level: level,
+            nome: `${prefix}${cat.nome} (${nomesDiff[level-1]})`,
+            desc: cat.desc,
+            exp: cat.exp
+        };
+
+        mostrarPantalla('screenGame');
+        document.getElementById('gameTitle').innerText = xogoActual.nome;
+        document.getElementById('gameDesc').innerText = xogoActual.desc;
+        
+        // ELIMINACIÓN DA PALABRA DUPLICADA Puntuación:
+        document.getElementById('scoreSystemExp').innerText = modoContrarreloxo ? `⏳ CONTRARRELOXO: ${tempoRestanteGlobal}s restantes | Puntos: ${campanaPuntosAcumulados}` : `${xogoActual.exp}`;
+
+        const area = document.getElementById('gameArea');
+        const ctrl = document.getElementById('gameControls');
+        area.innerHTML = ''; ctrl.innerHTML = '';
+
+        if (typeId === 'bar') cargarXogoBarra(area, ctrl);
+        else if (typeId === 'memory') cargarXogoMemory(area, ctrl);
+        else if (typeId === 'math') cargarXogoMathSpeed(area, ctrl);
+        else if (typeId === 'react') cargarXogoReaccion(area, ctrl);
+        else if (typeId === 'order') cargarXogoOrde(area, ctrl);
+        else if (typeId === 'box') cargarXogoCaixas(area, ctrl);
+        else if (typeId === 'time') cargarXogoTempoExacto(area, ctrl);
+        else if (typeId === 'dice') cargarXogoDados(area, ctrl);
+        else if (typeId === 'color') cargarXogoCorCorrecta(area, ctrl);
+        else if (typeId === 'swipe') cargarXogoDesliza(area, ctrl);
+        else if (typeId === 'pattern') cargarXogoPatron(area, ctrl);
+        else if (typeId === 'reverse_math') cargarXogoReverseMath(area, ctrl);
+        else if (typeId === 'visual_find') cargarXogoVisualFind(area, ctrl);
+        else if (typeId === 'maze') cargarXogoLabirinto(area, ctrl);
+        else if (typeId === 'flies') cargarXogoCazaMoscas(area, ctrl);
+        else if (typeId === 'shadows') cargarXogoMemoriaSombras(area, ctrl);
+        else if (typeId === 'runner') cargarXogoCorredorMetro(area, ctrl);
+        else if (typeId === 'target') cargarXogoTiroBlanco(area, ctrl);
+    }
+
+    // 1. BARRIÑA PRECISIÓN
+    function cargarXogoBarra(area, ctrl) {
+        let intentos = [], pos = 0;
+        let speed = xogoActual.level === 1 ? 1.5 : (xogoActual.level === 2 ? 3.2 : 5.5);
+        let dir = speed;
+
+        area.innerHTML = `
+            <p id="barStatus" style="margin:4px; font-size:0.9rem; color:var(--accent-blue); font-weight:bold;">Intento 1 de 5</p>
+            <div class="bar-container" id="barBox">
+                <div class="bar-pointer" id="barPtr"></div>
+            </div>
+            <p id="barScore" style="color:var(--accent-yellow); font-weight:bold; margin-top:8px; font-size:1.1rem;">Último: - | Media: 0 pts</p>`;
+
+        const ptr = document.getElementById('barPtr');
+        const barBox = document.getElementById('barBox');
+
+        let stopBtn = document.createElement('button');
+        stopBtn.innerText = "🎯 PARAR BARRA AGORA";
+        stopBtn.style.cssText = "background:var(--accent-yellow); color:#0f172a; font-size:1.1rem; padding:14px; margin-top:10px;";
+        ctrl.appendChild(stopBtn);
+
+        function moveBar() {
+            pos += dir;
+            if (pos >= 98 || pos <= 0) dir *= -1;
+            ptr.style.left = pos + '%';
+            animFrame = requestAnimationFrame(moveBar);
+        }
+        moveBar();
+
+        function pararBarra() {
+            playBeep(500, 'sine', 0.1);
+            let mark = document.createElement('div');
+            mark.className = 'click-mark';
+            mark.style.left = pos + '%';
+            barBox.appendChild(mark);
+
+            let distToCenter = Math.abs(50 - pos);
+            let score = Math.max(0, Math.round(100 - (distToCenter * 2)));
+            intentos.push({score, dist: distToCenter.toFixed(1)});
+
+            let media = Math.round(intentos.reduce((a,b)=>a+b.score, 0) / intentos.length);
+            document.getElementById('barScore').innerText = `Último: ${score} pts | Media: ${media} pts`;
+
+            if (intentos.length < 5) {
+                document.getElementById('barStatus').innerText = `Intento ${intentos.length + 1} de 5`;
+            } else {
+                cancelAnimationFrame(animFrame);
+                stopBtn.disabled = true;
+                let distMedia = (intentos.reduce((a,b)=>a+parseFloat(b.dist),0)/5).toFixed(1);
+                rematarEAmosarPuntos(media * 10, `Media dos 5 intentos: ${media} pts`, `Desviación media do centro: ${distMedia}%`);
+            }
+        }
+
+        barBox.onclick = pararBarra;
+        stopBtn.onclick = pararBarra;
+    }
+
+    // 2. MEMORIA REVERTIDA (MÍNIMO 5 ROLDAS PROGRESIVAS)
+    function cargarXogoMemory(area, ctrl) {
+        let totalRondas = 5, ronda = 0, acertosTotais = 0;
+
+        function xogarRoldaMemory() {
+            if (ronda >= totalRondas) {
+                rematarEAmosarPuntos(acertosTotais * 40, `5 Roldas completadas!`, `Puntos totais memorizados: ${acertosTotais}`);
+                return;
+            }
+            ronda++;
+            area.innerHTML = `<p style="color:var(--accent-blue); margin:0 0 8px 0; font-weight:bold;">Rolda ${ronda} de ${totalRondas}</p>`;
+
+            let cant = 3 + ronda + Math.floor(xogoActual.level / 2);
+            let numArr = Array.from({length: cant}, (_, i) => i + 1).sort(() => Math.random() - 0.5);
+            let expected = 1, acertos = 0;
+
+            let grid = document.createElement('div');
+            grid.className = 'grid-4x4';
+
+            numArr.forEach(n => {
+                let b = document.createElement('div');
+                b.className = 'num-btn';
+                b.innerText = n;
+                b.dataset.val = n;
+                grid.appendChild(b);
+            });
+            area.appendChild(grid);
+
+            let tVisual = Math.max(600, 2500 - (ronda * 300));
+            gameSetTimeout(() => {
+                let btns = area.querySelectorAll('.num-btn');
+                btns.forEach(b => {
+                    b.classList.add('hidden-val');
+                    b.onclick = () => {
+                        let v = parseInt(b.dataset.val);
+                        if (v === expected) {
+                            playBeep(500 + v*40, 'sine', 0.1);
+                            b.classList.add('done');
+                            expected++;
+                            acertos++;
+                            acertosTotais++;
+                            if (expected > cant) {
+                                gameSetTimeout(xogarRoldaMemory, 400);
+                            }
+                        } else {
+                            playBeep(180, 'sawtooth', 0.2);
+                            rematarEAmosarPuntos(acertosTotais * 30, `Fallaches na rolda ${ronda}.`, `Acadaches ${acertosTotais} acertos totais.`);
+                        }
+                    };
+                });
+            }, tVisual);
+        }
+        xogarRoldaMemory();
+    }
+
+    // 3. SUMAS EXPRESS
+    function cargarXogoMathSpeed(area, ctrl) {
+        let totalRondas = 5, ronda = 0, acertos = 0, tStart = Date.now();
+        let numMax = xogoActual.level === 1 ? 10 : (xogoActual.level === 2 ? 25 : 50);
+
+        function nextMath() {
+            if (ronda >= totalRondas) {
+                let dur = ((Date.now() - tStart)/1000).toFixed(1);
+                let pts = Math.max(100, Math.round((acertos * 200) - (dur * 10)));
+                rematarEAmosarPuntos(pts, `${acertos}/${totalRondas} acertos en ${dur}s`, `Tempo medio por suma: ${(dur/totalRondas).toFixed(1)}s`);
+                return;
+            }
+            ronda++;
+            let a = Math.floor(Math.random() * numMax) + 1;
+            let b = Math.floor(Math.random() * numMax) + 1;
+
+            area.innerHTML = `
+                <p style="color:var(--text-muted); margin:0;">Suma ${ronda} de ${totalRondas}</p>
+                <h2 id="sumExpr" style="color:var(--accent-yellow); font-size:2.4rem; margin:10px 0;">${a} + ${b}</h2>
+                <input type="number" id="mathAns" autofocus style="width:65%; font-size:1.6rem;">`;
+
+            const inp = document.getElementById('mathAns');
+            inp.focus();
+            inp.oninput = () => {
+                if (parseInt(inp.value) === (a + b)) {
+                    playBeep(700, 'sine', 0.08);
+                    acertos++;
+                    nextMath();
+                }
+            };
+        }
+        nextMath();
+    }
+
+    // 4. REACCIÓN E VELOCIDADE (VERDE BRILANTE #22c55e)
+    function cargarXogoReaccion(area, ctrl) {
+        let rondasTotal = 5, rondaActual = 0, tempos = [];
+        let numCircles = xogoActual.level === 1 ? 4 : (xogoActual.level === 2 ? 9 : 16);
+
+        let grid = document.createElement('div');
+        grid.className = numCircles === 16 ? 'grid-4x4-react' : (numCircles === 9 ? 'grid-3x3' : 'grid-2x2');
+
+        for (let i = 0; i < numCircles; i++) {
+            let btn = document.createElement('div');
+            btn.className = 'circle-btn';
+            grid.appendChild(btn);
+        }
+        area.appendChild(grid);
+
+        let info = document.createElement('p');
+        info.innerText = "Preme Comezar para iniciar as 5 roldas.";
+        area.appendChild(info);
+
+        function proximaRolda() {
+            if (rondaActual >= rondasTotal) {
+                let media = Math.round(tempos.reduce((a,b)=>a+b,0) / rondasTotal);
+                let pts = Math.max(100, Math.round(1000 - media));
+                let mellor = Math.min(...tempos);
+                rematarEAmosarPuntos(pts, `Tempo medio de reacción: ${media}ms`, `Mellor reacción: ${mellor}ms`);
+                return;
+            }
+            rondaActual++;
+            info.innerText = `Rolda ${rondaActual} de ${rondasTotal}... Atento!`;
+            let circles = area.querySelectorAll('.circle-btn');
+            circles.forEach(c => { c.classList.remove('active'); c.onclick = null; });
+
+            let delay = Math.random() * (xogoActual.level === 1 ? 1800 : (xogoActual.level === 2 ? 1000 : 500)) + 300;
+            gameSetTimeout(() => {
+                let idx = Math.floor(Math.random() * numCircles);
+                let activeCircle = circles[idx];
+                activeCircle.classList.add('active');
+                let start = Date.now();
+
+                activeCircle.onclick = () => {
+                    let diff = Date.now() - start;
+                    playBeep(800, 'sine', 0.1);
+                    tempos.push(diff);
+                    proximaRolda();
+                };
+            }, delay);
+        }
+
+        let startBtn = document.createElement('button');
+        startBtn.innerText = 'Comezar Roldas';
+        startBtn.onclick = () => { startBtn.style.display = 'none'; proximaRolda(); };
+        ctrl.appendChild(startBtn);
+    }
+
+    // 5. ORDE NUMÉRICA (MÍNIMO 5 ROLDAS)
+    function cargarXogoOrde(area, ctrl) {
+        let totalRondas = 5, ronda = 0, acertosTotais = 0, tStart = Date.now();
+
+        function xogarRoldaOrde() {
+            if (ronda >= totalRondas) {
+                let dur = ((Date.now() - tStart)/1000).toFixed(1);
+                if (dur < 10) desbloquearInsignia("fast_wind");
+                rematarEAmosarPuntos(acertosTotais * 20, `5 Roldas de Orde Numérica completadas!`, `Tempo total: ${dur}s`);
+                return;
+            }
+            ronda++;
+            area.innerHTML = `<p style="color:var(--accent-blue); margin:0 0 6px 0; font-weight:bold;">Rolda ${ronda} de ${totalRondas}</p>`;
+
+            let cant = 6 + (xogoActual.level * 2);
+            let expected = 1;
+            let numbers = Array.from({length: cant}, (_, i) => i + 1).sort(() => Math.random() - 0.5);
+            
+            let grid = document.createElement('div');
+            grid.className = 'grid-4x4';
+
+            numbers.forEach(num => {
+                let btn = document.createElement('div');
+                btn.className = 'num-btn';
+                btn.innerText = num;
+                btn.onclick = () => {
+                    if (num === expected) {
+                        playBeep(400 + (num * 20), 'sine', 0.08);
+                        btn.classList.add('done');
+                        expected++;
+                        acertosTotais++;
+                        if (expected > cant) {
+                            gameSetTimeout(xogarRoldaOrde, 300);
+                        }
+                    } else {
+                        playBeep(180, 'sawtooth', 0.15);
+                        rematarEAmosarPuntos(acertosTotais * 15, `Fallaches na rolda ${ronda}.`, `Total números premidos: ${acertosTotais}`);
+                    }
+                };
+                grid.appendChild(btn);
+            });
+            area.appendChild(grid);
+        }
+        xogarRoldaOrde();
+    }
+
+    // 6. CONTADOR DE CAIXAS (RANDOMIZACIÓN DE CAIXAS ENTRE 3 E 12)
+    function cargarXogoCaixas(area, ctrl) {
+        let rolda = 0, totalRoldas = 3, acertosTotais = 0;
+        const cores = ['#f59e0b', '#38bdf8', '#10b981', '#a855f7', '#ef4444', '#ec4899', '#f97316'];
+
+        function xogarRolda() {
+            if (rolda >= totalRoldas) {
+                rematarEAmosarPuntos(acertosTotais * 330, `Acertaches ${acertosTotais} de ${totalRoldas} roldas.`, `Caixas contadas con éxito.`);
+                return;
+            }
+            rolda++;
+            area.innerHTML = ''; ctrl.innerHTML = '';
+
+            let header = document.createElement('p');
+            header.style.cssText = 'color:var(--accent-blue); font-weight:bold; margin:0 0 6px 0; position:absolute; top:8px;';
+            header.innerText = `Rolda ${rolda} de ${totalRoldas}`;
+            area.appendChild(header);
+
+            let boxSize = xogoActual.level === 1 ? 55 : (xogoActual.level === 2 ? 45 : 38);
+            let numBoxes = Math.floor(Math.random() * 10) + 3; // ENTRE 3 E 12 CAIXAS ALEATORIAS
+            let placed = [];
+
+            for (let i = 0; i < numBoxes; i++) {
+                let b = document.createElement('div');
+                let color = cores[Math.floor(Math.random() * cores.length)];
+                let max = 80, top = 0, left = 0;
+                while (max-- > 0) {
+                    top = Math.random() * 100 + 35;
+                    left = Math.random() * 180 + 20;
+                    if (!placed.some(p => !(left + boxSize + 4 < p.left || left > p.left + boxSize + 4 || top + boxSize + 4 < p.top || top > p.top + boxSize + 4))) {
+                        placed.push({top, left});
+                        b.style.cssText = `width:${boxSize}px; height:${boxSize}px; background:${color}; border-radius:8px; position:absolute; top:${top}px; left:${left}px; border:2px solid #ffffffaa; box-shadow:0 3px 6px rgba(0,0,0,0.5);`;
+                        area.appendChild(b);
+                        break;
+                    }
+                }
+            }
+
+            let tDisplay = xogoActual.level === 1 ? 2200 : (xogoActual.level === 2 ? 1600 : 1100);
+            gameSetTimeout(() => {
+                area.innerHTML = '<h4 style="color:var(--text-muted); margin-top:20px;">Cantas caixas había na pantalla?</h4>';
+                let inp = document.createElement('input');
+                inp.type = 'number';
+                inp.autofocus = true;
+                inp.style.cssText = 'width:60%; font-size:1.6rem; margin-top:10px;';
+                area.appendChild(inp);
+
+                inp.oninput = () => {
+                    if (parseInt(inp.value) === placed.length) {
+                        playBeep(700, 'sine', 0.1);
+                        acertosTotais++;
+                        xogarRolda();
+                    }
+                };
+            }, tDisplay);
+        }
+        xogarRolda();
+    }
+
+    // 7. TEMPO EXACTO! (CRONÓMETRO NEON E DIFERENZA EXACTA)
+    function cargarXogoTempoExacto(area, ctrl) {
+        let target = xogoActual.level === 1 ? 5.0 : (xogoActual.level === 2 ? 7.0 : 10.0);
+        area.innerHTML = `
+            <p style="margin:0; color:var(--text-muted);">Obxectivo Exacto: <strong style="color:var(--accent-yellow);">${target.toFixed(2)}s</strong></p>
+            <div style="width:100%; background:#1e293b; height:24px; border-radius:12px; margin:15px 0; overflow:hidden; border:1px solid #38bdf8;">
+                <div id="timeFill" style="width:100%; height:100%; background:#38bdf8; box-shadow:0 0 10px #38bdf8;"></div>
+            </div>
+            <h2 id="timeDisp" style="font-size:2.8rem; color:#38bdf8; text-shadow:0 0 12px #38bdf8; font-family:monospace;">0.000s</h2>`;
+
+        let fill = document.getElementById('timeFill');
+        let disp = document.getElementById('timeDisp');
+        let start = Date.now();
+
+        function updateTime() {
+            let elapsed = (Date.now() - start) / 1000;
+            let percent = Math.max(0, 100 - (elapsed / target) * 100);
+            fill.style.width = percent + '%';
+
+            if (percent < 50) {
+                fill.style.opacity = '0';
+                disp.innerText = "??.???s";
+            } else {
+                disp.innerText = elapsed.toFixed(3) + 's';
+            }
+            animFrame = requestAnimationFrame(updateTime);
+        }
+        updateTime();
+
+        let stopBtn = document.createElement('button');
+        stopBtn.innerText = '🛑 PARAR CRONÓMETRO AGORA!';
+        stopBtn.style.cssText = "background:var(--accent-yellow); color:#0f172a; font-size:1.1rem; padding:14px;";
+        stopBtn.onclick = () => {
+            cancelAnimationFrame(animFrame);
+            let total = ((Date.now() - start) / 1000);
+            let diff = total - target;
+            let diffAbs = Math.abs(diff);
+            
+            if (diffAbs < 0.05) desbloquearInsignia("time_master");
+
+            let score = Math.max(0, Math.round(1000 - (diffAbs * 250)));
+            let sign = diff >= 0 ? '+' : '-';
+            
+            rematarEAmosarPuntos(score, `Obxectivo: ${target.toFixed(2)}s | O teu tempo: ${total.toFixed(3)}s`, `Diferenza: ${sign}${diffAbs.toFixed(3)}s`);
+        };
+        ctrl.appendChild(stopBtn);
+    }
+
+    // 8. SUMA DE DADOS (3 OPCIÓNS MULTIOPCIÓN CON TRAMPAS)
+    function cargarXogoDados(area, ctrl) {
+        let totalRondas = 3, ronda = 0, acertos = 0;
+
+        function xogarRoldaDado() {
+            if (ronda >= totalRondas) {
+                rematarEAmosarPuntos(acertos * 330, `${acertos}/${totalRondas} sumas correctas de dados.`, `Mecánica de tres opcións superada.`);
+                return;
+            }
+            ronda++;
+            let totalDots = 0;
+            area.innerHTML = `<p style="color:var(--accent-blue); margin:0 0 10px 0;">Rolda ${ronda} de ${totalRondas}</p>`;
+            
+            let diceValues = [];
+            for (let d = 0; d < 4; d++) {
+                let val = Math.floor(Math.random() * 6) + 1;
+                totalDots += val;
+                diceValues.push(val);
+            }
+
+            let diceHtml = '<div class="dice-container">';
+            diceValues.forEach(val => {
+                diceHtml += `<div class="dice">`;
+                for (let i = 1; i <= 9; i++) {
+                    let show = (val===1 && i===5) || (val===2 && (i===1||i===9)) || (val===3 && (i===1||i===5||i===9)) ||
+                               (val===4 && (i===1||i===3||i===7||i===9)) || (val===5 && (i===1||i===3||i===5||i===7||i===9)) ||
+                               (val===6 && (i===1||i===3||i===4||i===6||i===7||i===9));
+                    diceHtml += `<div class="dot" style="visibility:${show?'visible':'hidden'}"></div>`;
+                }
+                diceHtml += `</div>`;
+            });
+            diceHtml += '</div>';
+            area.innerHTML += diceHtml;
+
+            // 3 OPCIÓNS CON TRAMPA (+-1, +-2)
+            let opcions = [totalDots, totalDots + (Math.random() > 0.5 ? 1 : -1), totalDots + (Math.random() > 0.5 ? 2 : -2)];
+            opcions = Array.from(new Set(opcions));
+            while (opcions.length < 3) opcions.push(totalDots + opcions.length + 1);
+            opcions.sort(() => Math.random() - 0.5);
+
+            let grid = document.createElement('div');
+            grid.style.cssText = "display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; width:100%; margin-top:10px;";
+
+            opcions.forEach(optVal => {
+                let b = document.createElement('button');
+                b.innerText = optVal;
+                b.style.fontSize = "1.2rem";
+                b.onclick = () => {
+                    if (optVal === totalDots) {
+                        playBeep(700, 'sine', 0.1);
+                        acertos++;
+                    } else {
+                        playBeep(200, 'sawtooth', 0.1);
+                    }
+                    xogarRoldaDado();
+                };
+                grid.appendChild(b);
+            });
+            area.appendChild(grid);
+        }
+
+        xogarRoldaDado();
+    }
+
+    // 9. COR CORRECTA
+    function cargarXogoCorCorrecta(area, ctrl) {
+        let totalRondas = 5, ronda = 0, acertos = 0, tStart = Date.now();
+        const cores = [
+            { nome: 'VERMELLO', color: '#ef4444' },
+            { nome: 'VERDE', color: '#10b981' },
+            { nome: 'AZUL', color: '#38bdf8' },
+            { nome: 'AMARELO', color: '#f59e0b' },
+            { nome: 'VIOLETA', color: '#a855f7' },
+            { nome: 'NARANXA', color: '#f97316' },
+            { nome: 'ROSA', color: '#ec4899' },
+            { nome: 'CIÁN', color: '#06b6d4' }
+        ];
+
+        function proximaRoldaCor() {
+            if (ronda >= totalRondas) {
+                let dur = ((Date.now() - tStart)/1000).toFixed(1);
+                rematarEAmosarPuntos(acertos * 200, `${acertos}/${totalRondas} acertos de cor.`, `Tempo total: ${dur}s`);
+                return;
+            }
+            ronda++;
+            let opcions = [...cores].sort(() => Math.random() - 0.5).slice(0, 6);
+            let idxTexto = Math.floor(Math.random() * opcions.length);
+            let idxCor = Math.floor(Math.random() * opcions.length);
+
+            area.innerHTML = `
+                <p style="color:var(--text-muted); margin:0;">Rolda ${ronda} de ${totalRondas}</p>
+                <h1 style="color:${opcions[idxCor].color}; font-size:2.4rem; margin:12px 0;">${opcions[idxTexto].nome}</h1>`;
+
+            let grid = document.createElement('div');
+            grid.className = 'grid-3x2';
+
+            opcions.forEach(c => {
+                let b = document.createElement('button');
+                b.innerText = c.nome;
+                b.style.background = c.color;
+                b.style.color = '#0f172a';
+                b.style.fontSize = '0.85rem';
+                b.style.padding = '10px 4px';
+                b.onclick = () => {
+                    if (c.color === opcions[idxCor].color) {
+                        playBeep(800, 'sine', 0.1);
+                        acertos++;
+                    } else {
+                        playBeep(200, 'sawtooth', 0.1);
+                    }
+                    proximaRoldaCor();
+                };
+                grid.appendChild(b);
+            });
+            area.appendChild(grid);
+        }
+        proximaRoldaCor();
+    }
+
+    // 10. DESLIZA RÁPIDO!
+    function cargarXogoDesliza(area, ctrl) {
+        let dirsBase = [
+            { txt: '⬆️', code: 'UP' },
+            { txt: '⬇️', code: 'DOWN' },
+            { txt: '⬅️', code: 'LEFT' },
+            { txt: '➡️', code: 'RIGHT' }
+        ];
+        let rondas = 5, acertos = 0, actual = 0, tStart = Date.now();
+
+        function segRolda() {
+            if (actual >= rondas) {
+                let dur = ((Date.now() - tStart)/1000).toFixed(1);
+                rematarEAmosarPuntos(acertos * 200, `Acertaches ${acertos}/${rondas} frechas.`, `Tempo de reacción total: ${dur}s`);
+                return;
+            }
+            actual++;
+
+            let targetBase = dirsBase[Math.floor(Math.random() * dirsBase.length)];
+            let rotDeg = 0;
+
+            if (xogoActual.level === 2 || xogoActual.level === 3) {
+                let rots = [0, 90, 180, 270];
+                rotDeg = rots[Math.floor(Math.random() * rots.length)];
+            }
+
+            let directionOrder = ['UP', 'RIGHT', 'DOWN', 'LEFT'];
+            let baseIdx = directionOrder.indexOf(targetBase.code);
+            let steps = Math.round(rotDeg / 90) % 4;
+            let finalIdx = (baseIdx + steps) % 4;
+            let finalDirectionCode = directionOrder[finalIdx];
+
+            area.innerHTML = `
+                <p style="color:var(--text-muted); margin:0;">Rolda ${actual} de ${rondas}</p>
+                <div style="margin:15px 0;">
+                    <span style="font-size:4rem; display:inline-block; transform:rotate(${rotDeg}deg); border:2px solid #334155; padding:10px 20px; border-radius:12px; background:#1e293b;">${targetBase.txt}</span>
+                </div>`;
+
+            let grid = document.createElement('div');
+            grid.className = 'grid-2x2';
+
+            let btnDirs = [...dirsBase].sort(() => Math.random() - 0.5);
+            btnDirs.forEach(d => {
+                let b = document.createElement('button');
+                b.className = 'swipe-btn';
+                b.innerText = d.txt;
+                b.onclick = () => {
+                    if (d.code === finalDirectionCode) {
+                        playBeep(700, 'sine', 0.08);
+                        acertos++;
+                    } else {
+                        playBeep(200, 'sawtooth', 0.08);
+                    }
+                    segRolda();
+                };
+                grid.appendChild(b);
+            });
+            area.appendChild(grid);
+        }
+        segRolda();
+    }
+
+    // 11. PATRÓN DE LUZ
+    function cargarXogoPatron(area, ctrl) {
+        let roldaMat = 0, totalRoldasMat = 3, acertosPasoTotais = 0;
+
+        function xogarRoldaPatron() {
+            if (roldaMat >= totalRoldasMat) {
+                rematarEAmosarPuntos(acertosPasoTotais * 120, "Patrón de luz completado nas 3 roldas!", `Pasos memorizados: ${acertosPasoTotais}`);
+                return;
+            }
+            roldaMat++;
+            area.innerHTML = '';
+            
+            let maxPasos = (roldaMat * 2) + (xogoActual.level === 1 ? 1 : (xogoActual.level === 2 ? 2 : 3));
+            let patron = [], paso = 0;
+
+            let grid = document.createElement('div');
+            grid.className = 'grid-2x2';
+            for(let i=0; i<4; i++) {
+                let b = document.createElement('div');
+                b.className = 'circle-btn';
+                b.dataset.idx = i;
+                grid.appendChild(b);
+            }
+            area.appendChild(grid);
+
+            for(let i=0; i<maxPasos; i++) patron.push(Math.floor(Math.random()*4));
+
+            let info = document.createElement('p');
+            info.style.cssText = 'color:var(--accent-blue); font-weight:bold; margin-top:10px;';
+            info.innerText = `Rolda ${roldaMat} de ${totalRoldasMat}: Observa o patrón de ${maxPasos} pasos...`;
+            area.appendChild(info);
+
+            function reproducir() {
+                let btns = area.querySelectorAll('.circle-btn');
+                patron.forEach((val, idx) => {
+                    gameSetTimeout(() => {
+                        btns[val].classList.add('active');
+                        playBeep(400 + val*100, 'sine', 0.2);
+                        gameSetTimeout(() => btns[val].classList.remove('active'), 350);
+                    }, (idx + 1) * (550 - (xogoActual.level*50)));
+                });
+
+                gameSetTimeout(() => {
+                    info.innerText = "Repite o patrón!";
+                    btns.forEach(b => {
+                        b.onclick = () => {
+                            let idxClicked = parseInt(b.dataset.idx);
+                            if (idxClicked === patron[paso]) {
+                                playBeep(400 + idxClicked*100, 'sine', 0.1);
+                                paso++;
+                                acertosPasoTotais++;
+                                if (paso >= maxPasos) {
+                                    gameSetTimeout(xogarRoldaPatron, 500);
+                                }
+                            } else {
+                                playBeep(180, 'sawtooth', 0.2);
+                                rematarEAmosarPuntos(acertosPasoTotais * 80, `Fallaches no paso ${paso+1} da rolda ${roldaMat}.`, `Completaches ${acertosPasoTotais} pasos en total.`);
+                            }
+                        };
+                    });
+                }, (maxPasos + 1) * (550 - (xogoActual.level*50)));
+            }
+            reproducir();
+        }
+        xogarRoldaPatron();
+    }
+
+    // 12. CÁLCULO MENTAL INVERTIDO
+    function cargarXogoReverseMath(area, ctrl) {
+        let totalRondas = 3, ronda = 0, acertos = 0, tStart = Date.now();
+        let ops = ['+', '*', '-'];
+
+        function proximaRoldaInv() {
+            if (ronda >= totalRondas) {
+                let dur = ((Date.now() - tStart)/1000).toFixed(1);
+                rematarEAmosarPuntos(acertos * 330, `${acertos}/${totalRondas} combinacións correctas.`, `Tempo total: ${dur}s`);
+                return;
+            }
+            ronda++;
+            let maxN = xogoActual.level === 1 ? 12 : (xogoActual.level === 2 ? 25 : 50);
+            let n1 = Math.floor(Math.random() * maxN) + 2;
+            let n2 = Math.floor(Math.random() * maxN) + 2;
+            let op = ops[Math.floor(Math.random() * (xogoActual.level === 1 ? 1 : 3))];
+
+            let res = 0;
+            if (op === '+') res = n1 + n2;
+            if (op === '*') res = n1 * n2;
+            if (op === '-') { if (n1 < n2) { let temp = n1; n1 = n2; n2 = temp; } res = n1 - n2; }
+
+            let targetText = `Resultado: ${res}`;
+            area.innerHTML = `
+                <p style="color:var(--text-muted); margin:0;">Rolda ${ronda} de ${totalRondas}</p>
+                <h2 style="color:var(--accent-yellow); font-size:2.2rem; margin:10px 0;">${targetText}</h2>
+                <p style="font-size:0.85rem; color:var(--accent-blue);">Atopa a combinación correcta:</p>`;
+
+            let correctString = `${n1} ${op} ${n2}`;
+            let options = [correctString];
+
+            while (options.length < 4) {
+                let fake1 = Math.floor(Math.random() * maxN) + 2;
+                let fake2 = Math.floor(Math.random() * maxN) + 2;
+                let fakeOp = ops[Math.floor(Math.random() * ops.length)];
+                let fakeStr = `${fake1} ${fakeOp} ${fake2}`;
+                if (!options.includes(fakeStr)) options.push(fakeStr);
+            }
+            options.sort(() => Math.random() - 0.5);
+
+            let grid = document.createElement('div');
+            grid.className = 'grid-2x2';
+
+            options.forEach(optStr => {
+                let b = document.createElement('button');
+                b.innerText = optStr;
+                b.onclick = () => {
+                    if (optStr === correctString) {
+                        playBeep(750, 'sine', 0.1);
+                        acertos++;
+                    } else {
+                        playBeep(180, 'sawtooth', 0.1);
+                    }
+                    proximaRoldaInv();
+                };
+                grid.appendChild(b);
+            });
+            area.appendChild(grid);
+        }
+        proximaRoldaInv();
+    }
+
+    // 13. O OBXECTO INTRUSO
+    function cargarXogoVisualFind(area, ctrl) {
+        let totalRondas = 5, ronda = 0, tempos = [], acertos = 0;
+        const paresConfusos = [
+            { normal: '😃', intruso: '😀' },
+            { normal: '🍎', intruso: '🍏' },
+            { normal: '🚗', intruso: '🚕' },
+            { normal: '🐶', intruso: '🐺' },
+            { normal: '🕒', intruso: '🕓' },
+            { normal: '⭐', intruso: '🌟' },
+            { normal: '⚽', intruso: '🏀' },
+            { normal: '🔴', intruso: '🟤' }
+        ];
+
+        function xogarRoldaVisual() {
+            if (ronda >= totalRondas) {
+                let mediaTempo = (tempos.reduce((a,b)=>a+b,0)/totalRondas).toFixed(1);
+                let pts = Math.max(100, Math.round((acertos * 200) - (mediaTempo * 20)));
+                rematarEAmosarPuntos(pts, `${acertos}/${totalRondas} intrusos atopados.`, `Tempo medio de busca: ${mediaTempo}s`);
+                return;
+            }
+            ronda++;
+            area.innerHTML = '';
+            let start = Date.now();
+
+            let par = paresConfusos[Math.floor(Math.random() * paresConfusos.length)];
+            let cols = xogoActual.level === 1 ? 5 : (xogoActual.level === 2 ? 6 : 7);
+            let totalItems = cols * cols;
+            let intrusoIdx = Math.floor(Math.random() * totalItems);
+
+            let header = document.createElement('p');
+            header.style.cssText = 'color:var(--accent-blue); font-weight:bold; margin:0 0 8px 0;';
+            header.innerText = `Rolda ${ronda} de ${totalRondas} (Grelha ${cols}x${cols})`;
+            area.appendChild(header);
+
+            let grid = document.createElement('div');
+            grid.style.cssText = `display:grid; grid-template-columns:repeat(${cols}, 1fr); gap:4px; width:100%; max-width:320px;`;
+
+            for (let i = 0; i < totalItems; i++) {
+                let b = document.createElement('button');
+                b.innerText = (i === intrusoIdx) ? par.intruso : par.normal;
+                b.style.cssText = 'font-size:1.2rem; padding:6px 0; margin:0; border-radius:6px; background:#1e293b; border:1px solid #334155;';
+                
+                b.onclick = () => {
+                    let dur = (Date.now() - start) / 1000;
+                    tempos.push(dur);
+                    if (i === intrusoIdx) {
+                        playBeep(800, 'sine', 0.1);
+                        acertos++;
+                    } else {
+                        playBeep(200, 'sawtooth', 0.1);
+                    }
+                    xogarRoldaVisual();
+                };
+                grid.appendChild(b);
+            }
+            area.appendChild(grid);
+        }
+        xogarRoldaVisual();
+    }
+
+    // 14. LABIRINTO TÁCTIL (TRAZO DE LIÑA SEN SOLTAR O DEDO / META E INICIO MANTIDOS)
+    function cargarXogoLabirinto(area, ctrl) {
+        area.innerHTML = `
+            <p style="margin:0 0 4px 0; font-size:0.8rem; color:var(--accent-blue);">Arrastra dende INICIO a META sen tocar obstáculos nin soltar!</p>
+            <canvas id="mazeCanvas" width="300" height="220" style="background:#0f172a; border:2px solid #38bdf8; border-radius:10px; cursor:crosshair;"></canvas>`;
+
+        const canvas = document.getElementById('mazeCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let isDrawing = false;
+        let pathPoints = [];
+
+        // INICIO E META EN ESQUINAS OPUESTAS CON MARXE DE SEGURIDADE
+        const startZone = { x: 25, y: 25, r: 18 };
+        const endZone = { x: 275, y: 195, r: 18 };
+
+        // OBSTÁCULOS ALEATORIOS QUE NUNCA TAPAM INICIO OU META
+        let obstacles = [];
+        let numObs = 3 + xogoActual.level * 2;
+        for (let i = 0; i < numObs; i++) {
+            let ox = Math.random() * 180 + 60;
+            let oy = Math.random() * 120 + 50;
+            let ow = Math.random() * 40 + 20;
+            let oh = Math.random() * 40 + 20;
+            obstacles.push({ x: ox, y: oy, w: ow, h: oh });
+        }
+
+        function drawMaze() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // INICIO
+            ctx.fillStyle = "#10b981";
+            ctx.beginPath(); ctx.arc(startZone.x, startZone.y, startZone.r, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = "#0f172a"; ctx.font = "bold 10px sans-serif"; ctx.fillText("INICIO", 10, 28);
+
+            // META
+            ctx.fillStyle = "#f59e0b";
+            ctx.beginPath(); ctx.arc(endZone.x, endZone.y, endZone.r, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = "#0f172a"; ctx.fillText("META", 262, 198);
+
+            // OBSTÁCULOS
+            ctx.fillStyle = "#ef4444";
+            obstacles.forEach(o => {
+                ctx.fillRect(o.x, o.y, o.w, o.h);
+            });
+
+            // TRAZO DA LIÑA EN VIVO
+            if (pathPoints.length > 1) {
+                ctx.strokeStyle = "#38bdf8";
+                ctx.lineWidth = 4;
+                ctx.beginPath();
+                ctx.moveTo(pathPoints[0].x, pathPoints[0].y);
+                for (let i = 1; i < pathPoints.length; i++) {
+                    ctx.lineTo(pathPoints[i].x, pathPoints[i].y);
+                }
+                ctx.stroke();
+            }
+        }
+
+        drawMaze();
+
+        function getPos(e) {
+            const rect = canvas.getBoundingClientRect();
+            let clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            let clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            return { x: clientX - rect.left, y: clientY - rect.top };
+        }
+
+        function handleStart(e) {
+            let pos = getPos(e);
+            let distStart = Math.hypot(pos.x - startZone.x, pos.y - startZone.y);
+            if (distStart <= startZone.r) {
+                isDrawing = true;
+                pathPoints = [pos];
+            }
+        }
+
+        function handleMove(e) {
+            if (!isDrawing) return;
+            let pos = getPos(e);
+            pathPoints.push(pos);
+
+            // COMPROBAR COLISIÓN CON OBSTÁCULOS
+            let hit = obstacles.some(o => pos.x >= o.x && pos.x <= o.x + o.w && pos.y >= o.y && pos.y <= o.y + o.h);
+            if (hit) {
+                playBeep(180, 'sawtooth', 0.2);
+                isDrawing = false;
+                pathPoints = [];
+                drawMaze();
+                return;
+            }
+
+            // COMPROBAR LLEGADA A META
+            let distEnd = Math.hypot(pos.x - endZone.x, pos.y - endZone.y);
+            if (distEnd <= endZone.r) {
+                playBeep(800, 'sine', 0.15);
+                isDrawing = false;
+                rematarEAmosarPuntos(850, "Labirinto superado con éxito!", "Percorrido exacto completado sen soltar.");
+                return;
+            }
+
+            drawMaze();
+        }
+
+        function handleEnd() {
+            if (isDrawing) {
+                playBeep(200, 'sawtooth', 0.1);
+                isDrawing = false;
+                pathPoints = [];
+                drawMaze();
+            }
+        }
+
+        canvas.addEventListener('mousedown', handleStart);
+        canvas.addEventListener('mousemove', handleMove);
+        window.addEventListener('mouseup', handleEnd);
+
+        canvas.addEventListener('touchstart', handleStart);
+        canvas.addEventListener('touchmove', handleMove);
+        canvas.addEventListener('touchend', handleEnd);
+    }
+
+    // 15. CAZA DE MOSCAS (FORMAS XEOMÉTRICAS ALEATORIAS SEN REPETIR)
+    function cargarXogoCazaMoscas(area, ctrl) {
+        let cazadas = 0, total = 5, tStart = Date.now();
+        area.style.position = 'relative';
+
+        const formas = ['square', 'circle', 'triangle', 'diamond', 'star'];
+
+        function xerarObxecto() {
+            if (cazadas >= total) {
+                let dur = ((Date.now() - tStart)/1000).toFixed(1);
+                rematarEAmosarPuntos(850, `5 obxectos cazados en ${dur}s`, `Obxectos de formas xeométricas aleatorias.`);
+                return;
+            }
+
+            area.innerHTML = `<p style="color:var(--text-muted); position:absolute; top:4px; left:8px; margin:0;">Cazados: ${cazadas}/${total}</p>`;
+
+            let obj = document.createElement('div');
+            let size = Math.random() * 20 + 35;
+            let forma = formas[cazadas % formas.length];
+            let color = ['#ef4444', '#10b981', '#38bdf8', '#f59e0b', '#a855f7'][cazadas % 5];
+
+            let borderRadius = forma === 'circle' ? '50%' : (forma === 'diamond' ? '4px' : '8px');
+            let transform = forma === 'diamond' ? 'rotate(45deg)' : 'rotate(0deg)';
+
+            obj.style.cssText = `width:${size}px; height:${size}px; background:${color}; border-radius:${borderRadius}; transform:${transform}; position:absolute; cursor:pointer; box-shadow:0 0 10px ${color};`;
+
+            let maxTop = 180, maxLeft = 240;
+            let curTop = Math.random() * maxTop + 30;
+            let curLeft = Math.random() * maxLeft + 20;
+
+            obj.style.top = curTop + 'px';
+            obj.style.left = curLeft + 'px';
+
+            let moveInterval = gameSetInterval(() => {
+                curTop += (Math.random() - 0.5) * (20 + xogoActual.level * 10);
+                curLeft += (Math.random() - 0.5) * (20 + xogoActual.level * 10);
+                curTop = Math.max(30, Math.min(maxTop, curTop));
+                curLeft = Math.max(20, Math.min(maxLeft, curLeft));
+                obj.style.top = curTop + 'px';
+                obj.style.left = curLeft + 'px';
+            }, 250);
+
+            obj.onclick = () => {
+                clearInterval(moveInterval);
+                playBeep(750, 'sine', 0.08);
+                cazadas++;
+                xerarObxecto();
+            };
+
+            area.appendChild(obj);
+        }
+
+        xerarObxecto();
+    }
+
+    // 16. MEMORIA DE SOMBRAS (GRELLA DE 6 OPCIÓNS CON NIVEIS DE DIFICULTADE)
+    function cargarXogoMemoriaSombras(area, ctrl) {
+        let totalRondas = 5, ronda = 0, acertos = 0;
+        const catalog = ['✈️', '🚀', '🚗', '🐱', '👑', '🎸', '⚽', '🍏', '🏠', '🎁', '🔔', '🌙'];
+
+        function xogarSombras() {
+            if (ronda >= totalRondas) {
+                rematarEAmosarPuntos(acertos * 200, `${acertos}/${totalRondas} sombras identificadas.`, `6 opcións por rolda.`);
+                return;
+            }
+            ronda++;
+            
+            let targetEmoji = catalog[Math.floor(Math.random() * catalog.length)];
+            
+            area.innerHTML = `
+                <p style="color:var(--text-muted); margin:0;">Rolda ${ronda} de ${totalRondas}</p>
+                <div style="font-size:3.8rem; filter: brightness(0); margin:12px 0;">${targetEmoji}</div>
+                <p style="font-size:0.8rem; color:var(--accent-blue);">Cal é o obxecto orixinal?</p>`;
+
+            let opcions = [targetEmoji];
+            while (opcions.length < 6) {
+                let fake = catalog[Math.floor(Math.random() * catalog.length)];
+                if (!opcions.includes(fake)) opcions.push(fake);
+            }
+            opcions.sort(() => Math.random() - 0.5);
+
+            let grid = document.createElement('div');
+            grid.style.cssText = "display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; width:100%;";
+
+            opcions.forEach(emoji => {
+                let b = document.createElement('button');
+                b.innerText = emoji;
+                b.style.fontSize = "1.8rem";
+                b.style.padding = "8px 0";
+                b.onclick = () => {
+                    if (emoji === targetEmoji) {
+                        playBeep(800, 'sine', 0.1);
+                        acertos++;
+                    } else {
+                        playBeep(200, 'sawtooth', 0.1);
+                    }
+                    xogarSombras();
+                };
+                grid.appendChild(b);
+            });
+            area.appendChild(grid);
+        }
+        xogarSombras();
+    }
+
+    // 17. CORREDOR DO METRO (TUTORIAL PREVIO, 3 CARRÍS E ESTILO NEON)
+    function cargarXogoCorredorMetro(area, ctrl) {
+        // PANTALLA PREVIA DE TUTORIAL
+        area.innerHTML = `
+            <div style="text-align:left; padding:8px;">
+                <h3 style="color:var(--accent-yellow); margin-top:0;">📖 Titorial de Corredor</h3>
+                <p style="font-size:0.85rem; color:white;">⭐ <strong>Bo:</strong> Puntos e Potenciadores (+100 pts)</p>
+                <p style="font-size:0.85rem; color:var(--accent-red);">🚧 <strong>Malo:</strong> Obstáculos (Restan vida)</p>
+                <p style="font-size:0.8rem; color:var(--text-muted);">Usa os botóns para cambiar entre os 3 carrís do metro.</p>
+            </div>`;
+
+        let startBtn = document.createElement('button');
+        startBtn.innerText = '🚀 Comezar Carreira';
+        startBtn.onclick = () => iniciarCarreiraMetro();
+        ctrl.appendChild(startBtn);
+
+        function iniciarCarreiraMetro() {
+            ctrl.innerHTML = '';
+            let lane = 1; // 0: Esquerda, 1: Centro, 2: Dereita
+            let score = 0, lives = 3;
+
+            area.innerHTML = `
+                <div style="display:flex; justify-shadow:space-between; width:100%; font-size:0.85rem; margin-bottom:4px;">
+                    <span id="metroLives">❤️ ❤️ ❤️</span>
+                    <span id="metroScore" style="color:var(--accent-yellow); font-weight:bold;">0 pts</span>
+                </div>
+                <div id="trackArea" style="width:100%; height:180px; background:#0f172a; border:2px solid #38bdf8; box-shadow:0 0 15px #38bdf8; border-radius:10px; position:relative; overflow:hidden;">
+                    <div style="position:absolute; left:33%; top:0; bottom:0; border-left:1px dashed #334155;"></div>
+                    <div style="position:absolute; left:66%; top:0; bottom:0; border-left:1px dashed #334155;"></div>
+                    <div id="playerCar" style="position:absolute; bottom:10px; left:41%; font-size:1.8rem; transition:left 0.1s;">🏃</div>
+                </div>`;
+
+            let track = document.getElementById('trackArea');
+            let player = document.getElementById('playerCar');
+
+            function updatePlayerPos() {
+                if (lane === 0) player.style.left = '8%';
+                if (lane === 1) player.style.left = '41%';
+                if (lane === 2) player.style.left = '74%';
+            }
+
+            let gridCtrl = document.createElement('div');
+            gridCtrl.style.cssText = "display:grid; grid-template-columns:repeat(2, 1fr); gap:8px; width:100%; margin-top:8px;";
+
+            let btnLeft = document.createElement('button');
+            btnLeft.innerText = '⬅️ Esquerda';
+            btnLeft.onclick = () => { if (lane > 0) { lane--; updatePlayerPos(); } };
+
+            let btnRight = document.createElement('button');
+            btnRight.innerText = '➡️ Dereita';
+            btnRight.onclick = () => { if (lane < 2) { lane++; updatePlayerPos(); } };
+
+            gridCtrl.appendChild(btnLeft);
+            gridCtrl.appendChild(btnRight);
+            ctrl.appendChild(gridCtrl);
+
+            let spawnInterval = gameSetInterval(() => {
+                if (lives <= 0) {
+                    clearInterval(spawnInterval);
+                    rematarEAmosarPuntos(score, `Carreira finalizada con ${score} pts!`, `Resistencia no metro neon.`);
+                    return;
+                }
+
+                let itemLane = Math.floor(Math.random() * 3);
+                let isGood = Math.random() > 0.4;
+                let item = document.createElement('div');
+                item.innerText = isGood ? '⭐' : '🚧';
+                item.style.cssText = `position:absolute; top:0; font-size:1.5rem; transition:top 1.2s linear;`;
+
+                if (itemLane === 0) item.style.left = '8%';
+                if (itemLane === 1) item.style.left = '41%';
+                if (itemLane === 2) item.style.left = '74%';
+
+                track.appendChild(item);
+
+                gameSetTimeout(() => { item.style.top = '140px'; }, 50);
+
+                gameSetTimeout(() => {
+                    if (itemLane === lane) {
+                        if (isGood) {
+                            playBeep(800, 'sine', 0.08);
+                            score += 150;
+                        } else {
+                            playBeep(200, 'sawtooth', 0.15);
+                            lives--;
+                        }
+                        let livesStr = '❤️ '.repeat(Math.max(0, lives));
+                        document.getElementById('metroLives').innerText = livesStr || '💀';
+                        document.getElementById('metroScore').innerText = `${score} pts`;
+                    }
+                    if (item.parentNode) item.parentNode.removeChild(item);
+                }, 1250);
+
+            }, 1000);
+        }
+    }
+
+    // 18. TIRO AO BLANCO (MOVEMENTO ESTOCÁSTICO E MUESCAS VISUAIS DE IMPACTO)
+    function cargarXogoTiroBlanco(area, ctrl) {
+        let disparos = 0, totalDisparos = 5, puntosAcumulados = 0;
+
+        area.innerHTML = `
+            <p style="margin:0 0 4px 0; font-size:0.8rem; color:var(--text-muted);">Movera se a mira de forma aleatoria estocástica. Dispara!</p>
+            <div id="targetBoard" style="width:100%; height:200px; background:#0f172a; border:2px solid #334155; border-radius:12px; position:relative; overflow:hidden;">
+                <!-- DIANA CONÉNTRICA -->
+                <div style="width:140px; height:140px; border-radius:50%; background:#ef4444; position:absolute; top:30px; left:calc(50% - 70px); display:flex; align-items:center; justify-content:center;">
+                    <div style="width:80px; height:80px; border-radius:50%; background:white; display:flex; align-items:center; justify-content:center;">
+                        <div style="width:30px; height:30px; border-radius:50%; background:#ef4444;"></div>
+                    </div>
+                </div>
+                <!-- MIRA MÓBIL -->
+                <div id="crosshair" style="width:24px; height:24px; border:2px solid #38bdf8; border-radius:50%; position:absolute; top:88px; left:calc(50% - 12px); box-shadow:0 0 10px #38bdf8; pointer-events:none;"></div>
+            </div>`;
+
+        const crosshair = document.getElementById('crosshair');
+        const board = document.getElementById('targetBoard');
+
+        let curX = 200, curY = 88;
+        function animateTarget() {
+            // MOVEMENTO ESTOCÁSTICO ALEATORIO
+            curX += (Math.random() - 0.5) * (15 + xogoActual.level * 8);
+            curY += (Math.random() - 0.5) * (12 + xogoActual.level * 6);
+
+            curX = Math.max(20, Math.min(380, curX));
+            curY = Math.max(20, Math.min(160, curY));
+
+            crosshair.style.left = curX + 'px';
+            crosshair.style.top = curY + 'px';
+
+            animFrame = requestAnimationFrame(animateTarget);
+        }
+        animateTarget();
+
+        let fireBtn = document.createElement('button');
+        fireBtn.innerText = "🔥 DISPARAR!";
+        fireBtn.style.cssText = "background:var(--accent-yellow); color:#0f172a; font-size:1.1rem; padding:12px; margin-top:8px;";
+        ctrl.appendChild(fireBtn);
+
+        fireBtn.onclick = () => {
+            playBeep(600, 'triangle', 0.08);
+            disparos++;
+
+            // GARDA E MUESTRA VISUALMENTE O MARCADOR DE IMPACTO (PUNTO VERMELLO / MUESCA)
+            let mark = document.createElement('div');
+            mark.style.cssText = `width:8px; height:8px; background:#f59e0b; border-radius:50%; border:1px solid white; position:absolute; left:${curX + 8}px; top:${curY + 8}px; box-shadow:0 0 6px #f59e0b;`;
+            board.appendChild(mark);
+
+            // CÁLCULO DE PRECISIÓN EN RELACIÓN AO CENTRO (200, 88)
+            let dist = Math.hypot(curX - 200, curY - 88);
+            let pts = Math.max(0, Math.round(200 - (dist * 2.5)));
+            puntosAcumulados += pts;
+
+            if (disparos >= totalDisparos) {
+                cancelAnimationFrame(animFrame);
+                fireBtn.disabled = true;
+                if (puntosAcumulados >= 950) desbloquearInsignia("sniper");
+                rematarEAmosarPuntos(puntosAcumulados, `${totalDisparos} disparos realizados.`, `Puntuación total de precisión: ${puntosAcumulados} pts`);
+            }
+        };
+    }
+
+    // ===== NOVAS CORRECCIÓNS E FUNCIONALIDADES =====
+    let modoDesafioDia = false;
+    let contrarreloxoPool = [];
+    let selectedClubId = null;
+
+    function barallarUnicos(lista) { return [...lista].sort(() => Math.random() - 0.5); }
+
+    function seleccionarSeguinteContrarreloxo() {
+        if (!contrarreloxoPool.length) contrarreloxoPool = barallarUnicos(CATEGORIAS_BASE.map(c => c.id));
+        return contrarreloxoPool.shift();
+    }
+
+    function actualizarContextoPuntuacion(baseExp = '') {
+        const el = document.getElementById('scoreSystemExp');
+        if (!el) return;
+        let contexto = modoContrarreloxo ? `Contrarreloxo: ${tempoRestanteGlobal}s restantes.` :
+            (modoDesafioDia ? `Desafío do Día: proba ${Math.min(campanaIndex + 1, 3)}/3.` :
+            (modoCampana ? `Campaña: xogo ${Math.min(campanaIndex + 1, campanaListaXogos.length)}/${campanaListaXogos.length}.` : 'Partida individual.'));
+        el.innerText = `${baseExp || xogoActual?.exp || ''} ${contexto} Cálculo: os acertos achegan puntos e o tempo/precisión modifica a puntuación final segundo a mecánica do xogo. Máximo: 1000 pts.`;
+    }
+
+    function mostrarControisResultado() {
+        const ctrl = document.getElementById('gameControls');
+        ctrl.innerHTML = `
+            <button onclick="volverXogarActual()">🔄 Volver xogar</button>
+            <button class="btn-alt" onclick="voltarMenuPrincipal()">🏠 Volver ao Menú Principal</button>`;
+    }
+
+    function volverXogarActual() {
+        if (!xogoActual) return;
+        limparRecursosXogo();
+        iniciarXogoDirecto(xogoActual.id, xogoActual.level);
+    }
+
+    function voltarMenuPrincipal() {
+        limparRecursosXogo();
+        modoCampana = false; modoDesafioDia = false; modoContrarreloxo = false;
+        duplicarPuntosActivo = false;
+        document.getElementById('wildcardBox').style.display = 'none';
+        mostrarPantalla('screenMenu');
+    }
+
+    function mostrarPantalla(id) {
+        if (id === 'screenMenu') limparRecursosXogo();
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        const target = document.getElementById(id);
+        if (target) target.classList.add('active');
+    }
+
+    function abandonarPartida() {
+        limparRecursosXogo();
+        modoCampana = false; modoDesafioDia = false; modoContrarreloxo = false;
+        duplicarPuntosActivo = false;
+        document.getElementById('wildcardBox').style.display = 'none';
+        mostrarPantalla('screenMenu');
+    }
+
+    function cerrarSesion() {
+        limparRecursosXogo();
+        if (db && currentUser) { try { db.ref('ranking/' + currentUser).off(); } catch(e) {} }
+        if (db) { try { db.ref('clubes').off(); } catch(e) {} }
+        localStorage.removeItem('portela_user'); currentUser = '';
+        document.getElementById('usernameInput').value = '';
+        document.getElementById('pinInput').value = '';
+        actualizarHeader(); mostrarPantalla('screenLogin');
+    }
+
+    function iniciarCampana(nivel) {
+        limparRecursosXogo();
+        modoCampana = true; modoDesafioDia = false; modoContrarreloxo = false;
+        campanaNivel = nivel; campanaPuntosAcumulados = 0;
+        campanaListaXogos = barallarUnicos(CATEGORIAS_BASE).slice(0, 5);
+        campanaIndex = 0; comodinSaltarUsado = false; comodinDuplicarUsado = false; duplicarPuntosActivo = false;
+        document.getElementById('wildcardBox').style.display = 'flex'; actualizarBotonsComodins(); iniciarSeguinteMinixogoCampana();
+    }
+
+    function iniciarDesafioDia() {
+        limparRecursosXogo();
+        modoCampana = true; modoDesafioDia = true; modoContrarreloxo = false;
+        campanaNivel = 2; campanaPuntosAcumulados = 0;
+        const hoxe = new Date().toISOString().split('T')[0];
+        let seed = [...hoxe].reduce((a,c) => a + c.charCodeAt(0), 0);
+        let pool = barallarUnicos(CATEGORIAS_BASE);
+        // Rotación determinista por data, sen repetición.
+        pool = [...pool.slice(seed % pool.length), ...pool.slice(0, seed % pool.length)];
+        campanaListaXogos = pool.slice(0, 3); campanaIndex = 0;
+        document.getElementById('wildcardBox').style.display = 'none'; iniciarSeguinteMinixogoCampana();
+    }
+
+    function iniciarContrarreloxo() {
+        limparRecursosXogo();
+        modoContrarreloxo = true; modoCampana = false; modoDesafioDia = false;
+        tempoRestanteGlobal = 60; campanaPuntosAcumulados = 0; contrarreloxoPool = barallarUnicos(CATEGORIAS_BASE.map(c => c.id));
+        document.getElementById('wildcardBox').style.display = 'none';
+        timerGlobalInterval = gameSetInterval(() => {
+            tempoRestanteGlobal--;
+            const el = document.getElementById('scoreSystemExp');
+            if (tempoRestanteGlobal <= 0) { clearInterval(timerGlobalInterval); gameIntervals.delete(timerGlobalInterval); timerGlobalInterval = null; rematarContrarreloxo(); }
+            else if (el) el.innerText = `⏳ CONTRARRELOXO: ${tempoRestanteGlobal}s restantes | Puntos totais: ${campanaPuntosAcumulados}`;
+        }, 1000);
+        iniciarSeguinteMinixogoContrarreloxo();
+    }
+
+    function iniciarSeguinteMinixogoContrarreloxo() {
+        if (tempoRestanteGlobal <= 0) return;
+        iniciarXogoDirecto(seleccionarSeguinteContrarreloxo(), 1);
+    }
+
+    function iniciarSeguinteMinixogoCampana() {
+        if (campanaIndex >= campanaListaXogos.length) { rematarCampanaCompleta(); return; }
+        iniciarXogoDirecto(campanaListaXogos[campanaIndex].id, campanaNivel);
+    }
+
+    function iniciarXogoDirecto(typeId, level) {
+        // O contador global do Contrarreloxo non se pode interromper ao cambiar de minixogo.
+        limparRecursosXogo(modoContrarreloxo);
+        const cat = CATEGORIAS_BASE.find(c => c.id === typeId) || CATEGORIAS_BASE[0];
+        const nomesDiff = ['TRIVIAL','NORMAL','EXTREMODURO'];
+        let prefix = '';
+        if (modoDesafioDia) prefix = `[⚔️ Desafío do Día ${campanaIndex + 1}/3] `;
+        else if (modoCampana) prefix = `[Campaña ${campanaIndex + 1}/${campanaListaXogos.length}] `;
+        else if (modoContrarreloxo) prefix = `[⏱️ ${tempoRestanteGlobal}s] `;
+        xogoActual = { id:typeId, level, nome:`${prefix}${cat.nome} (${nomesDiff[level-1]})`, desc:cat.desc, exp:cat.exp };
+        mostrarPantalla('screenGame');
+        document.getElementById('gameTitle').innerText = xogoActual.nome;
+        document.getElementById('gameDesc').innerText = xogoActual.desc;
+        actualizarContextoPuntuacion(cat.exp);
+        const area=document.getElementById('gameArea'), ctrl=document.getElementById('gameControls'); area.innerHTML=''; ctrl.innerHTML='';
+        const loaders={bar:cargarXogoBarra,memory:cargarXogoMemory,math:cargarXogoMathSpeed,react:cargarXogoReaccion,order:cargarXogoOrde,box:cargarXogoCaixas,time:cargarXogoTempoExacto,dice:cargarXogoDados,color:cargarXogoCorCorrecta,swipe:cargarXogoDesliza,pattern:cargarXogoPatron,reverse_math:cargarXogoReverseMath,visual_find:cargarXogoVisualFind,maze:cargarXogoLabirinto,flies:cargarXogoCazaMoscas,shadows:cargarXogoMemoriaSombras,runner:cargarXogoCorredorMetro,target:cargarXogoTiroBlanco};
+        if (loaders[typeId]) loaders[typeId](area,ctrl);
+    }
+
+    function rematarEAmosarPuntos(puntosBase, msgResumen, msgDetalle='') {
+        // Mantemos o contador global vivo mentres aínda quede tempo de Contrarreloxo.
+        limparRecursosXogo(modoContrarreloxo && tempoRestanteGlobal > 0);
+        let puntosFinals=Math.min(1000,Math.max(10,Math.round(puntosBase)));
+        if(duplicarPuntosActivo){puntosFinals=Math.min(1000,puntosFinals*2);duplicarPuntosActivo=false;}
+        if(modoContrarreloxo){ campanaPuntosAcumulados+=puntosFinals; guardarResultado(xogoActual.id,puntosFinals); if(tempoRestanteGlobal>0) iniciarSeguinteMinixogoContrarreloxo(); else rematarContrarreloxo(); return; }
+        if(modoCampana){ campanaPuntosAcumulados+=puntosFinals; campanaIndex++; if(campanaIndex<campanaListaXogos.length) iniciarSeguinteMinixogoCampana(); else { guardarResultado(modoDesafioDia?'Desafío do Día':'Modo Campaña',campanaPuntosAcumulados); rematarCampanaCompleta(); } return; }
+        guardarResultado(xogoActual.id,puntosFinals); playVictorySound();
+        document.getElementById('gameTitle').innerText='🎉 Xogo Rematado!'; document.getElementById('gameDesc').innerText=msgResumen;
+        document.getElementById('scoreSystemExp').innerText=`${msgDetalle || xogoActual.exp} Cálculo detallado: acertos/precisión + tempo de execución, segundo a mecánica deste xogo. Puntuación final: ${puntosFinals}/1000 pts.`;
+        document.getElementById('gameArea').innerHTML=`<div class="result-box"><h2 style="color:var(--accent-yellow);">Puntuación do Xogo</h2><div class="result-score">+${puntosFinals} pts</div><p style="color:var(--text-muted);font-size:.85rem;">Puntos gardados na túa conta.</p></div>`;
+        mostrarControisResultado(); comprobarInsigniasPartida(puntosFinals);
+    }
+
+    function rematarContrarreloxo(){
+        limparRecursosXogo(modoContrarreloxo); modoContrarreloxo=false;
+        if(campanaPuntosAcumulados>=500) desbloquearInsignia('time_king');
+        document.getElementById('gameTitle').innerText='⏳ TEMPO ESGOTADO!';
+        document.getElementById('gameDesc').innerText='Remataron os 60 segundos do Modo Contrarreloxo.';
+        document.getElementById('scoreSystemExp').innerText=`Puntuación desta Contrarreloxo: ${campanaPuntosAcumulados} pts. Cálculo: suma das partidas completadas dentro dos 60 segundos, combinando acertos e tempo de cada xogo.`;
+        document.getElementById('gameArea').innerHTML=`<div class="result-box"><h2 style="color:var(--accent-yellow);">Puntuación desta Contrarreloxo</h2><div class="result-score">+${campanaPuntosAcumulados} pts</div></div>`;
+        mostrarControisResultado();
+    }
+
+    function rematarCampanaCompleta(){
+        limparRecursosXogo(modoContrarreloxo && tempoRestanteGlobal > 0); playVictorySound();
+        const tipo=modoDesafioDia?'Desafío do Día':'Campaña';
+        document.getElementById('wildcardBox').style.display='none';
+        document.getElementById('gameTitle').innerText=modoDesafioDia?'🏆 DESAFÍO DO DÍA COMPLETADO!':'🏆 CAMPAÑA COMPLETADA!';
+        document.getElementById('gameDesc').innerText=modoDesafioDia?'Completaches as 3 probas do desafío diario.':'Completaches con éxito a serie de minixogos.';
+        document.getElementById('scoreSystemExp').innerText=`Puntuación desta ${tipo}: ${campanaPuntosAcumulados} pts. Cálculo: suma das puntuacións das probas, considerando acertos, precisión e tempo.`;
+        if(!modoDesafioDia){ userProfile.campanasCompletadas=(userProfile.campanasCompletadas||0)+1; if(userProfile.campanasCompletadas>=5) desbloquearInsignia('camp_vet'); }
+        else desbloquearInsignia('daily_champion');
+        document.getElementById('gameArea').innerHTML=`<div class="result-box"><h2 style="color:var(--accent-yellow);">Puntuación desta ${tipo}</h2><div class="result-score">+${campanaPuntosAcumulados} pts</div></div>`;
+        mostrarControisResultado(); modoCampana=false;
+    }
+
+    function cargarXogoMathSpeed(area,ctrl){
+        let totalRondas=5,ronda=0,acertos=0,tempos=[]; const numMax=xogoActual.level===1?10:(xogoActual.level===2?25:50);
+        function next(){ if(ronda>=totalRondas){let dur=(tempos.reduce((a,b)=>a+b,0)/1000).toFixed(1); let pts=Math.max(100,Math.round(acertos*200-(dur*10))); rematarEAmosarPuntos(pts,`${acertos}/${totalRondas} acertos en ${dur}s`,`Tempo medio por suma: ${(dur/totalRondas).toFixed(1)}s.`);return;} ronda++; let a=Math.floor(Math.random()*numMax)+1,b=Math.floor(Math.random()*numMax)+1,start=performance.now(); area.innerHTML=`<p style="color:var(--text-muted);margin:0;">Suma ${ronda} de ${totalRondas}</p><h2 style="color:var(--accent-yellow);font-size:2.4rem;margin:10px 0;">${a} + ${b}</h2><div id="mathOptions" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:100%;"></div>`; const grid=document.getElementById('mathOptions'); let opts=[a+b]; while(opts.length<3){let fake=(a+b)+Math.floor(Math.random()*11)-5;if(fake>=0&&!opts.includes(fake))opts.push(fake);} opts.sort(()=>Math.random()-.5); opts.forEach(v=>{let btt=document.createElement('button');btt.innerText=v;btt.style.fontSize='1.25rem';btt.onclick=()=>{let elapsed=performance.now()-start;if(v===a+b){playBeep(700,'sine',.08);acertos++;tempos.push(elapsed);}else{playBeep(180,'sawtooth',.1);tempos.push(elapsed+700);} next();};grid.appendChild(btt);});} next();
+    }
+
+    function cargarXogoCaixas(area,ctrl){
+        let rolda=0,totalRoldas=3,acertos=0,erros=0,finalBtnShown=false; const cores=['#f59e0b','#38bdf8','#10b981','#a855f7','#ef4444','#ec4899','#f97316'];
+        function mostrarFinal(){if(finalBtnShown)return;finalBtnShown=true; const b=document.createElement('button');b.className='btn-danger';b.innerText='⛔ Finalizar partida';b.onclick=()=>rematarEAmosarPuntos(acertos*330,`Partida finalizada tras ${erros} intentos incorrectos.`,`Acertos: ${acertos}/${rolda}. Erros: ${erros}.`);ctrl.appendChild(b);}
+        function rondaX(){if(rolda>=totalRoldas){rematarEAmosarPuntos(acertos*330,`Acertaches ${acertos} de ${totalRoldas} roldas.`,`Caixas contadas con éxito. Erros: ${erros}.`);return;} rolda++; area.innerHTML='';ctrl.innerHTML=''; area.innerHTML=`<p style="color:var(--accent-blue);font-weight:bold;margin:0 0 6px 0;">Rolda ${rolda} de ${totalRoldas} · Erros: ${erros}/10</p>`; let size=xogoActual.level===1?55:(xogoActual.level===2?45:38),n=Math.floor(Math.random()*10)+3,placed=[]; for(let i=0;i<n;i++){let b=document.createElement('div'),top=0,left=0,tries=80;while(tries--){top=Math.random()*65+12;left=Math.random()*80+10;if(!placed.some(p=>Math.abs(left-p.left)<size+3&&Math.abs(top-p.top)<size+3))break;}placed.push({top,left});b.style.cssText=`width:${size}px;height:${size}px;background:${cores[i%cores.length]};border-radius:8px;position:absolute;top:${top}%;left:${left}%;border:2px solid #ffffffaa;box-shadow:0 3px 6px rgba(0,0,0,.5);`;area.appendChild(b);} let t=xogoActual.level===1?2200:(xogoActual.level===2?1600:1100); gameSetTimeout(()=>{area.innerHTML=`<h4 style="color:var(--text-muted);">Cantas caixas había?</h4><input id="boxAns" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" style="width:60%;font-size:1.6rem;margin-top:10px;" /><p style="font-size:.75rem;color:var(--text-muted);">Non se pode incrementar/decrementar coa caixa.</p>`;let inp=document.getElementById('boxAns');inp.focus();inp.oninput=()=>{inp.value=inp.value.replace(/\D/g,'');if(parseInt(inp.value)===n){playBeep(700,'sine',.1);acertos++;rondaX();}else if(inp.value.length>=String(n).length){erros++;inp.value='';if(erros>=10)mostrarFinal();}};},t);}
+        rondaX();
+    }
+
+    function cargarXogoLabirinto(area,ctrl){
+        area.innerHTML=`<p style="margin:0 0 5px;color:var(--accent-blue);font-size:.8rem;">Usa un só dedo. Comeza en <strong>INICIO</strong> e chega a <strong>META</strong> sen tocar obstáculos.</p><canvas id="mazeCanvas" class="maze-canvas" width="430" height="315"></canvas>`;
+        const canvas=document.getElementById('mazeCanvas'),ctx=canvas.getContext('2d'); let drawing=false,path=[]; const start={x:34,y:34,r:27},end={x:396,y:281,r:27};
+        let obstacles=[],count=3+xogoActual.level*2; for(let i=0;i<count;i++){let o,tries=100;do{o={x:70+Math.random()*280,y:55+Math.random()*190,w:30+Math.random()*55,h:25+Math.random()*50};tries--;}while(tries&&([start,end].some(z=>o.x<z.x+z.r&&o.x+o.w>z.x-z.r&&o.y<z.y+z.r&&o.y+o.h>z.y-z.r)));obstacles.push(o);}
+        function draw(){ctx.clearRect(0,0,430,315);ctx.fillStyle='#0b1220';ctx.fillRect(0,0,430,315);ctx.fillStyle='#10b981';ctx.beginPath();ctx.arc(start.x,start.y,start.r,0,Math.PI*2);ctx.fill();ctx.fillStyle='#06111d';ctx.font='bold 13px sans-serif';ctx.fillText('INICIO',12,39);ctx.fillStyle='#f59e0b';ctx.beginPath();ctx.arc(end.x,end.y,end.r,0,Math.PI*2);ctx.fill();ctx.fillStyle='#06111d';ctx.fillText('META',370,286);ctx.fillStyle='#ef4444';obstacles.forEach(o=>ctx.fillRect(o.x,o.y,o.w,o.h));if(path.length>1){ctx.strokeStyle='#38bdf8';ctx.lineWidth=6;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(path[0].x,path[0].y);path.slice(1).forEach(p=>ctx.lineTo(p.x,p.y));ctx.stroke();}}
+        function pos(e){const r=canvas.getBoundingClientRect(),src=e.touches?e.touches[0]:e;return{x:(src.clientX-r.left)*(canvas.width/r.width),y:(src.clientY-r.top)*(canvas.height/r.height)};}
+        function startDraw(e){e.preventDefault();let p=pos(e);if(Math.hypot(p.x-start.x,p.y-start.y)<=start.r+8){drawing=true;path=[p];draw();}}
+        function move(e){if(!drawing)return;e.preventDefault();let p=pos(e),last=path[path.length-1]||p;let steps=Math.max(1,Math.ceil(Math.hypot(p.x-last.x,p.y-last.y)/5));for(let i=1;i<=steps;i++){let q={x:last.x+(p.x-last.x)*i/steps,y:last.y+(p.y-last.y)*i/steps};if(obstacles.some(o=>q.x>=o.x-4&&q.x<=o.x+o.w+4&&q.y>=o.y-4&&q.y<=o.y+o.h+4)){drawing=false;path=[];playBeep(180,'sawtooth',.15);draw();return;}path.push(q);}if(Math.hypot(p.x-end.x,p.y-end.y)<=end.r+8){drawing=false;playBeep(800,'sine',.15);rematarEAmosarPuntos(850,'Labirinto superado con éxito!','Percorrido completado sen soltar o dedo.');return;}draw();}
+        function endDraw(e){if(!drawing)return;e.preventDefault();drawing=false;path=[];playBeep(200,'sawtooth',.08);draw();}
+        canvas.addEventListener('pointerdown',startDraw);canvas.addEventListener('pointermove',move);canvas.addEventListener('pointerup',endDraw);canvas.addEventListener('pointercancel',endDraw);draw();
+    }
+
+    function cargarXogoCazaMoscas(area,ctrl){
+        let cazadas=0,total=xogoActual.level===1?5:(xogoActual.level===2?8:12),start=performance.now(); area.style.position='relative'; area.style.minHeight='min(70vw,430px)'; const flies=[]; const formas=['●','◆','✦','✚','⬟'];
+        function update(){area.querySelector('.fly-status')?.remove();let st=document.createElement('p');st.className='fly-status';st.style.cssText='position:absolute;top:5px;left:8px;margin:0;color:var(--text-muted);z-index:10;';st.innerText=`Cazadas: ${cazadas}/${total}`;area.appendChild(st);}
+        function spawn(){if(cazadas>=total){let dur=((performance.now()-start)/1000).toFixed(1);rematarEAmosarPuntos(Math.max(100,1000-parseFloat(dur)*35),`${cazadas} moscas cazadas en ${dur}s`,`Velocidade e precisión combinadas.`);return;} let f=document.createElement('button');f.innerText='🪰';f.style.cssText='position:absolute;width:46px;height:46px;padding:0;margin:0;border:0;background:transparent;font-size:2rem;cursor:pointer;z-index:3;transition:left .18s linear,top .18s linear;filter:drop-shadow(0 0 6px #38bdf8);';let maxX=Math.max(10,area.clientWidth-55),maxY=Math.max(55,area.clientHeight-55);f.style.left=(10+Math.random()*Math.max(1,maxX-10))+'px';f.style.top=(45+Math.random()*Math.max(1,maxY-45))+'px';let obj={el:f,vx:(Math.random()-.5)*(1.2+xogoActual.level),vy:(Math.random()-.5)*(1.2+xogoActual.level),x:parseFloat(f.style.left),y:parseFloat(f.style.top)};f.onclick=()=>{cazadas++;playBeep(750,'sine',.08);f.remove();let idx=flies.indexOf(obj);if(idx>=0)flies.splice(idx,1);update();spawn();};area.appendChild(f);flies.push(obj);}
+        function loop(){flies.forEach(o=>{o.x+=o.vx;o.y+=o.vy;let maxX=area.clientWidth-52,maxY=area.clientHeight-52;if(o.x<5||o.x>maxX)o.vx*=-1;if(o.y<40||o.y>maxY)o.vy*=-1;o.x=Math.max(5,Math.min(maxX,o.x));o.y=Math.max(40,Math.min(maxY,o.y));o.el.style.left=o.x+'px';o.el.style.top=o.y+'px';});animFrame=requestAnimationFrame(loop);} update(); for(let i=0;i<(xogoActual.level===1?1:(xogoActual.level===2?3:6));i++)spawn();loop();
+    }
+
+    function cargarXogoCorredorMetro(area,ctrl){
+        area.innerHTML=`<div style="display:flex;justify-content:center;gap:28px;width:100%;font-size:.9rem;margin-bottom:5px;"><span id="metroLives">❤️ ❤️ ❤️</span><span id="metroScore" style="color:var(--accent-yellow);font-weight:bold;">0 pts</span></div><div id="metroStars" style="font-size:.75rem;color:var(--accent-yellow);margin-bottom:5px;"></div><div id="trackArea" class="metro-track"><div class="metro-lane-line" style="left:33.333%"></div><div class="metro-lane-line" style="left:66.666%"></div><div class="metro-lane-tap" data-lane="0"></div><div class="metro-lane-tap" data-lane="1"></div><div class="metro-lane-tap" data-lane="2"></div><div id="playerCar" class="metro-player" style="left:50%">🏃</div></div><p style="font-size:.72rem;color:var(--text-muted);margin:6px 0 0;">Toca directamente no carril contiguo. Non podes saltar dous carrís.</p>`;
+        let lane=1,score=0,lives=3,stars=0,threshold=xogoActual.level===1?20:(xogoActual.level===2?50:100),ended=false,spawnId=null;const track=document.getElementById('trackArea'),player=document.getElementById('playerCar');
+        function render(){player.style.left=lane===0?'16.666%':lane===1?'50%':'83.333%';document.getElementById('metroLives').innerText=lives?'❤️ '.repeat(lives).trim():'💀';document.getElementById('metroScore').innerText=`${score} pts`;document.getElementById('metroStars').innerText=`⭐ ${stars}/${threshold} para recuperar unha vida`;} render();
+        track.querySelectorAll('.metro-lane-tap').forEach(z=>z.onclick=()=>{let target=+z.dataset.lane;if(Math.abs(target-lane)===1){lane=target;render();}});
+        function spawn(){if(ended)return;let l=Math.floor(Math.random()*3),good=Math.random()>.42,item=document.createElement('div');item.innerText=good?'⭐':'🚧';item.style.cssText=`position:absolute;left:${l===0?'16.666%':l===1?'50%':'83.333%'};top:-10%;transform:translateX(-50%);font-size:clamp(1.3rem,6vw,2rem);z-index:2;transition:top 1.25s linear;filter:drop-shadow(0 0 7px ${good?'#f59e0b':'#ef4444'});`;track.appendChild(item);gameSetTimeout(()=>item.style.top='88%',30);gameSetTimeout(()=>{if(item.parentNode)item.remove();if(ended)return;if(l===lane){if(good){score+=150;stars++;if(stars>=threshold&&lives<3){stars-=threshold;lives++;playBeep(950,'sine',.12);}}else{lives--;playBeep(200,'sawtooth',.15);}render();if(lives<=0){ended=true;clearInterval(spawnId);gameIntervals.delete(spawnId);rematarEAmosarPuntos(score,`Carreira finalizada con ${score} pts!`,`Estrelas: ${stars}. Recuperación: cada ${threshold} estrelas = +1 vida (máx. 3).`);}}},1250);}
+        spawnId=gameSetInterval(spawn,900);
+    }
+
+    function cargarXogoTiroBlanco(area,ctrl){
+        let disparos=0,total=5,puntos=0,marks=[];area.innerHTML=`<p style="margin:0 0 5px;font-size:.8rem;color:var(--text-muted);">Move a mira por todo o cadrado con física suave. Dispara para rexistrar cada muesca.</p><div id="targetBoard" class="target-square"><div id="targetRing" class="target-ring" style="width:54%;height:54%;background:#ef4444;"><div class="target-ring" style="width:57%;height:57%;background:white;"><div class="target-ring" style="width:38%;height:38%;background:#ef4444;"></div></div></div><div id="crosshair" class="target-crosshair" style="left:50%;top:50%"></div></div><p id="targetStatus" style="font-size:.75rem;color:var(--text-muted);margin:5px 0;">Disparo 1 de 5 · Muescas: 0</p>`;
+        const board=document.getElementById('targetBoard'),cross=document.getElementById('crosshair'),status=document.getElementById('targetStatus');let px=.5,py=.5,vx=0,vy=0,tx=.5,ty=.5;let accel=xogoActual.level===1?.012:(xogoActual.level===2?.018:.026);function newTarget(){tx=.12+Math.random()*.76;ty=.12+Math.random()*.76;}newTarget();
+        function loop(){vx+=(tx-px)*accel;vy+=(ty-py)*accel;vx*=.91;vy*=.91;px+=vx;py+=vy;if(Math.abs(tx-px)<.01&&Math.abs(ty-py)<.01)newTarget();px=Math.max(.04,Math.min(.96,px));py=Math.max(.04,Math.min(.96,py));cross.style.left=(px*100)+'%';cross.style.top=(py*100)+'%';animFrame=requestAnimationFrame(loop);}loop();
+        const fire=document.createElement('button');fire.innerText='🔥 DISPARAR!';fire.style.cssText='background:var(--accent-yellow);color:#0f172a;font-size:1.1rem;padding:12px;margin-top:8px;';ctrl.appendChild(fire);
+        fire.onclick=()=>{let w=board.clientWidth,h=board.clientHeight,cx=w/2,cy=h/2,x=px*w,y=py*h,dist=Math.hypot(x-cx,y-cy),maxDist=Math.hypot(w/2,h/2),score=Math.max(0,Math.round(200*(1-dist/maxDist)));puntos+=score;disparos++;let m=document.createElement('div');m.className='target-mark';m.style.left=(px*100)+'%';m.style.top=(py*100)+'%';board.appendChild(m);marks.push(m);status.innerText=`Disparo ${Math.min(disparos+1,total)} de ${total} · Muescas: ${marks.length}`;playBeep(600,'triangle',.08);if(disparos>=total){if(puntos>=950)desbloquearInsignia('sniper');rematarEAmosarPuntos(puntos,`${total} disparos realizados.`,`Precisión: ${Math.round(puntos/(total*200)*100)}%. Muescas de impacto gardadas: ${marks.length}.`);}};
+    }
+
+    function renderizarCategorias(lista){const grid=document.getElementById('categoryGrid');grid.innerHTML='';lista.forEach(cat=>{grid.insertAdjacentHTML('beforeend',`<div class="category-item"><div class="category-title">${cat.nome}</div><div style="font-size:.7rem;color:var(--text-muted);margin-bottom:7px;">${cat.desc}</div><div class="diff-grid"><button class="btn-diff btn-trivial" title="Xogar en dificultade Trivial" aria-label="${cat.nome}: dificultade Trivial" onclick="iniciarXogoDirecto('${cat.id}',1)"></button><button class="btn-diff btn-normal" title="Xogar en dificultade Normal" aria-label="${cat.nome}: dificultade Normal" onclick="iniciarXogoDirecto('${cat.id}',2)"></button><button class="btn-diff btn-extremoduro" title="Xogar en dificultade Extremoduro" aria-label="${cat.nome}: dificultade Extremoduro" onclick="iniciarXogoDirecto('${cat.id}',3)"></button></div></div>`);});}
+
+    function abrirXestionClubs(){mostrarPantalla('screenClubs');let host=document.getElementById('myClubsList');if(!document.getElementById('clubResultSelector')){let box=document.createElement('div');box.style.cssText='background:#0f172a;padding:10px;border-radius:10px;margin-bottom:12px;text-align:left;';box.innerHTML='<h4 style="margin:0 0 6px;color:var(--accent-yellow);">🎯 Asociar resultados a un club</h4><select id="clubResultSelector"><option value="">🌐 Resultados Globais</option></select><p style="font-size:.72rem;color:var(--text-muted);margin:5px 0 0;">Os resultados asociados a un club quedan illados dos rankings globais.</p>';document.getElementById('screenClubs').insertBefore(box,host.parentNode||host);}poblarSelectorClubResultados();actualizarListaClubesUI();}
+    function poblarSelectorClubResultados(){let sel=document.getElementById('clubResultSelector');if(!sel)return;sel.innerHTML='<option value="">🌐 Resultados Globais</option>';Object.values(rawClubesDB).filter(c=>c.membros&&c.membros[currentUser]).forEach(c=>{let o=document.createElement('option');o.value=c.id;o.textContent=`👥 ${c.nome} (${c.codigo})`;sel.appendChild(o);});sel.value=selectedClubId||'';sel.onchange=()=>{selectedClubId=sel.value||null;};}
+
+    function guardarResultado(nombreXogo,puntos){
+        if(!currentUser)return;let pts=Math.min(1000,Math.max(0,Math.round(puntos)));const clubId=selectedClubId;
+        if(clubId&&rawClubesDB[clubId]&&rawClubesDB[clubId].membros&&rawClubesDB[clubId].membros[currentUser]){
+            let club=rawClubesDB[clubId],base=(club.rankings&&club.rankings[currentUser])||{jugador:currentUser,puntosTotales:0,juegos:{}};base.juegos=base.juegos||{};let prev=typeof base.juegos[nombreXogo]==='object'?(base.juegos[nombreXogo].puntuacion||0):(base.juegos[nombreXogo]||0);base.puntosTotales=(base.puntosTotales||0)+pts;base.juegos[nombreXogo]=Math.max(prev,pts);if(!club.rankings)club.rankings={};club.rankings[currentUser]=base;
+            if(db)db.ref(`clubes/${clubId}/rankings/${currentUser}`).set(base).catch(()=>{});else{rawClubesDB[clubId]=club;localStorage.setItem('portela_clubs_db',JSON.stringify(rawClubesDB));}desbloquearInsignia('club_champion');return;
+        }
+        let hoxe=new Date().toISOString().split('T')[0],total=(userProfile.puntosTotales||0)+pts;userProfile.puntosTotales=total;userProfile.ultAct=hoxe;userProfile.juegos=userProfile.juegos||{};let prev=userProfile.juegos[nombreXogo];prev=typeof prev==='object'?(prev.puntuacion||prev.pts||0):(prev||0);userProfile.juegos[nombreXogo]=Math.max(prev,pts);if(pts>prev)playRecordSound();desbloquearInsignia('first_win');let dbLocal=JSON.parse(localStorage.getItem('portela_users_db')||'{}');dbLocal[currentUser]=userProfile;localStorage.setItem('portela_users_db',JSON.stringify(dbLocal));if(db)db.ref('ranking/'+currentUser).update({jugador:currentUser,puntosTotales:total,ultAct:hoxe,[`juegos/${nombreXogo}`]:userProfile.juegos[nombreXogo]}).catch(()=>{});
+    }
+
+    function renderizarRankingSegunTab(){let list=[...rawJugadoresRanking],html='';if(currentTabRanking==='club'){let id=document.getElementById('rankingClubSelect')?.value;if(!id||!rawClubesDB[id]){html='<p style="text-align:center;color:var(--text-muted);">Selecciona un club válido.</p>';}else{let r=rawClubesDB[id].rankings||{};Object.values(r).sort((a,b)=>(b.puntosTotales||0)-(a.puntosTotales||0)).forEach((j,i)=>html+=`<div class="ranking-item"><span>${i+1}. <strong>${j.jugador}</strong>${j.jugador===rawClubesDB[id].creador?' 👑':''}</span><span>${j.puntosTotales||0} pts</span></div>`);if(!html)html='<p style="text-align:center;color:var(--text-muted);">Sen resultados neste club.</p>';}}else if(currentTabRanking==='total'||currentTabRanking==='dia'||currentTabRanking==='xogo'){list=list.filter(j=>!j.__privateClubOnly);if(currentTabRanking==='dia'){let h=new Date().toISOString().split('T')[0];list=list.filter(j=>j.ultAct===h);}if(currentTabRanking==='xogo'){let a=[];list.forEach(j=>Object.entries(j.juegos||{}).forEach(([x,v])=>a.push({x,j:j.jugador,p:typeof v==='object'?(v.puntuacion||v.pts||0):v})));a.sort((x,y)=>y.p-x.p).slice(0,10).forEach((v,i)=>html+=`<div class="ranking-item"><span>${i+1}. <strong>${v.x}</strong> (${v.j})</span><span>${v.p} pts</span></div>`);}else{list.sort((a,b)=>(b.puntosTotales||0)-(a.puntosTotales||0));list.forEach((j,i)=>html+=`<div class="ranking-item"><span>${i+1}. <strong>${j.jugador}</strong></span><span>${j.puntosTotales||0} pts</span></div>`);}}document.getElementById('rankingList').innerHTML=html||'<p style="text-align:center;">Sen datos aínda</p>';}
+
+    function cambiarTabRanking(tab){currentTabRanking=tab;document.querySelectorAll('.ranking-tab').forEach(t=>t.classList.remove('active'));let id=tab==='total'?'tabTotal':tab==='dia'?'tabDia':tab==='xogo'?'tabXogo':'tabClub';document.getElementById(id)?.classList.add('active');document.getElementById('rankingContainer').classList.add('open');document.getElementById('rankingArrow').innerText='▼ Pechar';document.getElementById('clubSelectorBox').style.display=tab==='club'?'block':'none';if(tab==='club')poblarSelectClubesRanking();renderizarRankingSegunTab();}
+
+    function adminBorrarTodosClubs(){let pin=prompt('Introduce o PIN de 6 díxitos do usuario activo para confirmar o borrado de TÓDOLOS CLUBES:');if(pin===null)return;if(!/^\d{6}$/.test(pin)){alert('PIN inválido. Debe ter exactamente 6 díxitos.');return;}if(!currentUser||pin!==String(userProfile.pin||'')){alert('PIN incorrecto. Non se borraron os clubs.');return;}if(!confirm('⚠️ Confirmas que queres borrar TODOS os clubs? Esta acción non se pode desfacer.'))return;if(db)db.ref('clubes').remove();rawClubesDB={};localStorage.setItem('portela_clubs_db','{}');selectedClubId=null;alert('Tódolos clubs foron borrados.');mostrarPantalla('screenAdmin');}
+
+    const INSIGNIAS_NOVAS=[
+      {id:'daily_champion',nome:'Campión do Día',desc:'Completa un Desafío do Día 1/3, 2/3 e 3/3.',icon:'☀️'},
+      {id:'club_champion',nome:'Campión do Club',desc:'Rexistra unha puntuación asociada a un club.',icon:'👑'},
+      {id:'club_master',nome:'Mestre do Club',desc:'Acada 5.000 puntos nun club.',icon:'🏰'},
+      {id:'high_roller',nome:'Extremoduro',desc:'Completa un minixogo en dificultade EXTREMODURO.',icon:'💀'},
+      {id:'perfect_game',nome:'Perfección',desc:'Acada 1000 puntos nun minixogo.',icon:'💎'},
+      {id:'score_5000',nome:'Cinco Mil',desc:'Acada 5.000 puntos globais.',icon:'🌟'},
+      {id:'score_10000',nome:'Dez Mil',desc:'Acada 10.000 puntos globais.',icon:'🏆'},
+      {id:'games_10',nome:'Incansable',desc:'Completa 10 partidas.',icon:'🎮'},
+      {id:'games_50',nome:'Adicto aos Minixogos',desc:'Completa 50 partidas.',icon:'🕹️'},
+      {id:'streak_3',nome:'Racha de 3',desc:'Xoga 3 días consecutivos.',icon:'🔥'},
+      {id:'streak_30',nome:'Racha de 30',desc:'Xoga 30 días consecutivos.',icon:'🚀'},
+      {id:'sniper_elite',nome:'Sniper Elite',desc:'Obtén 1000 puntos no Tiro ao Blanco Móbil.',icon:'🎯'}
+    ];
+    INSIGNIAS.push(...INSIGNIAS_NOVAS);
+    function comprobarInsigniasPartida(pts){userProfile.partidasCompletadas=(userProfile.partidasCompletadas||0)+1;if(pts>=1000)desbloquearInsignia('perfect_game');if(xogoActual.level===3)desbloquearInsignia('high_roller');if((userProfile.puntosTotales||0)>=5000)desbloquearInsignia('score_5000');if((userProfile.puntosTotales||0)>=10000)desbloquearInsignia('score_10000');if(userProfile.partidasCompletadas>=10)desbloquearInsignia('games_10');if(userProfile.partidasCompletadas>=50)desbloquearInsignia('games_50');if(pts>=1000&&xogoActual.id==='target')desbloquearInsignia('sniper_elite');}
+
+    // Asociar automaticamente a selección do club ao abrir a pantalla e manter a selección ao cambiar.
+    const _abrirXestionClubsOriginal=abrirXestionClubs;
+
+
+    window.onload = init;
+</script>
+</body>
+</html>
