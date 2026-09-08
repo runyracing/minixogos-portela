@@ -55,6 +55,7 @@
             border-radius: 16px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.4);
             border: 1px solid #334155;
+            position: relative;
         }
 
         h1 {
@@ -69,6 +70,20 @@
             font-size: 0.85rem;
             color: var(--text-muted);
             font-weight: 500;
+        }
+
+        .sound-toggle-btn {
+            position: absolute;
+            right: 12px;
+            top: 12px;
+            background: transparent;
+            border: 1px solid #334155;
+            color: var(--text-light);
+            padding: 4px 8px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            width: auto;
+            margin: 0;
         }
 
         .card {
@@ -527,6 +542,7 @@
 
 <div class="container">
     <header>
+        <button class="sound-toggle-btn" id="soundToggleBtn" onclick="toggleAudioMute()">🔊 Son</button>
         <h1 id="appTitle" onclick="clickSecretTitle()">MINIXOGOS PORTELA</h1>
         <div class="user-info" id="userInfo">Sen identificar</div>
     </header>
@@ -666,7 +682,7 @@
     </div>
 
     <footer>
-        <span class="app-revision">~#v0.9</span>
+        <span class="app-revision">~#v1.0</span>
     </footer>
 </div>
 
@@ -688,7 +704,16 @@
     } catch(e){}
 
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    let isMuted = false;
+
+    function toggleAudioMute() {
+        isMuted = !isMuted;
+        const btn = document.getElementById('soundToggleBtn');
+        if (btn) btn.innerText = isMuted ? "🔇 Mute" : "🔊 Son";
+    }
+
     function playBeep(freq = 440, type = 'sine', duration = 0.1) {
+        if (isMuted) return;
         try {
             if (audioCtx.state === 'suspended') audioCtx.resume();
             const osc = audioCtx.createOscillator();
@@ -703,6 +728,7 @@
 
     // EFECTOS DE SONO ELABORADOS
     function playVictorySound() {
+        if (isMuted) return;
         try {
             if (audioCtx.state === 'suspended') audioCtx.resume();
             const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
@@ -713,6 +739,7 @@
     }
 
     function playRecordSound() {
+        if (isMuted) return;
         try {
             if (audioCtx.state === 'suspended') audioCtx.resume();
             const notes = [440, 554.37, 659.25, 880]; // A4, C#5, E5, A5
@@ -726,7 +753,9 @@
         { id: "dado_master", nome: "Mestre dos Dados", desc: "Supera os 200 pts en Suma de Dados", icon: "🎲" },
         { id: "fastest", nome: "O máis Veloz", desc: "Supera os 800 pts en Reacción", icon: "⚡" },
         { id: "extreme_complete", nome: "Campaña Extreme", desc: "Completa unha Campaña EXTREME", icon: "🔥" },
-        { id: "time_king", nome: "Rei do Reloxo", desc: "Supera os 500 pts no Contrarreloxo", icon: "⏳" }
+        { id: "time_king", nome: "Rei do Reloxo", desc: "Supera os 500 pts no Contrarreloxo", icon: "⏳" },
+        { id: "even_odd_master", nome: "Cerebro Par/Impar", desc: "Supera os 300 pts en Par ou Impar Express", icon: "🔢" },
+        { id: "club_leader", nome: "Líder de Club", desc: "Crea ou forma parte dun Club de Amigos", icon: "👥" }
     ];
 
     const CATEGORIAS_BASE = [
@@ -743,7 +772,9 @@
         { id: "pattern", nome: "💡 Patrón de Luz", desc: "Memoriza e repite a secuencia.", exp: "Puntuación = +35 pts por cada paso. (3 roldas progresivas)." },
         { id: "reverse_math", nome: "🧠 Cálculo Mental Invertido", desc: "Atopa os dous números que orixinan o resultado.", exp: "Puntuación = +50 pts por combinación correcta." },
         { id: "balance", nome: "⚖️ Balanza de Pesos", desc: "Deduce cal figura é máis pesada.", exp: "Puntuación = +60 pts por dedución correcta." },
-        { id: "visual_find", nome: "👁️ O Obxecto Intruso", desc: "Atopa o emoji/símbolo diferente.", exp: "Puntuación = 500 - (Segundos * 20) por rolda." }
+        { id: "visual_find", nome: "👁️ O Obxecto Intruso", desc: "Atopa o emoji/símbolo diferente.", exp: "Puntuación = 500 - (Segundos * 20) por rolda." },
+        { id: "even_odd", nome: "🔢 Par ou Impar Express", desc: "Identifica se o número é Par ou Impar ao voo.", exp: "Puntuación = +20 pts por cada acerto en 10 roldas." },
+        { id: "reflex_tap", nome: "🟢 Reflexo Verde", desc: "Toca o botón cando se volva verde.", exp: "Puntuación = 1000 - Tempo de reacción en ms." }
     ];
 
     let currentUser = "";
@@ -1215,6 +1246,7 @@
             actualizarListaClubesUI();
         }
 
+        desbloquearInsignia("club_leader");
         document.getElementById('newClubNameInput').value = "";
         alert(`Club "${nome}" creado! Código para compartir: ${codigo}`);
     }
@@ -1235,6 +1267,7 @@
             actualizarListaClubesUI();
         }
 
+        desbloquearInsignia("club_leader");
         document.getElementById('joinClubCodeInput').value = "";
         alert(`Unícheste con éxito ao club "${atopa.nome}"!`);
     }
@@ -1331,6 +1364,7 @@
         // COMPROBAR INSIGNIAS
         if (nombreXogo.includes("Suma de Dados") && puntos >= 200) desbloquearInsignia("dado_master");
         if (nombreXogo.includes("Reacción") && puntos >= 800) desbloquearInsignia("fastest");
+        if (nombreXogo.includes("Par ou Impar") && puntos >= 300) desbloquearInsignia("even_odd_master");
 
         userProfile.puntosTotales = novoTotal;
         userProfile.ultAct = hoxe;
@@ -1418,7 +1452,6 @@
         campanaNivel = 2; // NORMAL
         campanaPuntosAcumulados = 0;
 
-        // Xeramos a mesma secuencia fixa de 3 minixogos baseada no día actual
         const dataHoxe = new Date().toISOString().split('T')[0];
         let seed = 0;
         for (let i = 0; i < dataHoxe.length; i++) seed += dataHoxe.charCodeAt(i);
@@ -1462,7 +1495,7 @@
     function iniciarSeguinteMinixogoContrarreloxo() {
         if (tempoRestanteGlobal <= 0) return;
         const catAlea = CATEGORIAS_BASE[Math.floor(Math.random() * CATEGORIAS_BASE.length)];
-        iniciarXogoDirecto(catAlea.id, 1); // TRIVIAL para dinamismo
+        iniciarXogoDirecto(catAlea.id, 1);
     }
 
     function rematarContrarreloxo() {
@@ -1555,6 +1588,8 @@
         else if (typeId === 'reverse_math') cargarXogoReverseMath(area, ctrl);
         else if (typeId === 'balance') cargarXogoBalanza(area, ctrl);
         else if (typeId === 'visual_find') cargarXogoVisualFind(area, ctrl);
+        else if (typeId === 'even_odd') cargarXogoEvenOdd(area, ctrl);
+        else if (typeId === 'reflex_tap') cargarXogoReflexTap(area, ctrl);
     }
 
     // 1. BARRIÑA PRECISIÓN
@@ -2030,7 +2065,6 @@
                 rotDeg = rots[Math.floor(Math.random() * rots.length)];
             }
 
-            // A frecha de orixe '⬆️' apunta arriba (UP). A rotación en sentido horario (CW) modifica a orientación.
             let directionOrder = ['UP', 'RIGHT', 'DOWN', 'LEFT'];
             let baseIdx = directionOrder.indexOf(targetBase.code);
             let steps = Math.round(rotDeg / 90) % 4;
@@ -2301,6 +2335,87 @@
             area.appendChild(grid);
         }
         proximaRoldaFind();
+    }
+
+    // 15. PAR OU IMPAR EXPRESS (NOVO)
+    function cargarXogoEvenOdd(area, ctrl) {
+        let totalRondas = 10, ronda = 0, acertos = 0, tStart = Date.now();
+        let maxVal = xogoActual.level === 1 ? 30 : (xogoActual.level === 2 ? 100 : 500);
+
+        function segRolda() {
+            if (ronda >= totalRondas) {
+                let dur = ((Date.now() - tStart)/1000).toFixed(1);
+                let pts = acertos * 20 * xogoActual.level;
+                rematarEAmosarPuntos(pts, `${acertos}/${totalRondas} acertos de paridade`, `Tempo total: ${dur}s`);
+                return;
+            }
+            ronda++;
+            let num = Math.floor(Math.random() * maxVal) + 1;
+            let esPar = num % 2 === 0;
+
+            area.innerHTML = `
+                <p style="color:var(--text-muted); margin:0;">Rolda ${ronda} de ${totalRondas}</p>
+                <h1 style="color:var(--accent-yellow); font-size:3rem; margin:15px 0;">${num}</h1>`;
+
+            let grid = document.createElement('div');
+            grid.className = 'grid-2x2';
+
+            let bPar = document.createElement('button');
+            bPar.innerText = "PAR";
+            bPar.style.background = "var(--accent-blue)";
+            bPar.onclick = () => {
+                if (esPar) { playBeep(700, 'sine', 0.08); acertos++; }
+                else playBeep(200, 'sawtooth', 0.08);
+                segRolda();
+            };
+
+            let bImpar = document.createElement('button');
+            bImpar.innerText = "IMPAR";
+            bImpar.style.background = "var(--accent-purple)";
+            bImpar.onclick = () => {
+                if (!esPar) { playBeep(700, 'sine', 0.08); acertos++; }
+                else playBeep(200, 'sawtooth', 0.08);
+                segRolda();
+            };
+
+            grid.appendChild(bPar);
+            grid.appendChild(bImpar);
+            area.appendChild(grid);
+        }
+        segRolda();
+    }
+
+    // 16. REFLEXO VERDE (NOVO)
+    function cargarXogoReflexTap(area, ctrl) {
+        area.innerHTML = `
+            <p style="color:var(--text-muted); margin:0;">Preme o botón xusto cando se volva VERDE!</p>
+            <div id="targetBox" style="width:140px; height:140px; border-radius:50%; background:#ef4444; margin:20px auto; display:flex; align-items:center; justify-content:center; font-size:1.2rem; font-weight:bold; color:white; border:3px solid #ffffff33;">ESPERA...</div>`;
+
+        const targetBox = document.getElementById('targetBox');
+        let ready = false;
+        let start = 0;
+        let delay = Math.random() * (xogoActual.level === 1 ? 2500 : (xogoActual.level === 2 ? 1800 : 1200)) + 1200;
+
+        let timer = setTimeout(() => {
+            ready = true;
+            start = Date.now();
+            targetBox.style.background = '#10b981';
+            targetBox.innerText = 'TOCA AGORA!';
+            playBeep(880, 'sine', 0.15);
+        }, delay);
+
+        targetBox.onclick = () => {
+            if (!ready) {
+                clearTimeout(timer);
+                playBeep(180, 'sawtooth', 0.2);
+                rematarEAmosarPuntos(0, "Premiches antes de tempo!", "Debes esperar a que se volva verde.");
+            } else {
+                let ms = Date.now() - start;
+                playBeep(1000, 'sine', 0.1);
+                let score = Math.max(10, Math.round(1000 - ms));
+                rematarEAmosarPuntos(score * xogoActual.level, `Tempo de reacción: ${ms}ms`, `Nivel de dificultade: ${xogoActual.level}`);
+            }
+        };
     }
 
     function rematarEAmosarPuntos(puntos, detalle, statExtra = "") {
